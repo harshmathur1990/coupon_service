@@ -1,0 +1,6 @@
+mysql:
+    connection: mysql+pymysql://root:root@localhost/coupons
+
+logfile: "CouponService.out"
+errorlogfile: "CouponServiceError.log"
+debug: True
