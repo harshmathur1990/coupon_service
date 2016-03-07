@@ -5,4 +5,5 @@ https://getitinfomedia.atlassian.net/wiki/display/COUPONS/Grocery
 
 
 pip install -r requirement.txt
+
 python main.py
