@@ -1,11 +1,11 @@
 from datetime import datetime
 import logging
 from sqlalchemy import Table, MetaData, create_engine, exc, BINARY, ForeignKey,\
-    VARCHAR, BOOLEAN, TIMESTAMP, Column,BIGINT, and_,or_, Enum, INTEGER
+    VARCHAR, BOOLEAN, TIMESTAMP, Column, and_, or_
+from sqlalchemy.dialects.mysql import TINYINT, INTEGER, BIGINT
 from sqlalchemy import asc, desc, select, exists
 from config import DATABASE_URL
-from enums import ItemType, UseType, BenefitType, FreebieEntityType, LocationType
-from sqlalchemy.sql import func, text
+from sqlalchemy.sql import text
 logger = logging.getLogger()
 
 
@@ -37,17 +37,17 @@ class CouponsAlchemyDB:
                 Column('id', BINARY(16), primary_key=True),
                 Column('name', VARCHAR(255)),
                 Column('description', VARCHAR(255)),
-                Column('rule_type', INTEGER, nullable=False),
-                Column('item_type', Enum(*ItemType)),
-                Column('use_type', Enum(*UseType)),
-                Column('no_of_uses_allowed_per_user', INTEGER),
-                Column('no_of_total_uses_allowed', BIGINT),
-                Column('range_min', INTEGER),
-                Column('range_max', INTEGER),
-                Column('amount_or_percentage', INTEGER),
-                Column('max_discount_value', INTEGER),
-                Column('location_type', Enum(*LocationType)),
-                Column('benefit_type', Enum(*BenefitType)),
+                Column('rule_type', TINYINT(unsigned=True), nullable=False),
+                Column('item_type', TINYINT(unsigned=True)),
+                Column('use_type', TINYINT(unsigned=True)),
+                Column('no_of_uses_allowed_per_user', INTEGER(unsigned=True)),
+                Column('no_of_total_uses_allowed', BIGINT(unsigned=True)),
+                Column('range_min', INTEGER(unsigned=True)),
+                Column('range_max', INTEGER(unsigned=True)),
+                Column('amount_or_percentage', INTEGER(unsigned=True)),
+                Column('max_discount_value', INTEGER(unsigned=True)),
+                Column('location_type', TINYINT(unsigned=True)),
+                Column('benefit_type', TINYINT(unsigned=True)),
                 Column('payment_specific', BOOLEAN, default=False),
                 Column('active', BOOLEAN, default=False),
                 Column('created_by', BINARY(16), nullable=False),
@@ -64,6 +64,7 @@ class CouponsAlchemyDB:
 
             CouponsAlchemyDB.vouchers_table = Table(
                 'vouchers', metadata,
+                Column('id', BINARY(16), unique=True, nullable=False),
                 Column('code', VARCHAR(20), primary_key=True),
                 Column('rule_id', BINARY(16), ForeignKey("rule.id"), nullable=False),
                 Column('description', VARCHAR(255)),
@@ -84,8 +85,8 @@ class CouponsAlchemyDB:
             CouponsAlchemyDB.freebie_value_list = Table(
                 'freebie_value_list', metadata,
                 Column('rule_id', BINARY(16), ForeignKey("rule.id"), primary_key=True),
-                Column('entity_type', Enum(*FreebieEntityType), primary_key=True),
-                Column('entity_id', BIGINT, primary_key=True, autoincrement=False),
+                Column('entity_type', TINYINT(unsigned=True), primary_key=True, autoincrement=False),
+                Column('entity_id', BIGINT(unsigned=True), primary_key=True, autoincrement=False),
                 Column('created_by', BINARY(16), nullable=False),
                 Column('updated_by', BINARY(16), nullable=False),
                 Column('created_at', TIMESTAMP, default=datetime.now,
@@ -101,7 +102,7 @@ class CouponsAlchemyDB:
             CouponsAlchemyDB.item_type_value_list = Table(
                 'item_type_value_list', metadata,
                 Column('rule_id', BINARY(16), ForeignKey("rule.id"), primary_key=True),
-                Column('item_id', BIGINT, primary_key=True, autoincrement=False),
+                Column('item_id', BIGINT(unsigned=True), primary_key=True, autoincrement=False),
                 Column('created_by', BINARY(16), nullable=False),
                 Column('updated_by', BINARY(16), nullable=False),
                 Column('created_at', TIMESTAMP, default=datetime.now,
@@ -117,7 +118,7 @@ class CouponsAlchemyDB:
             CouponsAlchemyDB.location_value_list = Table(
                 'location_value_list', metadata,
                 Column('rule_id', BINARY(16), ForeignKey("rule.id"), primary_key=True),
-                Column('location_id', BIGINT, primary_key=True, autoincrement=False),
+                Column('location_id', BIGINT(unsigned=True), primary_key=True, autoincrement=False),
                 Column('created_by', BINARY(16), nullable=False),
                 Column('updated_by', BINARY(16), nullable=False),
                 Column('created_at', TIMESTAMP, default=datetime.now,
@@ -172,8 +173,8 @@ class CouponsAlchemyDB:
                 Column('user_id', BINARY(16), nullable=False),
                 Column('applied_on', TIMESTAMP, default=datetime.now,
                        server_default=text('CURRENT_TIMESTAMP'), nullable=False),
-                Column('voucher_code', VARCHAR(20), ForeignKey("vouchers.code"), nullable=False),
-                Column('order_id', BIGINT, nullable=False)
+                Column('voucher_id', BINARY(16), ForeignKey("vouchers.id"), nullable=False),
+                Column('order_id', BIGINT(unsigned=True), nullable=False)
             )
 
             CouponsAlchemyDB._table["voucher_use_tracker"] = CouponsAlchemyDB.voucher_use_tracker
