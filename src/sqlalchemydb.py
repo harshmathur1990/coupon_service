@@ -5,7 +5,7 @@ from sqlalchemy import Table, MetaData, create_engine, exc, BINARY, ForeignKey,\
 from sqlalchemy import asc, desc, select, exists
 from config import DATABASE_URL
 from enums import ItemType, UseType, BenefitType, FreebieEntityType, LocationType
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, text
 logger = logging.getLogger()
 
 
@@ -52,11 +52,12 @@ class CouponsAlchemyDB:
                 Column('active', BOOLEAN, default=False),
                 Column('created_by', BINARY(16), nullable=False),
                 Column('updated_by', BINARY(16), nullable=False),
-                Column('created_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), nullable=False),
-                Column('updated_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), onupdate=func.current_timestamp,
-                       server_onupdate=func.current_timestamp(), nullable=False)
+                Column('created_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
+                Column('updated_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
+                       onupdate=datetime.now,
+                       nullable=False)
             )
 
             CouponsAlchemyDB._table["rule"] = CouponsAlchemyDB.rule_table
@@ -70,11 +71,12 @@ class CouponsAlchemyDB:
                 Column('to', TIMESTAMP),
                 Column('created_by', BINARY(16), nullable=False),
                 Column('updated_by', BINARY(16), nullable=False),
-                Column('created_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), nullable=False),
-                Column('updated_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), onupdate=func.current_timestamp,
-                       server_onupdate=func.current_timestamp(), nullable=False)
+                Column('created_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
+                Column('updated_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
+                       onupdate=datetime.now,
+                       nullable=False)
             )
 
             CouponsAlchemyDB._table["vouchers"] = CouponsAlchemyDB.vouchers_table
@@ -86,11 +88,12 @@ class CouponsAlchemyDB:
                 Column('entity_id', BIGINT, primary_key=True, autoincrement=False),
                 Column('created_by', BINARY(16), nullable=False),
                 Column('updated_by', BINARY(16), nullable=False),
-                Column('created_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), nullable=False),
-                Column('updated_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), onupdate=func.current_timestamp,
-                       server_onupdate=func.current_timestamp(), nullable=False)
+                Column('created_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
+                Column('updated_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
+                       onupdate=datetime.now,
+                       nullable=False)
             )
 
             CouponsAlchemyDB._table["freebie_value_list"] = CouponsAlchemyDB.freebie_value_list
@@ -101,11 +104,12 @@ class CouponsAlchemyDB:
                 Column('item_id', BIGINT, primary_key=True, autoincrement=False),
                 Column('created_by', BINARY(16), nullable=False),
                 Column('updated_by', BINARY(16), nullable=False),
-                Column('created_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), nullable=False),
-                Column('updated_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), onupdate=func.current_timestamp,
-                       server_onupdate=func.current_timestamp(), nullable=False)
+                Column('created_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
+                Column('updated_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
+                       onupdate=datetime.now,
+                       nullable=False)
             )
 
             CouponsAlchemyDB._table["item_type_value_list"] = CouponsAlchemyDB.item_type_value_list
@@ -116,11 +120,12 @@ class CouponsAlchemyDB:
                 Column('location_id', BIGINT, primary_key=True, autoincrement=False),
                 Column('created_by', BINARY(16), nullable=False),
                 Column('updated_by', BINARY(16), nullable=False),
-                Column('created_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), nullable=False),
-                Column('updated_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), onupdate=func.current_timestamp,
-                       server_onupdate=func.current_timestamp(), nullable=False)
+                Column('created_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
+                Column('updated_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
+                       onupdate=datetime.now,
+                       nullable=False)
             )
 
             CouponsAlchemyDB._table["location_value_list"] = CouponsAlchemyDB.location_value_list
@@ -131,11 +136,12 @@ class CouponsAlchemyDB:
                 Column('payment_mode', VARCHAR(255), primary_key=True),
                 Column('created_by', BINARY(16), nullable=False),
                 Column('updated_by', BINARY(16), nullable=False),
-                Column('created_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), nullable=False),
-                Column('updated_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), onupdate=func.current_timestamp,
-                       server_onupdate=func.current_timestamp(), nullable=False)
+                Column('created_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
+                Column('updated_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
+                       onupdate=datetime.now,
+                       nullable=False)
             )
 
             CouponsAlchemyDB._table["payment_mode_list"] = CouponsAlchemyDB.payment_mode_list
@@ -150,11 +156,12 @@ class CouponsAlchemyDB:
                 Column('to', TIMESTAMP),
                 Column('created_by', BINARY(16), nullable=False),
                 Column('updated_by', BINARY(16), nullable=False),
-                Column('created_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), nullable=False),
-                Column('updated_at', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), onupdate=func.current_timestamp,
-                       server_onupdate=func.current_timestamp(), nullable=False)
+                Column('created_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
+                Column('updated_at', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
+                       onupdate=datetime.now,
+                       nullable=False)
             )
 
             CouponsAlchemyDB._table["deleted_vouchers"] = CouponsAlchemyDB.deleted_vouchers
@@ -163,8 +170,8 @@ class CouponsAlchemyDB:
                 'voucher_use_tracker', metadata,
                 Column('id', BINARY(16), primary_key=True),
                 Column('user_id', BINARY(16), nullable=False),
-                Column('applied_on', TIMESTAMP, default=func.current_timestamp,
-                       server_default=func.current_timestamp(), nullable=False),
+                Column('applied_on', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
                 Column('voucher_code', VARCHAR(20), ForeignKey("vouchers.code"), nullable=False),
                 Column('order_id', BIGINT, nullable=False)
             )
