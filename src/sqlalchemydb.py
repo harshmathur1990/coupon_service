@@ -38,20 +38,12 @@ class CouponsAlchemyDB:
                 Column('name', VARCHAR(255)),
                 Column('description', VARCHAR(255)),
                 Column('rule_type', TINYINT(unsigned=True), nullable=False),
-                Column('item_type', TINYINT(unsigned=True)),
-                Column('use_type', TINYINT(unsigned=True)),
-                Column('no_of_uses_allowed_per_user', INTEGER(unsigned=True)),
-                Column('no_of_total_uses_allowed', BIGINT(unsigned=True)),
-                Column('range_min', INTEGER(unsigned=True)),
-                Column('range_max', INTEGER(unsigned=True)),
-                Column('amount_or_percentage', INTEGER(unsigned=True)),
-                Column('max_discount_value', INTEGER(unsigned=True)),
-                Column('location_type', TINYINT(unsigned=True)),
-                Column('benefit_type', TINYINT(unsigned=True)),
-                Column('payment_specific', BOOLEAN, default=False),
+                Column('criteria_json', VARCHAR(8000), nullable=False),
+                Column('benefits_json', VARCHAR(2000), nullable=False),
+                Column('sha2hash', VARCHAR(64), index=True),
                 Column('active', BOOLEAN, default=False),
-                Column('created_by', BINARY(16), nullable=False),
-                Column('updated_by', BINARY(16), nullable=False),
+                Column('created_by', VARCHAR(32), nullable=False),
+                Column('updated_by', VARCHAR(32), nullable=False),
                 Column('created_at', TIMESTAMP, default=datetime.now,
                        server_default=text('CURRENT_TIMESTAMP'), nullable=False),
                 Column('updated_at', TIMESTAMP, default=datetime.now,
@@ -70,8 +62,8 @@ class CouponsAlchemyDB:
                 Column('description', VARCHAR(255)),
                 Column('from', TIMESTAMP),
                 Column('to', TIMESTAMP),
-                Column('created_by', BINARY(16), nullable=False),
-                Column('updated_by', BINARY(16), nullable=False),
+                Column('created_by', VARCHAR(32), nullable=False),
+                Column('updated_by', VARCHAR(32), nullable=False),
                 Column('created_at', TIMESTAMP, default=datetime.now,
                        server_default=text('CURRENT_TIMESTAMP'), nullable=False),
                 Column('updated_at', TIMESTAMP, default=datetime.now,
@@ -82,71 +74,6 @@ class CouponsAlchemyDB:
 
             CouponsAlchemyDB._table["vouchers"] = CouponsAlchemyDB.vouchers_table
 
-            CouponsAlchemyDB.freebie_value_list = Table(
-                'freebie_value_list', metadata,
-                Column('rule_id', BINARY(16), ForeignKey("rule.id"), primary_key=True),
-                Column('entity_type', TINYINT(unsigned=True), primary_key=True, autoincrement=False),
-                Column('entity_id', BIGINT(unsigned=True), primary_key=True, autoincrement=False),
-                Column('created_by', BINARY(16), nullable=False),
-                Column('updated_by', BINARY(16), nullable=False),
-                Column('created_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
-                Column('updated_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
-                       onupdate=datetime.now,
-                       nullable=False)
-            )
-
-            CouponsAlchemyDB._table["freebie_value_list"] = CouponsAlchemyDB.freebie_value_list
-
-            CouponsAlchemyDB.item_type_value_list = Table(
-                'item_type_value_list', metadata,
-                Column('rule_id', BINARY(16), ForeignKey("rule.id"), primary_key=True),
-                Column('item_id', BIGINT(unsigned=True), primary_key=True, autoincrement=False),
-                Column('created_by', BINARY(16), nullable=False),
-                Column('updated_by', BINARY(16), nullable=False),
-                Column('created_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
-                Column('updated_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
-                       onupdate=datetime.now,
-                       nullable=False)
-            )
-
-            CouponsAlchemyDB._table["item_type_value_list"] = CouponsAlchemyDB.item_type_value_list
-
-            CouponsAlchemyDB.location_value_list = Table(
-                'location_value_list', metadata,
-                Column('rule_id', BINARY(16), ForeignKey("rule.id"), primary_key=True),
-                Column('location_id', BIGINT(unsigned=True), primary_key=True, autoincrement=False),
-                Column('created_by', BINARY(16), nullable=False),
-                Column('updated_by', BINARY(16), nullable=False),
-                Column('created_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
-                Column('updated_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
-                       onupdate=datetime.now,
-                       nullable=False)
-            )
-
-            CouponsAlchemyDB._table["location_value_list"] = CouponsAlchemyDB.location_value_list
-
-            CouponsAlchemyDB.payment_mode_list = Table(
-                'payment_mode_list', metadata,
-                Column('rule_id', BINARY(16), ForeignKey("rule.id"), primary_key=True),
-                Column('payment_mode', VARCHAR(255), primary_key=True),
-                Column('created_by', BINARY(16), nullable=False),
-                Column('updated_by', BINARY(16), nullable=False),
-                Column('created_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
-                Column('updated_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
-                       onupdate=datetime.now,
-                       nullable=False)
-            )
-
-            CouponsAlchemyDB._table["payment_mode_list"] = CouponsAlchemyDB.payment_mode_list
-
             CouponsAlchemyDB.deleted_vouchers = Table(
                 'deleted_vouchers', metadata,
                 Column('id', BINARY(16), primary_key=True),
@@ -155,8 +82,8 @@ class CouponsAlchemyDB:
                 Column('description', VARCHAR(255)),
                 Column('from', TIMESTAMP),
                 Column('to', TIMESTAMP),
-                Column('created_by', BINARY(16), nullable=False),
-                Column('updated_by', BINARY(16), nullable=False),
+                Column('created_by', VARCHAR(32), nullable=False),
+                Column('updated_by', VARCHAR(32), nullable=False),
                 Column('created_at', TIMESTAMP, default=datetime.now,
                        server_default=text('CURRENT_TIMESTAMP'), nullable=False),
                 Column('updated_at', TIMESTAMP, default=datetime.now,
@@ -170,7 +97,7 @@ class CouponsAlchemyDB:
             CouponsAlchemyDB.voucher_use_tracker = Table(
                 'voucher_use_tracker', metadata,
                 Column('id', BINARY(16), primary_key=True),
-                Column('user_id', BINARY(16), nullable=False),
+                Column('user_id', VARCHAR(32), nullable=False),
                 Column('applied_on', TIMESTAMP, default=datetime.now,
                        server_default=text('CURRENT_TIMESTAMP'), nullable=False),
                 Column('voucher_id', BINARY(16), ForeignKey("vouchers.id"), nullable=False),
@@ -178,6 +105,19 @@ class CouponsAlchemyDB:
             )
 
             CouponsAlchemyDB._table["voucher_use_tracker"] = CouponsAlchemyDB.voucher_use_tracker
+
+            CouponsAlchemyDB.user_voucher_transaction_log = Table(
+                'user_voucher_transaction_log', metadata,
+                Column('id', BINARY(16), primary_key=True),
+                Column('user_id', VARCHAR(32), nullable=False),
+                Column('updated_on', TIMESTAMP, default=datetime.now,
+                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
+                Column('voucher_id', BINARY(16), ForeignKey("vouchers.id"), nullable=False),
+                Column('order_id', BIGINT(unsigned=True), nullable=False),
+                Column('status', TINYINT(unsigned=True), nullable=False)
+            )
+
+            CouponsAlchemyDB._table["user_voucher_transaction_log"] = CouponsAlchemyDB.user_voucher_transaction_log
 
             metadata.create_all(CouponsAlchemyDB.engine)
 
