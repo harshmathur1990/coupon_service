@@ -36,7 +36,7 @@ def validate_for_create_coupon(data):
     return success, error
 
 
-def create_rule_object_and_persist(data, id=None):
+def create_rule_object(data, id=None):
     if not id:
         id = uuid.uuid1().hex
     rule_criteria_kwargs = dict()
@@ -57,25 +57,21 @@ def create_rule_object_and_persist(data, id=None):
             location = data.get('location')
             for location_key in location_keys:
                 rule_criteria_kwargs[location_key] = location.get(location_key)
-    print rule_criteria_kwargs
     rule_criteria = RuleCriteria(**rule_criteria_kwargs)
     freebie_benefit_list = list()
-    for freebie in data.get('freebies'):
+    for freebie in data.get('freebies', list()):
         freebie_dict = dict()
         freebie_dict['type'] = BenefitType.freebie.value
         freebie_dict['value'] = freebie
         freebie_benefit_list.append(freebie_dict)
-    print freebie_benefit_list
     amount_benefit = {
         'type': BenefitType.amount.value,
         'value': data.get('amount')
     }
-    print amount_benefit
     percentage_benefit = {
         'type': BenefitType.percentage.value,
         'value': data.get('percentage')
     }
-    print percentage_benefit
     benefit_list = freebie_benefit_list
     benefit_list.append(amount_benefit)
     benefit_list.append(percentage_benefit)
@@ -83,5 +79,4 @@ def create_rule_object_and_persist(data, id=None):
     rule = Rule(id=id, name=data.get('name'), description=data.get('description'),
                 criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
                 created_by=data.get('user_id'), updated_by=data.get('user_id'))
-    result = rule.save()
-    return result
+    return rule

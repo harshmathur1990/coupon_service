@@ -99,8 +99,10 @@ class Rule(object):
 
     @staticmethod
     def find_one(id):
+        id = binascii.a2b_hex(id)
         db = CouponsAlchemyDB()
         rule_dict = db.find_one("rule", **{'id': id})
+        rule_dict['id'] = binascii.b2a_hex(rule_dict['id'])
         rule = Rule(**rule_dict)
         return rule
 

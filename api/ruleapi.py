@@ -1,15 +1,16 @@
 from webargs import fields, validate
 from src.enums import *
 from . import api
+import json
 from flask import request
 from webargs.flaskparser import parser
 from lib.decorator import jsonify
-from src.rules.validate import validate_for_create_coupon, create_rule_object_and_persist
+from src.rules.validate import validate_for_create_coupon, create_rule_object
 
 
+@jsonify
 @api.route('/<hex:id>', methods=['PUT'])
 @api.route('/', methods=['POST'])
-@jsonify
 def create_coupon(id=None):
     coupon_create_args = {
         'name': fields.Str(required=False, missing=None, location='json'),
@@ -171,7 +172,6 @@ def create_coupon(id=None):
         'user_id': fields.Str(required=True)
     }
     args = parser.parse(coupon_create_args, request)
-    print args
     success, error = validate_for_create_coupon(args)
     if not success:
         rv = {
@@ -182,7 +182,8 @@ def create_coupon(id=None):
             }
         }
         return rv
-    success = create_rule_object_and_persist(args, id=id)
+    rule = create_rule_object(args, id=id)
+    success = rule.save()
     if not success:
         rv = {
             'success': success,
