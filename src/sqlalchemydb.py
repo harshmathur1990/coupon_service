@@ -176,27 +176,23 @@ class CouponsAlchemyDB:
         table = CouponsAlchemyDB.get_table(table_name)
         self.conn.execute(table.insert(), values)
 
-    def update_row(self,table_name,*keys, **row):
+    def update_row(self, table_name, *keys, **row):
         table = CouponsAlchemyDB.get_table(table_name)
-        try:
-            if not isinstance(keys, (list, tuple)):
-                keys = [keys]
-            if not keys or len(keys) == len(row):
-                return False
-            clause = dict()
-            for k in keys:
-                clause[k] = row[k]
-            clean_row = row.copy()
-            for key in keys:
-                if key in clean_row.keys():
-                    del clean_row[key]
-            clauses = CouponsAlchemyDB.args_to_where(table, clause)
-            update = table.update(clauses, clean_row)
-            self.conn.execute(update)
-            return True
-        except exc.SQLAlchemyError as err:
-            logger.error(err, exc_info=True)(err, True)
+        if not isinstance(keys, (list, tuple)):
+            keys = [keys]
+        if not keys or len(keys) == len(row):
             return False
+        clause = dict()
+        for k in keys:
+            clause[k] = row[k]
+        clean_row = row.copy()
+        for key in keys:
+            if key in clean_row.keys():
+                del clean_row[key]
+        clauses = CouponsAlchemyDB.args_to_where(table, clause)
+        update = table.update(clauses, clean_row)
+        self.conn.execute(update)
+        return True
 
     def update_row_new(self, table_name, where=None, val=None):
         if not where:

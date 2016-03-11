@@ -7,9 +7,10 @@ from lib.decorator import jsonify
 from src.rules.validate import validate_for_create_coupon, create_rule_object_and_persist
 
 
+@api.route('/<hex:id>', methods=['PUT'])
 @api.route('/', methods=['POST'])
 @jsonify
-def create_coupon():
+def create_coupon(id=None):
     coupon_create_args = {
         'name': fields.Str(required=False, missing=None, location='json'),
 
@@ -170,6 +171,7 @@ def create_coupon():
         'user_id': fields.Str(required=True)
     }
     args = parser.parse(coupon_create_args, request)
+    print args
     success, error = validate_for_create_coupon(args)
     if not success:
         rv = {
@@ -180,7 +182,7 @@ def create_coupon():
             }
         }
         return rv
-    success = create_rule_object_and_persist(args)
+    success = create_rule_object_and_persist(args, id=id)
     if not success:
         rv = {
             'success': success,

@@ -12,10 +12,10 @@ class Rule(object):
 
     def __init__(self, **kwargs):
         # instantiate this class with a helper function
-        id = kwargs.get('id')
-        if not id:
-            id = uuid.uuid1().hex
+        id = kwargs.get('id')  # id should be uuid.uuid1().hex
         self.id = id
+        if self.id:
+            self.id_bin = binascii.a2b_hex(self.id)
         self.name = kwargs.get('name')
         self.description = kwargs.get('description')
         self.rule_type = kwargs.get('rule_type')
@@ -47,16 +47,23 @@ class Rule(object):
         db = CouponsAlchemyDB()
         db.begin()
         try:
-            # for now we are allowing user to create same rule as many times as he can, later we will restrict
-            rule_list = db.find("rule", **{'sha2hash': values.get('sha2hash')})
-            if rule_list:
-                for rule in rule_list:
-                    rule['id'] = binascii.b2a_hex(rule['id'])
-                    rule_obj = Rule(**rule)
-                    if self == rule_obj:
-                        return rule_obj.id
+            # check if the rule being created already exists, if yes, just return rule id
+            existing_rule = db.find_one("rule", **{'id': self.id_bin})
+            if not existing_rule:
+                # no existing rule exists for this id, now check if a rule exists for given attributes
+                rule_list = db.find("rule", **{'sha2hash': values.get('sha2hash')})
+                if rule_list:
+                    for rule in rule_list:
+                        rule['id'] = binascii.b2a_hex(rule['id'])
+                        rule_obj = Rule(**rule)
+                        if self == rule_obj:
+                            self.id = rule_obj.id
+                            break
+                else:
+                    db.insert_row("rule", **values)
             else:
-                db.insert_row("rule", **values)
+                # call is to update the existing rule with new attributes, just update and save it
+                db.update_row("rule", 'id', **values)
         except Exception as e:
             logger.exception(e)
             db.rollback()
@@ -67,7 +74,7 @@ class Rule(object):
 
     def get_value_dict(self):
         values = dict()
-        values['id'] = self.id
+        values['id'] = self.id_bin
         if self.name:
             values['name'] = self.name
         if self.description:
@@ -91,9 +98,11 @@ class Rule(object):
         return False
 
     @staticmethod
-    def dict_to_object(data):
-        # to implement dict to this object
-        return Rule()
+    def find_one(id):
+        db = CouponsAlchemyDB()
+        rule_dict = db.find_one("rule", **{'id': id})
+        rule = Rule(**rule_dict)
+        return rule
 
 
 class RuleCriteria(object):
