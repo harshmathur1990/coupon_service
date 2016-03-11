@@ -1,16 +1,15 @@
 from webargs import fields, validate
 from src.enums import *
 from . import api
-import json
 from flask import request
 from webargs.flaskparser import parser
 from lib.decorator import jsonify
 from src.rules.validate import validate_for_create_coupon, create_rule_object
 
 
-@jsonify
 @api.route('/<hex:id>', methods=['PUT'])
 @api.route('/', methods=['POST'])
+@jsonify
 def create_coupon(id=None):
     coupon_create_args = {
         'name': fields.Str(required=False, missing=None, location='json'),

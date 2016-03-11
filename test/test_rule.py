@@ -4,6 +4,8 @@ import json
 from __init__ import create_app
 from src.rules.rule import Rule
 from src.rules.validate import create_rule_object
+import binascii
+from src.sqlalchemydb import CouponsAlchemyDB
 
 
 class CreateRule(unittest.TestCase):
@@ -59,7 +61,9 @@ class CreateRule(unittest.TestCase):
         rule_id = data.get('data', dict()).get('rule_id', None)
         rule = Rule.find_one(rule_id)
         this_rule = create_rule_object(test_data, id=rule_id)
-        self.assertTrue(rule == this_rule)
+        self.assertTrue(rule == this_rule,
+                        u'Rule created is not same as rule pushed as json RulePushed : {} Rule Created: {} Benefits: {}'
+                        .format(test_data, rule.criteria_json, rule.benefits_json))
         test_data = {
             "name": "test rule",
             "use_type": 3,
@@ -85,8 +89,55 @@ class CreateRule(unittest.TestCase):
                 "zone": ["ASDS34", "SDD245"]
             },
             "payment_modes": ["VISA", "AMEX"],
+            "freebies": [[1,2,3,4]],
+            "amount": None,
+            "percentage": None,
+            "max_discount": 100,
+            "user_id": "10000"
+        }
+        response = self.client.put(url_for('api.create_coupon', id=rule_id), data=json.dumps(test_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, u'{}-{}'.format(response.data, response.status_code))
+        data = json.loads(response.data)
+        rule_id = data.get('data', dict()).get('rule_id', None)
+        rule = Rule.find_one(rule_id)
+        this_rule = create_rule_object(test_data, id=rule_id)
+        self.assertTrue(rule == this_rule,
+                        u'Rule created is not same as rule pushed as json RulePushed : {} Rule Created: {} Benefits: {}'
+                        .format(test_data, rule.criteria_json, rule.benefits_json))
+        db = CouponsAlchemyDB()
+        db.delete_row("rule", **{'id': binascii.a2b_hex(rule_id)})
+        test_data = {
+            "name": "test rule",
+            "use_type": 3,
+            "no_of_uses_allowed_per_user": 1,
+            "no_of_total_uses_allowed": 100,
+            "range_min": 250,
+            "range_max": 1000,
+            "channels": [0],
+            "brands": [1,2],
+            "products": [234,675],
+            "categories": {
+                "in": [54, 89],
+                "not_in": [4,7]
+            },
+            "storefronts": [6,3],
+            "variants": [90, 100],
+            "sellers": [45, 78, 43, 100, 3, 7],
+            "location": {
+                "country": [1],
+                "state": [0,1,2,3,4,5,6,7,8],
+                "city": [87,45,23,45,1,4,5,34],
+                "area": [56,34,67,23,67,34],
+                "zone": ["ASDS34", "SDD245"]
+            },
+            "payment_modes": ["VISA", "AMEX"],
+            "freebies": [[1,2,3,4]],
             "amount": 100,
             "percentage": None,
             "max_discount": 100,
             "user_id": "10000"
         }
+        response = self.client.post(url_for('api.create_coupon'), data=json.dumps(test_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 400, u'{}-{}'.format(response.data, response.status_code))

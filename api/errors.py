@@ -2,7 +2,7 @@ from . import api
 from flask import jsonify
 
 
-@api.errorhandler(422)
+@api.app_errorhandler(422)
 def handle_error(error):
     rv = {
         'success': False,
@@ -11,4 +11,6 @@ def handle_error(error):
             'error': error.data['messages']
         }
     }
-    return jsonify(rv), 400
+    res = jsonify(rv)
+    res.status_code = 400
+    return res
