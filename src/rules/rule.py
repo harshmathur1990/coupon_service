@@ -1,9 +1,7 @@
-import uuid
 import logging
 import canonicaljson
 import hashlib
 import binascii
-from src.enums import *
 from src.sqlalchemydb import CouponsAlchemyDB
 logger = logging.getLogger()
 
@@ -102,9 +100,11 @@ class Rule(object):
         id = binascii.a2b_hex(id)
         db = CouponsAlchemyDB()
         rule_dict = db.find_one("rule", **{'id': id})
-        rule_dict['id'] = binascii.b2a_hex(rule_dict['id'])
-        rule = Rule(**rule_dict)
-        return rule
+        if rule_dict:
+            rule_dict['id'] = binascii.b2a_hex(rule_dict['id'])
+            rule = Rule(**rule_dict)
+            return rule
+        return False
 
 
 class RuleCriteria(object):

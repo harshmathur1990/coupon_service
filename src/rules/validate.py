@@ -1,6 +1,7 @@
 from src.enums import *
 from rule import Rule, RuleCriteria, Benefits
-import uuid
+from vouchers import Vouchers
+import uuid, datetime
 
 
 def validate_for_create_coupon(data):
@@ -37,8 +38,6 @@ def validate_for_create_coupon(data):
 
 
 def create_rule_object(data, id=None):
-    if not id:
-        id = uuid.uuid1().hex
     rule_criteria_kwargs = dict()
     rule_criteria_keys = [
         'brands', 'categories', 'channels',
@@ -76,7 +75,47 @@ def create_rule_object(data, id=None):
     benefit_list.append(amount_benefit)
     benefit_list.append(percentage_benefit)
     benefits = Benefits(max_discount=data.get('max_discount'), data=benefit_list)
-    rule = Rule(id=id, name=data.get('name'), description=data.get('description'),
-                criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
-                created_by=data.get('user_id'), updated_by=data.get('user_id'))
+    if not id:
+        id = uuid.uuid1().hex
+        rule = Rule(id=id, name=data.get('name'), description=data.get('description'),
+                    criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
+                    created_by=data.get('user_id'), updated_by=data.get('user_id'))
+    else:
+        rule = Rule(id=id, name=data.get('name'), description=data.get('description'),
+                    criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
+                    updated_by=data.get('user_id'))
     return rule
+
+
+def validate_for_create_voucher(data_dict, rule_id):
+    error = list()
+    success = True
+
+    if not Rule.find_one(rule_id):
+        success = False
+        error.append(u'No Rule Exists for rule id {}'.format(data_dict.get('rule_id')))
+
+    if data_dict.get('from') < datetime.datetime.now():
+        success = False
+        error.append('Backdated voucher creation is not allowed')
+
+    if data_dict.get('to') < data_dict.get('from'):
+        success = False
+        error.append(u'Voucher end date must be greater than start date')
+
+    return success, error
+
+
+def create_voucher_object(data, rule_id, code):
+    kwargs = dict()
+    id = uuid.uuid1().hex
+    kwargs['id'] = id
+    kwargs['created_by'] = data.get('user_id')
+    kwargs['code'] = code
+    kwargs['rule_id'] = rule_id
+    kwargs['description'] = data.get('description')
+    kwargs['from'] = data.get('from')
+    kwargs['to'] = data.get('to')
+    kwargs['updated_by'] = data.get('user_id')
+    voucher = Vouchers(**kwargs)
+    return voucher
