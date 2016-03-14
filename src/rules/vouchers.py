@@ -41,6 +41,7 @@ class Vouchers(object):
             db.insert_row("vouchers", **values)
             db.insert_row("all_vouchers", **values)
         except Exception as e:
+            # TODO Exception handling for primary key dedup
             logger.exception(e)
             db.rollback()
             return False
