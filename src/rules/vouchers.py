@@ -2,6 +2,7 @@ import logging
 from constants import VOUCHERS_KEY
 import binascii
 from src.sqlalchemydb import CouponsAlchemyDB
+from src.enums import VoucherTransactionStatus
 from rule import Rule
 from lib import cache
 logger = logging.getLogger()
@@ -77,11 +78,59 @@ class Vouchers(object):
     #     cache.set(voucher_key, voucher)
 
 
-class VoucherUseTracker(object):
+class VoucherTransactionLog(object):
     def __init__(self, **kwargs):
         self.id = kwargs.get('id')  # uuid.uuid1().hex
+        if self.id:
+            self.id_bin = binascii.a2b_hex(self.id)
         self.user_id = kwargs.get('user_id')
         self.voucher_id = kwargs.get('voucher_id')  # uuid.uuid1().hex
         if self.voucher_id:
             self.voucher_id_bin = binascii.a2b_hex(self.voucher_id)
         self.order_id = kwargs.get('order_id')
+        self.status = kwargs.get('status')
+        if self.status:
+            self.status_enum = VoucherTransactionStatus(self.status)
+
+    def save(self):
+        values = self.get_value_dict_for_log()
+        db = CouponsAlchemyDB()
+        db.begin()
+        try:
+            function = self.save_function().get(self.status_enum)
+            function(db, values)
+        except Exception as e:
+            logger.exception(e)
+            db.rollback()
+            return False
+        else:
+            db.commit()
+        return True
+
+    def get_value_dict_for_log(self):
+        values = dict()
+        values['id'] = self.id_bin
+        values['user_id'] = self.user_id
+        values['voucher_id'] = self.voucher_id_bin
+        values['order_id'] = self.order_id
+        values['status'] = self.status
+        return values
+
+    def make_in_progress_entry(self, db, values):
+        db.insert_row("user_voucher_transaction_log", **values)
+        del values['status']
+        db.insert_row("voucher_use_tracker", **values)
+
+    def make_success_entry(self, db, values):
+        db.insert_row("user_voucher_transaction_log", **values)
+
+    def make_failure_entry(self, db, values):
+        db.insert_row("user_voucher_transaction_log", **values)
+        db.delete_row_in_transaction("voucher_use_tracker", **{'order_id': self.order_id})
+
+    def save_function(self):
+        return {
+            VoucherTransactionStatus.in_progress: self.make_in_progress_entry,
+            VoucherTransactionStatus.success: self.make_success_entry,
+            VoucherTransactionStatus.failure: self.make_failure_entry
+        }

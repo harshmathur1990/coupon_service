@@ -1,8 +1,9 @@
 import datetime
-from vouchers import Vouchers
+from vouchers import Vouchers, VoucherTransactionLog
 from src.enums import BenefitType, Channels
 from lib import cache
 from rule import Rule
+import uuid
 from constants import RULE_CACHE_KEY
 
 
@@ -62,19 +63,29 @@ def get_benefits(data, coupon_code):
                 discount = max_discount
             for item in data['items']:
                 product_dict = dict()
-                product_dict['item_id'] = item.variant
+                product_dict['subscriptionId'] = item.variant
                 product_dict['qty'] = item.quantity
                 product_dict['discount'] = (item.quantity * item.price * discount)/data.get('total')
                 products_list.append(product_dict)
     benefit_dict['products'] = products_list
-    benefit_dict['freebie'] = freebie_list
-    benefit_dict['discount'] = discount
-    benefit_dict['payment_modes'] = rule.criteria_obj.payment_modes
+    benefit_dict['freebies'] = freebie_list
+    benefit_dict['totalDiscount'] = discount
+    benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
     benefit_dict['channel'] = [Channels(c).name for c in rule.criteria_obj.channels]
-    benefit_dict['coupon_code'] = coupon_code
+    benefit_dict['couponCodes'] = [coupon_code]
+    benefit_dict['status'] = 'success'
     return benefit
 
 
-def apply_benefits(voucher_id, user_id, order_id):
-
-    pass
+def apply_benefits(args, benefit):
+    order_id = args.get('order_id')
+    user_id = args.get('customer_id')
+    voucher_code = args.get('coupon_codes')[0]
+    voucher_id = get_voucher(voucher_code).id
+    transaction_log = VoucherTransactionLog(**{
+        'id': uuid.uuid1().hex,
+        'user_id': user_id,
+        'voucher_id': voucher_id,
+        'order_id': order_id
+    })
+    return transaction_log.save()

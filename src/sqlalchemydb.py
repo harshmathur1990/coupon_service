@@ -218,6 +218,11 @@ class CouponsAlchemyDB:
             logger.error(err, exc_info=True)(err, True)
             return False
 
+    def delete_row_in_transaction(self, table_name, **where):
+        table = CouponsAlchemyDB.get_table(table_name)
+        delete = table.delete().where(CouponsAlchemyDB.args_to_where(table, where))
+        self.conn.execute(delete)
+
     def find_one(self,table_name, **where):
         table = CouponsAlchemyDB.get_table(table_name)
         sel = select([table]).where(CouponsAlchemyDB.args_to_where(table, where))

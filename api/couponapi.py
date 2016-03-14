@@ -5,7 +5,7 @@ from flask import request
 from webargs.flaskparser import parser
 from lib.decorator import jsonify
 from src.rules.validate import validate_coupon
-from src.rules.utils import get_benefits
+from src.rules.utils import get_benefits, apply_benefits
 
 
 @voucher_api.route('/apply', methods=['POST'])
@@ -53,10 +53,30 @@ def apply_coupon():
     args = parser.parse(apply_coupon_args, request)
     success, data, error = validate_coupon(args)
     if success:
+        # coupon is valid, try applying it
         benefits = get_benefits(data)
-
-        pass
+        benefits_applied = apply_benefits(args, benefits)
+        if not benefits_applied:
+            err = {
+                'success': False,
+                'error': {
+                    'code': 500,
+                    'error': 'Internal Server error'
+                }
+            }
+            return err
+        benefits['success'] = True
+        return benefits
     else:
-        # pass error
-        pass
-    pass
+       return {
+           'success': False,
+           'error': {
+               'code': 400
+           },
+           'products': [],
+           'freebies': [],
+           'totalDiscount': 0.0,
+           'channel': [],
+           'paymentModes': []
+       }
+
