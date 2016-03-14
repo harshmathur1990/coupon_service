@@ -1,5 +1,5 @@
--- Create syntax for TABLE 'deleted_vouchers'
-CREATE TABLE `deleted_vouchers` (
+-- Create syntax for TABLE 'all_vouchers'
+CREATE TABLE `all_vouchers` (
   `id` binary(16) NOT NULL,
   `code` varchar(20) NOT NULL,
   `rule_id` binary(16) NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE `deleted_vouchers` (
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `rule_id` (`rule_id`),
-  CONSTRAINT `deleted_vouchers_ibfk_1` FOREIGN KEY (`rule_id`) REFERENCES `rule` (`id`)
+  CONSTRAINT `all_vouchers_ibfk_1` FOREIGN KEY (`rule_id`) REFERENCES `rule` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'rule'
@@ -39,11 +39,11 @@ CREATE TABLE `user_voucher_transaction_log` (
   `user_id` varchar(32) NOT NULL,
   `updated_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `voucher_id` binary(16) NOT NULL,
-  `order_id` bigint(20) unsigned NOT NULL,
+  `order_id` varchar(32) NOT NULL,
   `status` tinyint(3) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `voucher_id` (`voucher_id`),
-  CONSTRAINT `user_voucher_transaction_log_ibfk_1` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers` (`id`)
+  CONSTRAINT `user_voucher_transaction_log_ibfk_1` FOREIGN KEY (`voucher_id`) REFERENCES `all_vouchers` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'voucher_use_tracker'
@@ -52,10 +52,10 @@ CREATE TABLE `voucher_use_tracker` (
   `user_id` varchar(32) NOT NULL,
   `applied_on` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `voucher_id` binary(16) NOT NULL,
-  `order_id` bigint(20) unsigned NOT NULL,
+  `order_id` varchar(32) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `voucher_id` (`voucher_id`),
-  CONSTRAINT `voucher_use_tracker_ibfk_1` FOREIGN KEY (`voucher_id`) REFERENCES `vouchers` (`id`)
+  CONSTRAINT `voucher_use_tracker_ibfk_1` FOREIGN KEY (`voucher_id`) REFERENCES `all_vouchers` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'vouchers'
