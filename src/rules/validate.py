@@ -1,7 +1,12 @@
 from src.enums import *
 from rule import Rule, RuleCriteria, Benefits
 from vouchers import Vouchers
+from utils import get_rule, get_voucher
+from data import OrderData
 import uuid, datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def validate_for_create_coupon(data):
@@ -40,7 +45,7 @@ def validate_for_create_coupon(data):
 def create_rule_object(data, id=None):
     rule_criteria_kwargs = dict()
     rule_criteria_keys = [
-        'brands', 'categories', 'channels',
+        'brands', 'categories', 'channels', 'valid_on_order_no',
         'payment_modes', 'products', 'range_max',
         'range_min', 'sellers',  'storefronts',
         'use_type', 'no_of_uses_allowed_per_user',
@@ -119,3 +124,30 @@ def create_voucher_object(data, rule_id, code):
     kwargs['updated_by'] = data.get('user_id')
     voucher = Vouchers(**kwargs)
     return voucher
+
+
+def fetch_order_detail(args):
+    # to implement
+    a = OrderData()
+    return a
+
+
+def validate_coupon(args):
+    # this is where all the magic happens
+    coupon_code = args.get('coupon_codes')[0]
+    voucher = get_voucher(coupon_code)
+    if not voucher:
+        False, None, {'error': u'Voucher {} is not valid'.format(coupon_code)}
+    rule = get_rule(voucher.rule_id)
+    if not rule:
+        # should not happen, hence put a logger
+        logger.error(u'No rule exists for voucher code {} with rule_id {}'.format(coupon_code, voucher.rule_id))
+        return False, None, {'error': u'Voucher {} is not valid'.format(coupon_code)}
+    rv = rule.check_usage(args.get('customer_id'), voucher.id)
+    if not rv['success']:
+        return False, None, rv['msg']
+    order_details = fetch_order_detail(args)
+    success, data = order_details.match(rule)
+    if success:
+        return success, {'rule': rule, 'items_list': data.get('items'), 'total': data.get('total')}, None
+    return success, None, data

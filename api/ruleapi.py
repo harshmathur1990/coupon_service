@@ -168,7 +168,14 @@ def create_coupon(id=None):
             required=True, validate=validate.Range(min=0), location='json'
         ),
 
-        'user_id': fields.Str(required=True)
+        'user_id': fields.Str(required=True),
+
+        'valid_on_order_no': fields.List(
+            fields.Int(validate=validate.Range(min=1)),
+            required=False,
+            missing=list(),
+            location='json'
+        )
     }
     args = parser.parse(coupon_create_args, request)
     success, error = validate_for_create_coupon(args)
@@ -181,7 +188,11 @@ def create_coupon(id=None):
             }
         }
         return rv
-    rule = create_rule_object(args, id=id)
+    try:
+        rule = create_rule_object(args, id=id)
+    except:
+        print "args"
+        print args
     success = rule.save()
     if not success:
         rv = {

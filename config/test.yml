@@ -4,3 +4,8 @@ mysql:
 logfile: "CouponServiceTest.out"
 errorlogfile: "CouponServiceTestError.log"
 debug: True
+
+ruleredis:
+    host: localhost
+    port: 6379
+    db: 0

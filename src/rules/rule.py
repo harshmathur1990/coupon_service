@@ -2,7 +2,10 @@ import logging
 import canonicaljson
 import hashlib
 import binascii
+from src.enums import UseType, BenefitType
 from src.sqlalchemydb import CouponsAlchemyDB
+from lib import cache
+from constants import RULE_CACHE_KEY
 logger = logging.getLogger()
 
 
@@ -44,6 +47,7 @@ class Rule(object):
         values = self.get_value_dict()
         db = CouponsAlchemyDB()
         db.begin()
+        # update_cache = False
         try:
             # check if the rule being created already exists, if yes, just return rule id
             existing_rule = db.find_one("rule", **{'id': self.id_bin})
@@ -58,9 +62,11 @@ class Rule(object):
                             self.id = rule_obj.id
                             break
                 else:
+                    # update_cache = True
                     db.insert_row("rule", **values)
             else:
                 # call is to update the existing rule with new attributes, just update and save it
+                # update_cache = True
                 db.update_row("rule", 'id', **values)
         except Exception as e:
             logger.exception(e)
@@ -68,6 +74,8 @@ class Rule(object):
             return False
         else:
             db.commit()
+        # if update_cache:
+        #     self.update_cache()
         return self.id
 
     def get_value_dict(self):
@@ -106,23 +114,90 @@ class Rule(object):
             return rule
         return False
 
+    def check_usage(self, user_id, voucher_id):
+        use_type = self.criteria_obj.usage['use_type']
+        rv = {
+            'success': True
+        }
+        if use_type is UseType.both.value:
+            is_voucher_exhausted = self.is_voucher_exhausted(voucher_id)
+            if not is_voucher_exhausted:
+                is_voucher_exhausted_for_this_user = self.is_voucher_exhausted_for_this_user(
+                    user_id, voucher_id)
+                if is_voucher_exhausted_for_this_user:
+                    rv['success'] = False
+                    rv['msg'] = 'Voucher Invalid for this user'
+            else:
+                rv['success'] = False
+                rv['msg'] = 'This voucher has exhausted'
+        elif use_type is UseType.per_user.value:
+            is_voucher_exhausted_for_this_user = self.is_voucher_exhausted_for_this_user(
+                user_id, voucher_id)
+            if is_voucher_exhausted_for_this_user:
+                rv['success'] = False
+                rv['msg'] = 'Voucher Invalid for this user'
+        elif use_type is UseType.global_use.value:
+            is_voucher_exhausted = self.is_voucher_exhausted(voucher_id)
+            if is_voucher_exhausted:
+                rv['success'] = False
+                rv['msg'] = 'This voucher has exhausted'
+        return rv
+
+    def is_voucher_exhausted(self, voucher_id):
+        db = CouponsAlchemyDB()
+        total_allowed_uses = self.criteria_obj.usage['no_of_total_uses_allowed']
+        count = db.count("voucher_use_tracker", **{'voucher_id': voucher_id})
+        if count > total_allowed_uses:
+            return True
+        return False
+
+    def is_voucher_exhausted_for_this_user(self, user_id, voucher_id):
+        db = CouponsAlchemyDB()
+        total_per_user_allowed_uses = self.criteria_obj.usage['no_of_uses_allowed_per_user']
+        count = db.count("voucher_use_tracker", **{'voucher_id': voucher_id, 'user_id': user_id})
+        if count > total_per_user_allowed_uses:
+            return True
+        return False
+
+    # def update_cache(self):
+    #     rule = Rule.find_one(self.id)
+    #     rule_key = RULE_CACHE_KEY + rule.id
+    #     cache.set(rule_key, rule)
+
 
 class RuleCriteria(object):
     def __init__(self, **kwargs):
         self.area = kwargs.get('area', list())
+        self.area.sort()
         self.brands = kwargs.get('brands', list())
-        self.categories = kwargs.get('categories', {"in": [], "not_in": []})
-        self.channels = kwargs.get('channels', None)
+        self.brands.sort()
+        self.categories = {
+            'in': kwargs.get('categories')['in'],
+            'not_in': kwargs.get('categories')['not_in']
+        }
+        self.categories['in'].sort()
+        self.categories['not_in'].sort()
+        self.channels = kwargs.get('channels', list())
+        self.channels.sort()
         self.city = kwargs.get('city', list())
+        self.city.sort()
         self.country = kwargs.get('country', list())
+        self.country.sort()
         self.payment_modes = kwargs.get('payment_modes', list())
+        self.payment_modes.sort()
         self.products = kwargs.get('products', list())
+        self.products.sort()
         self.range_max = kwargs.get('range_max', None)
         self.range_min = kwargs.get('range_min', None)
         self.sellers = kwargs.get('sellers', list())
+        self.sellers.sort()
         self.state = kwargs.get('state', list())
+        self.state.sort()
         self.storefronts = kwargs.get('storefronts', list())
-        use_type = kwargs.get('use_type', 0),
+        self.storefronts.sort()
+        self.valid_on_order_no = kwargs.get('valid_on_order_no', list())
+        self.valid_on_order_no.sort()
+        use_type = kwargs.get('use_type', 0)
         no_of_uses_allowed_per_user = kwargs.get('no_of_uses_allowed_per_user', None)
         no_of_total_uses_allowed = kwargs.get('no_of_total_uses_allowed', None)
         self.usage = {
@@ -131,7 +206,9 @@ class RuleCriteria(object):
             'no_of_total_uses_allowed': no_of_total_uses_allowed
         }
         self.variants = kwargs.get('variants', list())
+        self.variants.sort()
         self.zone = kwargs.get('zone', list())
+        self.zone.sort()
 
     def __eq__(self, other) :
         return self.__dict__ == other.__dict__
@@ -144,6 +221,7 @@ class Benefits(object):
     def __init__(self, **kwargs):
         self.maximum_discount = kwargs.get('max_discount', None)
         self.data = kwargs.get('data', list())
+        self.data.sort()
 
     def __eq__(self, other) :
         return self.__dict__ == other.__dict__
@@ -156,3 +234,5 @@ class BenefitsData(object):
     def __init__(self, **kwargs):
         self.type = kwargs.get('type')
         self.value = kwargs.get('value')
+        if self.type == BenefitType.freebie.value:
+            self.value.sort()

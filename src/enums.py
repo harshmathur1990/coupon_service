@@ -41,5 +41,12 @@ class BenefitType(Enum):
 
 
 class Channels(Enum):
-    androidApp = 0
-    webApp = 1
+    app = 0
+    website = 1
+
+
+class VoucherTransactionStatus(Enum):
+    in_progress = 0
+    success = 1
+    failure = 2
+

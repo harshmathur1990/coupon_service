@@ -54,7 +54,8 @@ class CreateRule(unittest.TestCase):
             "amount": 100,
             "percentage": None,
             "max_discount": 100,
-            "user_id": "10000"
+            "user_id": "10000",
+            "valid_on_order_no": [1]
         }
         response = self.client.post(url_for('rule_api.create_coupon'), data=json.dumps(test_data),
                                     content_type='application/json')
@@ -95,7 +96,8 @@ class CreateRule(unittest.TestCase):
             "amount": None,
             "percentage": None,
             "max_discount": 100,
-            "user_id": "10000"
+            "user_id": "10000",
+            "valid_on_order_no": []
         }
         response = self.client.put(url_for('rule_api.create_coupon', id=rule_id), data=json.dumps(test_data),
                                     content_type='application/json')
@@ -187,7 +189,8 @@ class CreateRule(unittest.TestCase):
             "to": datetime.datetime.now().isoformat(),
             "user_id": "10000"
         }
-        response = self.client.post(url_for('rule_api.create_voucher', rule_id=rule_id), data=json.dumps(voucher_create_data),
+        response = self.client.post(url_for('rule_api.create_voucher',
+                                            rule_id=rule_id), data=json.dumps(voucher_create_data),
                                     content_type='application/json')
         self.assertTrue(response.status_code == 400, u'{}-{}'.format(response.data, response.status_code))
         data = json.loads(response.data)
@@ -209,7 +212,8 @@ class CreateRule(unittest.TestCase):
             "to": day_after.isoformat(),
             "user_id": "10000"
         }
-        response = self.client.post(url_for('rule_api.create_voucher', rule_id=rule_id), data=json.dumps(voucher_create_data),
+        response = self.client.post(url_for('rule_api.create_voucher', rule_id=rule_id),
+                                    data=json.dumps(voucher_create_data),
                                     content_type='application/json')
         self.assertTrue(response.status_code == 200, u'{}-{}'.format(response.data, response.status_code))
         data = json.loads(response.data)
@@ -221,4 +225,5 @@ class CreateRule(unittest.TestCase):
         db = CouponsAlchemyDB()
         for voucher in voucher_id_list:
             db.delete_row("vouchers", **{'id': binascii.a2b_hex(voucher)})
+            db.delete_row("all_vouchers", **{'id': binascii.a2b_hex(voucher)})
         db.delete_row("rule", **{'id': binascii.a2b_hex(rule_id)})

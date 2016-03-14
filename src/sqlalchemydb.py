@@ -74,8 +74,8 @@ class CouponsAlchemyDB:
 
             CouponsAlchemyDB._table["vouchers"] = CouponsAlchemyDB.vouchers_table
 
-            CouponsAlchemyDB.deleted_vouchers = Table(
-                'deleted_vouchers', metadata,
+            CouponsAlchemyDB.all_vouchers = Table(
+                'all_vouchers', metadata,
                 Column('id', BINARY(16), primary_key=True),
                 Column('code', VARCHAR(20), nullable=False),
                 Column('rule_id', BINARY(16), ForeignKey("rule.id"), nullable=False),
@@ -92,7 +92,7 @@ class CouponsAlchemyDB:
                        nullable=False)
             )
 
-            CouponsAlchemyDB._table["deleted_vouchers"] = CouponsAlchemyDB.deleted_vouchers
+            CouponsAlchemyDB._table["all_vouchers"] = CouponsAlchemyDB.all_vouchers
 
             CouponsAlchemyDB.voucher_use_tracker = Table(
                 'voucher_use_tracker', metadata,
@@ -100,8 +100,8 @@ class CouponsAlchemyDB:
                 Column('user_id', VARCHAR(32), nullable=False),
                 Column('applied_on', TIMESTAMP, default=datetime.now,
                        server_default=text('CURRENT_TIMESTAMP'), nullable=False),
-                Column('voucher_id', BINARY(16), ForeignKey("vouchers.id"), nullable=False),
-                Column('order_id', BIGINT(unsigned=True), nullable=False)
+                Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
+                Column('order_id', VARCHAR(32), nullable=False)
             )
 
             CouponsAlchemyDB._table["voucher_use_tracker"] = CouponsAlchemyDB.voucher_use_tracker
@@ -112,8 +112,8 @@ class CouponsAlchemyDB:
                 Column('user_id', VARCHAR(32), nullable=False),
                 Column('updated_on', TIMESTAMP, default=datetime.now,
                        server_default=text('CURRENT_TIMESTAMP'), nullable=False),
-                Column('voucher_id', BINARY(16), ForeignKey("vouchers.id"), nullable=False),
-                Column('order_id', BIGINT(unsigned=True), nullable=False),
+                Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
+                Column('order_id', VARCHAR(32), nullable=False),
                 Column('status', TINYINT(unsigned=True), nullable=False)
             )
 
@@ -325,3 +325,13 @@ class CouponsAlchemyDB:
                         and_list.append(table.c[col] == v)
                 or_list.append(and_(*and_list))
         return or_(*or_list)
+
+    def count(self, table_name, **where):
+        table = CouponsAlchemyDB.get_table(table_name)
+        try:
+            sel = select([table.c.id]).where(CouponsAlchemyDB.args_to_where(table, where))
+            row = self.conn.execute(sel)
+            count = row.rowcount
+        except exc.SQLAlchemyError as err:
+            logger.error(err, exc_info=True)
+            return False
