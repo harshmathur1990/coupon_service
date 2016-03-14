@@ -22,6 +22,7 @@ pickleshare==0.6
 ptyprocess==0.5.1
 PyMySQL==0.7.2
 PyYAML==3.11
+redis==2.10.5
 simplegeneric==0.8.1
 simplejson==3.8.2
 SQLAlchemy==1.0.12

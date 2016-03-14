@@ -13,4 +13,8 @@ with open(config_file, 'r') as f:
 DATABASE_URL = CONFIG["mysql"]["connection"]
 LOG_FILE = CONFIG["logfile"]
 LOG_FILE_ERROR = CONFIG["errorlogfile"]
+RULESREDISHOST = CONFIG["ruleredis"]["host"]
+RULESREDISPORT = CONFIG["ruleredis"]["port"]
+RULESREDISDB = CONFIG["ruleredis"]["db"]
+
 

@@ -1,9 +1,9 @@
 import logging
-import canonicaljson
-import hashlib
+from constants import VOUCHERS_KEY
 import binascii
 from src.sqlalchemydb import CouponsAlchemyDB
 from rule import Rule
+from lib import cache
 logger = logging.getLogger()
 
 
@@ -38,6 +38,7 @@ class Vouchers(object):
         db.begin()
         try:
             db.insert_row("vouchers", **values)
+            db.insert_row("all_vouchers", **values)
         except Exception as e:
             logger.exception(e)
             db.rollback()
@@ -65,6 +66,22 @@ class Vouchers(object):
         voucher_dict = db.find_one("vouchers", **{'code': code})
         if voucher_dict:
             voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
+            voucher_dict['rule_id'] = binascii.b2a_hex(voucher_dict['rule_id'])
             voucher = Vouchers(**voucher_dict)
             return voucher
         return False
+
+    # def update_cache(self):
+    #     voucher = Vouchers.find_one(self.id)
+    #     voucher_key = VOUCHERS_KEY + self.code
+    #     cache.set(voucher_key, voucher)
+
+
+class VoucherUseTracker(object):
+    def __init__(self, **kwargs):
+        self.id = kwargs.get('id')  # uuid.uuid1().hex
+        self.user_id = kwargs.get('user_id')
+        self.voucher_id = kwargs.get('voucher_id')  # uuid.uuid1().hex
+        if self.voucher_id:
+            self.voucher_id_bin = binascii.a2b_hex(self.voucher_id)
+        self.order_id = kwargs.get('order_id')
