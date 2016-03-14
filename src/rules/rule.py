@@ -46,7 +46,7 @@ class Rule(object):
     def save(self):
         values = self.get_value_dict()
         db = CouponsAlchemyDB()
-        db.begin()
+        db.begin() # TODO db transaction should start outside of Rule class. We might want Rule creation and voucher creation as part of single transaction
         # update_cache = False
         try:
             # check if the rule being created already exists, if yes, just return rule id
@@ -67,7 +67,8 @@ class Rule(object):
             else:
                 # call is to update the existing rule with new attributes, just update and save it
                 # update_cache = True
-                db.update_row("rule", 'id', **values)
+                logger.error('Trying to update an existing rule {}'.format(self.__dict__))
+                assert False, "A Rule is immutable."
         except Exception as e:
             logger.exception(e)
             db.rollback()

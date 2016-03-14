@@ -16,14 +16,14 @@ def validate_for_create_coupon(data):
     if data.get('use_type') in [UseType.global_use.value, UseType.both.value]\
             and not data.get('no_of_total_uses_allowed'):
         success = False
-        error.append(u'no_of_total_uses_allowed is mandatory if use_type in (1,3')
+        error.append(u'no_of_total_uses_allowed is mandatory if use_type in (1,3') # TODO to improve the error messsages, should be user friendly
 
     if data.get('use_type') in [UseType.per_user.value, UseType.both.value]\
             and not data.get('no_of_uses_allowed_per_user'):
         success = False
         error.append(u'no_of_uses_allowed_per_user is mandatory if use_type in (2,3')
 
-    if data.get('range_min') and data.get('range_max') and data.get('range_max') < data.get('range_min'):
+    if data.get('range_min') and data.get('range_max') and data.get('range_max') <= data.get('range_min'):
         success = False
         error.append(u'range_max must be greater than range_min')
 

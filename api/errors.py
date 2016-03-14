@@ -8,10 +8,10 @@ def handle_error(error):
     rv = {
         'success': False,
         'error': {
-            'code': 400,
+            'code': 422,
             'error': error.data['messages']
         }
     }
     res = jsonify(rv)
-    res.status_code = 400
+    res.status_code = 422
     return res

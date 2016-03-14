@@ -188,11 +188,7 @@ def create_coupon(id=None):
             }
         }
         return rv
-    try:
-        rule = create_rule_object(args, id=id)
-    except:
-        print "args"
-        print args
+    rule = create_rule_object(args, id=id)
     success = rule.save()
     if not success:
         rv = {
