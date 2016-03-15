@@ -168,6 +168,7 @@ def get_location_details(response):
             return False, None, u'Area Does not exist'
         data = data_list[0]
         location_dict = dict()
+        location_dict['area'] = data.get('areaid')
         location_dict['country'] = [data.get('countryid')]
         location_dict['state'] = [data.get('stateid')]
         location_dict['city'] = [data.get('cityid')]
