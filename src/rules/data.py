@@ -1,6 +1,6 @@
 from rule import Rule
 from src.enums import Channels
-from utils import get_intersection_of_lists
+from lib.utils import get_intersection_of_lists
 
 
 class VerificationItemData(object):
@@ -33,8 +33,7 @@ class VerificationItemData(object):
         return True
 
     def in_category(self, categories):
-        intersection = [c for c in self.category if self.category in categories]
-        if intersection:
+        if get_intersection_of_lists(self.category, categories):
             return True
         return False
 
@@ -48,10 +47,10 @@ class OrderData(object):
         self.country = kwargs.get('country')  #list
         self.state = kwargs.get('state')  # can and will be treated as list ex: Haryana/Delhi
         self.city = kwargs.get('city')  # treated as list for same reason above
-        self.area = kwargs.get('area')  # list
+        self.area = kwargs.get('area')
         self.zone = kwargs.get('zone')  # list
         self.channel = kwargs.get('channel')
-        self.items = kwargs.get('items')  # an instance of VerificationItemData
+        self.items = kwargs.get('items')  # list of instances of VerificationItemData
         self.total_price = 0.0
         for item in self.items:
             self.total_price += item.price * item.quantity
@@ -76,7 +75,7 @@ class OrderData(object):
             return False, u'This coupon is not valid in your city'
         if rule.criteria_obj.zone and not get_intersection_of_lists(rule.criteria_obj.zone, self.zone):
             return False, u'This coupon is not valid in your area'
-        if rule.criteria_obj.area and not get_intersection_of_lists(rule.criteria_obj.area, self.area):
+        if rule.criteria_obj.area and not self.area not in rule.criteria_obj.area:
             return False, u'This coupon is not valid in your area'
         matching_items = list()
         total = 0.0

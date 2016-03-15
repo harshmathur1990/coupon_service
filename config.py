@@ -16,5 +16,8 @@ LOG_FILE_ERROR = CONFIG["logfile"]["foldername"] + os.sep + CONFIG["logfile"]["e
 RULESREDISHOST = CONFIG["ruleredis"]["host"]
 RULESREDISPORT = CONFIG["ruleredis"]["port"]
 RULESREDISDB = CONFIG["ruleredis"]["db"]
+SUBSCRIPTIONURL = CONFIG["informationhosturl"] + CONFIG["subscriptionendpoint"]
+LOCATIONURL = CONFIG["informationhosturl"] + CONFIG["locationendpoint"]
+USERINFOURL = CONFIG["informationhosturl"] + CONFIG["userendpoint"]
 
 

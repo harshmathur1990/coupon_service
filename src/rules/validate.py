@@ -2,10 +2,12 @@ from src.enums import *
 from rule import Rule, RuleCriteria, Benefits
 from vouchers import Vouchers
 from utils import get_rule, get_voucher
-from data import OrderData
+from data import OrderData, VerificationItemData
 import uuid, datetime
 import logging
-import pytz
+import json
+import grequests
+from config import LOCATIONURL, SUBSCRIPTIONURL, USERINFOURL
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +38,7 @@ def validate_for_create_coupon(data):
     if data.get('percentage'):
         benefit_count += 1
 
-    if benefit_count > 1:
+    if benefit_count!= 1:
         success = False
         error.append(u'Benefit must have one of the values in freebies or amount or percentage')
 
@@ -122,10 +124,104 @@ def create_voucher_object(data, rule_id, code):
     return voucher
 
 
+def get_item_details(response, total_length, item_to_quantity):
+    # returns the list of instances of VerificationItemData
+    try:
+        items_list = list()
+        data_list  = json.loads(response.text)
+        if not data_list and len(data_list) != total_length:
+            return False, None, 'Invalid Item ids provided'
+        for data in data_list:
+            item_dict = dict()
+            item_dict['brand'] = data.get('brandid')
+            item_dict['category'] = [data.get('categoryid')]
+            item_dict['product'] = data.get('productid')
+            item_dict['seller'] = data.get('sellerid')
+            item_dict['storefront'] = data.get('storefront')
+            item_dict['variant'] = data.get('variantid')
+            item_dict['price'] = data.get('offerprice')
+            item_dict['quantity'] = item_to_quantity[data.get('itemid')]
+            items_list.append(VerificationItemData(**item_dict))
+        return True, items_list, None
+    except Exception as e:
+        logger.exception(e)
+        return False, None, 'Unable to fetch Items'
+
+
+def get_user_details(response):
+    # returns the order no of the user
+    try:
+        data_list  = json.loads(response.text)
+        if not data_list:
+            return False, None, u'User Does not exist'
+        return True, data_list[0]['ordercount'], None
+    except Exception as e:
+        logger.exception(e)
+        return False, None, 'Unable to fetch Items'
+
+
+def get_location_details(response):
+    # returns a dict containing location information
+    try:
+        data_list  = json.loads(response.text)
+        if not data_list:
+            return False, None, u'Area Does not exist'
+        data = data_list[0]
+        location_dict = dict()
+        location_dict['country'] = [data.get('countryid')]
+        location_dict['state'] = [data.get('stateid')]
+        location_dict['city'] = [data.get('cityid')]
+        location_dict['zone'] = [data.get('zoneid')]
+        return True, location_dict, None
+    except Exception as e:
+        logger.exception(e)
+        return False, None, u'Unable to fetch area details'
+
+
 def fetch_order_detail(args):
-    # to implement
-    a = OrderData()
-    return a
+    # custom implementation for askmegrocery, this method has to be
+    # re-written to integrate with other sites' services
+    area_id = args.get('area_id')
+    customer_id = args.get('customer_id')
+    item_id_list = list()
+    item_to_quantity = dict()
+    for item in args.get('products', list()):
+        item_id_list.append(item.get('item_id'))
+        item_to_quantity[item.get('item_id')] = item.get('quantity')
+    item_id_list_str = ','.join(item_id_list)
+
+    item_url = SUBSCRIPTIONURL + item_id_list_str + '/'
+    location_url = LOCATIONURL + area_id + '/'
+    user_info_url = USERINFOURL + customer_id + '/'
+
+    urls = [item_url, location_url, user_info_url]
+    rs = (grequests.get(u) for u in urls)
+    list_of_responses = grequests.map(rs)
+    items = list()
+    order_no = 0
+    location_dict = dict()
+    for index, response in enumerate(list_of_responses):
+        if index is 0:
+            success, items, error = get_item_details(response, len(item_id_list), item_to_quantity)
+            if not success:
+                break
+        if index is 1:
+            success, location_dict, error = get_location_details(response)
+            if not success:
+                break
+        if index is 2:
+            success, order_no, error = get_user_details(response)
+            if not success:
+                break
+    if not success:
+        return success, None, error
+    order_data_dict = dict()
+    order_data_dict['order_no'] = order_no
+    order_data_dict.update(location_dict)
+    order_data_dict['channel'] = args.get('channel')
+    order_data_dict['items'] = items
+    order_data = OrderData(**order_data_dict)
+    return True, order_data, None
 
 
 def validate_coupon(args):
@@ -142,8 +238,10 @@ def validate_coupon(args):
     rv = rule.check_usage(args.get('customer_id'), voucher.id)
     if not rv['success']:
         return False, None, rv['msg']
-    order_details = fetch_order_detail(args)
+    success, order_details, error = fetch_order_detail(args)
+    if not success:
+        return success, None, {'error': error}
     success, data = order_details.match(rule)
     if success:
         return success, {'rule': rule, 'items_list': data.get('items'), 'total': data.get('total')}, None
-    return success, None, data
+    return success, None, {'error': data}

@@ -21,13 +21,6 @@ def get_voucher(voucher_code):
     return None
 
 
-def get_intersection_of_lists(list1, list2, key=None):
-    if not key:
-        return [l for l in list1 if l in list2]
-    else:
-        return [l[key] for l in list1 if l in list2]
-
-
 def get_benefits(data, coupon_code):
     '''
 

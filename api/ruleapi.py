@@ -16,7 +16,8 @@ def create_coupon(id=None):
 
         'description': fields.Str(required=False, missing=None, location='json'),
 
-        'use_type': fields.Int(required=True, location='json', validate=validate.OneOf(
+        'use_type': fields.Int(required=False, missing=UseType.not_available.value,
+                               location='json', validate=validate.OneOf(
             [l.value for l in list(UseType)], [l.name for l in list(UseType)])),
 
         'no_of_uses_allowed_per_user': fields.Int(required=False, missing=None,
@@ -130,7 +131,7 @@ def create_coupon(id=None):
                     ),
                 ),
                 'zone': fields.List(
-                    fields.Str(),
+                    fields.Int(),
                 ),
             },
             required=False,
@@ -165,10 +166,10 @@ def create_coupon(id=None):
         ),
 
         'max_discount': fields.Int(
-            required=True, validate=validate.Range(min=0), location='json'
+            required=False, validate=validate.Range(min=0), location='json'
         ),
 
-        'user_id': fields.Str(required=True),
+        'user_id': fields.Str(required=False),
 
         'valid_on_order_no': fields.List(
             fields.Int(validate=validate.Range(min=1)),

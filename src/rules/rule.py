@@ -95,7 +95,8 @@ class Rule(object):
         values['active'] = self.active
         if self.created_by:
             values['created_by'] = self.created_by
-        values['updated_by'] = self.updated_by
+        if self.updated_by:
+            values['updated_by'] = self.updated_by
         return values
 
     def __eq__(self, other):

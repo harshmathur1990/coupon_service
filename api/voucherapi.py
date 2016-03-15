@@ -8,8 +8,6 @@ from src.rules.validate import validate_for_create_voucher, create_voucher_objec
 from . import rule_api
 from lib.utils import is_timezone_aware
 
-# if a timezone is not present in any input datetime, we will assume IST
-IN = timezone("Asia/Kolkata")
 
 @rule_api.route('/<hex:rule_id>/vouchers', methods=['POST'])
 @jsonify
@@ -27,7 +25,7 @@ def create_voucher(rule_id):
     if is_timezone_aware(args.get('from')):
         args['from'] = args.get('from').replace(tzinfo=None)
 
-    if not is_timezone_aware(args.get('to')):
+    if is_timezone_aware(args.get('to')):
         args['to'] = args.get('to').replace(tzinfo=None)
 
     success, error = validate_for_create_voucher(args, rule_id)

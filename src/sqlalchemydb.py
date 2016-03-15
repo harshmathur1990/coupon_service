@@ -42,8 +42,8 @@ class CouponsAlchemyDB:
                 Column('benefits_json', VARCHAR(2000), nullable=False),
                 Column('sha2hash', VARCHAR(64), index=True),
                 Column('active', BOOLEAN, default=False),
-                Column('created_by', VARCHAR(32), nullable=False),
-                Column('updated_by', VARCHAR(32), nullable=False),
+                Column('created_by', VARCHAR(32), nullable=False, default=''),
+                Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
                 Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False)
             )
@@ -58,8 +58,8 @@ class CouponsAlchemyDB:
                 Column('description', VARCHAR(255)),
                 Column('from', DATETIME),
                 Column('to', DATETIME),
-                Column('created_by', VARCHAR(32), nullable=False),
-                Column('updated_by', VARCHAR(32), nullable=False),
+                Column('created_by', VARCHAR(32), nullable=False, default=''),
+                Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
                 Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False)
             )
@@ -74,8 +74,8 @@ class CouponsAlchemyDB:
                 Column('description', VARCHAR(255)),
                 Column('from', DATETIME),
                 Column('to', DATETIME),
-                Column('created_by', VARCHAR(32), nullable=False),
-                Column('updated_by', VARCHAR(32), nullable=False),
+                Column('created_by', VARCHAR(32), nullable=False, default=''),
+                Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
                 Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False)
             )

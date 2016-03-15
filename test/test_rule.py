@@ -48,7 +48,7 @@ class CreateRule(unittest.TestCase):
                 "state": [0,1,2,3,4,5,6,7,8],
                 "city": [87,45,23,45,1,4,5,34],
                 "area": [56,34,67,23,67,34],
-                "zone": ["ASDS34", "SDD245"]
+                "zone": [1,3]
             },
             "payment_modes": ["VISA", "AMEX"],
             "freebies": [[1,2,3,4]],
@@ -64,7 +64,7 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         rule_id = data.get('data', dict()).get('rule_id', None)
         rule = Rule.find_one(rule_id)
-        this_rule = create_rule_object(test_data)
+        this_rule = create_rule_object(test_data, )
         self.assertTrue(rule == this_rule,
                         u'Rule created is not same as rule pushed as json RulePushed : {} Rule Created: {} Benefits: {}'
                         .format(test_data, rule.criteria_json, rule.benefits_json))
@@ -92,7 +92,7 @@ class CreateRule(unittest.TestCase):
                 "state": [0,1,2,3,4,5,6,7,8],
                 "city": [87,45,23,45,1,4,5,34],
                 "area": [56,34,67,23,67,34],
-                "zone": ["ASDS34", "SDD245"]
+                "zone": [3,5]
             },
             "payment_modes": ["VISA", "AMEX"],
             "freebies": [[1,2,3,4]],
@@ -128,7 +128,7 @@ class CreateRule(unittest.TestCase):
                 "state": [0,1,2,3,4,5,6,7,8],
                 "city": [87,45,23,45,1,4,5,34],
                 "area": [56,34,67,23,67,34],
-                "zone": ["ASDS34", "SDD245"]
+                "zone": [1,3]
             },
             "payment_modes": ["VISA", "AMEX"],
             "freebies": [[1,2,3,4]],

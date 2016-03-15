@@ -12,3 +12,11 @@ ruleredis:
     host: localhost
     port: 6379
     db: 0
+
+informationhosturl: http://uatadmin.api.askmegrocery.com
+
+subscriptionendpoint: /item/
+
+locationendpoint: /area/
+
+userendpoint: /user/
