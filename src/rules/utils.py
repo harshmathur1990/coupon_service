@@ -16,7 +16,7 @@ def get_rule(rule_id):
 
 def get_voucher(voucher_code):
     voucher = Vouchers.find_one(voucher_code)
-    if voucher and voucher.to_date > datetime.datetime.now():
+    if voucher and voucher.to_date > datetime.datetime.utcnow():
         return voucher
     return None
 

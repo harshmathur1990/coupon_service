@@ -5,6 +5,7 @@ from utils import get_rule, get_voucher
 from data import OrderData
 import uuid, datetime
 import logging
+import pytz
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +17,12 @@ def validate_for_create_coupon(data):
     if data.get('use_type') in [UseType.global_use.value, UseType.both.value]\
             and not data.get('no_of_total_uses_allowed'):
         success = False
-        error.append(u'no_of_total_uses_allowed is mandatory if use_type in (1,3') # TODO to improve the error messsages, should be user friendly
+        error.append(u'no_of_total_uses_allowed is mandatory if use_type in (global_use, both')
 
     if data.get('use_type') in [UseType.per_user.value, UseType.both.value]\
             and not data.get('no_of_uses_allowed_per_user'):
         success = False
-        error.append(u'no_of_uses_allowed_per_user is mandatory if use_type in (2,3')
+        error.append(u'no_of_uses_allowed_per_user is mandatory if use_type in (per_user, both')
 
     if data.get('range_min') and data.get('range_max') and data.get('range_max') <= data.get('range_min'):
         success = False
@@ -42,7 +43,7 @@ def validate_for_create_coupon(data):
     return success, error
 
 
-def create_rule_object(data, id=None):
+def create_rule_object(data):
     rule_criteria_kwargs = dict()
     rule_criteria_keys = [
         'brands', 'categories', 'channels', 'valid_on_order_no',
@@ -80,15 +81,10 @@ def create_rule_object(data, id=None):
     benefit_list.append(amount_benefit)
     benefit_list.append(percentage_benefit)
     benefits = Benefits(max_discount=data.get('max_discount'), data=benefit_list)
-    if not id:
-        id = uuid.uuid1().hex
-        rule = Rule(id=id, name=data.get('name'), description=data.get('description'),
-                    criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
-                    created_by=data.get('user_id'), updated_by=data.get('user_id'))
-    else:
-        rule = Rule(id=id, name=data.get('name'), description=data.get('description'),
-                    criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
-                    updated_by=data.get('user_id'))
+    id = uuid.uuid1().hex
+    rule = Rule(id=id, name=data.get('name'), description=data.get('description'),
+                criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
+                created_by=data.get('user_id'), updated_by=data.get('user_id'))
     return rule
 
 
@@ -100,7 +96,7 @@ def validate_for_create_voucher(data_dict, rule_id):
         success = False
         error.append(u'No Rule Exists for rule id {}'.format(data_dict.get('rule_id')))
 
-    if data_dict.get('from') < datetime.datetime.now():
+    if data_dict.get('from') < datetime.datetime.utcnow():
         success = False
         error.append('Backdated voucher creation is not allowed')
 

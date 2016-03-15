@@ -6,4 +6,8 @@ https://getitinfomedia.atlassian.net/wiki/display/COUPONS/Grocery
 
 pip install -r requirement.txt
 
-python main.py
+python manage.py runserver
+
+to test:
+export SETTINGS=test
+python manage.py test

@@ -7,7 +7,7 @@ from lib.decorator import jsonify
 from src.rules.validate import validate_for_create_coupon, create_rule_object
 
 
-@rule_api.route('/<hex:id>', methods=['PUT'])
+# @rule_api.route('/<hex:id>', methods=['PUT'])
 @rule_api.route('/', methods=['POST'])
 @jsonify
 def create_coupon(id=None):
@@ -188,7 +188,7 @@ def create_coupon(id=None):
             }
         }
         return rv
-    rule = create_rule_object(args, id=id)
+    rule = create_rule_object(args)
     success = rule.save()
     if not success:
         rv = {

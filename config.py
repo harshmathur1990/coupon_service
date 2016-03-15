@@ -11,8 +11,8 @@ with open(config_file, 'r') as f:
     CONFIG = yaml.safe_load(f)
 
 DATABASE_URL = CONFIG["mysql"]["connection"]
-LOG_FILE = CONFIG["logfile"]
-LOG_FILE_ERROR = CONFIG["errorlogfile"]
+LOG_FILE = CONFIG["logfile"]["foldername"] + os.sep + CONFIG["logfile"]["logfilename"]
+LOG_FILE_ERROR = CONFIG["logfile"]["foldername"] + os.sep + CONFIG["logfile"]["errorlogfilename"]
 RULESREDISHOST = CONFIG["ruleredis"]["host"]
 RULESREDISPORT = CONFIG["ruleredis"]["port"]
 RULESREDISDB = CONFIG["ruleredis"]["db"]

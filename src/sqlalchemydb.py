@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 from sqlalchemy import Table, MetaData, create_engine, exc, BINARY, ForeignKey,\
-    VARCHAR, BOOLEAN, TIMESTAMP, Column, and_, or_
+    VARCHAR, BOOLEAN, DATETIME, Column, and_, or_
 from sqlalchemy.dialects.mysql import TINYINT, INTEGER, BIGINT
 from sqlalchemy import asc, desc, select, exists
 from config import DATABASE_URL
@@ -44,12 +44,8 @@ class CouponsAlchemyDB:
                 Column('active', BOOLEAN, default=False),
                 Column('created_by', VARCHAR(32), nullable=False),
                 Column('updated_by', VARCHAR(32), nullable=False),
-                Column('created_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
-                Column('updated_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
-                       onupdate=datetime.now,
-                       nullable=False)
+                Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
+                Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False)
             )
 
             CouponsAlchemyDB._table["rule"] = CouponsAlchemyDB.rule_table
@@ -60,16 +56,12 @@ class CouponsAlchemyDB:
                 Column('code', VARCHAR(20), primary_key=True),
                 Column('rule_id', BINARY(16), ForeignKey("rule.id"), nullable=False),
                 Column('description', VARCHAR(255)),
-                Column('from', TIMESTAMP),
-                Column('to', TIMESTAMP),
+                Column('from', DATETIME),
+                Column('to', DATETIME),
                 Column('created_by', VARCHAR(32), nullable=False),
                 Column('updated_by', VARCHAR(32), nullable=False),
-                Column('created_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
-                Column('updated_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
-                       onupdate=datetime.now,
-                       nullable=False)
+                Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
+                Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False)
             )
 
             CouponsAlchemyDB._table["vouchers"] = CouponsAlchemyDB.vouchers_table
@@ -80,16 +72,12 @@ class CouponsAlchemyDB:
                 Column('code', VARCHAR(20), nullable=False),
                 Column('rule_id', BINARY(16), ForeignKey("rule.id"), nullable=False),
                 Column('description', VARCHAR(255)),
-                Column('from', TIMESTAMP),
-                Column('to', TIMESTAMP),
+                Column('from', DATETIME),
+                Column('to', DATETIME),
                 Column('created_by', VARCHAR(32), nullable=False),
                 Column('updated_by', VARCHAR(32), nullable=False),
-                Column('created_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
-                Column('updated_at', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
-                       onupdate=datetime.now,
-                       nullable=False)
+                Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
+                Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False)
             )
 
             CouponsAlchemyDB._table["all_vouchers"] = CouponsAlchemyDB.all_vouchers
@@ -98,8 +86,7 @@ class CouponsAlchemyDB:
                 'voucher_use_tracker', metadata,
                 Column('id', BINARY(16), primary_key=True),
                 Column('user_id', VARCHAR(32), nullable=False),
-                Column('applied_on', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
+                Column('applied_on', DATETIME, default=datetime.utcnow, nullable=False),
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
                 Column('order_id', VARCHAR(32), nullable=False)
             )
@@ -110,8 +97,7 @@ class CouponsAlchemyDB:
                 'user_voucher_transaction_log', metadata,
                 Column('id', BINARY(16), primary_key=True),
                 Column('user_id', VARCHAR(32), nullable=False),
-                Column('updated_on', TIMESTAMP, default=datetime.now,
-                       server_default=text('CURRENT_TIMESTAMP'), nullable=False),
+                Column('updated_on', DATETIME, default=datetime.utcnow, nullable=False),
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
                 Column('order_id', VARCHAR(32), nullable=False),
                 Column('status', TINYINT(unsigned=True), nullable=False)

@@ -1,8 +1,10 @@
 mysql:
     connection: mysql+pymysql://root:root@localhost/coupons_test
 
-logfile: "CouponServiceTest.out"
-errorlogfile: "CouponServiceTestError.log"
+logfile:
+    foldername: logs
+    logfilename: CouponServiceTest.out
+    errorlogfilename: CouponServiceTestError.log
 debug: True
 
 ruleredis:
