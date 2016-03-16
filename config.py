@@ -12,9 +12,10 @@ config_file = basedir + '/config/' + env + '.yml'
 with open(config_file, 'r') as f:
     CONFIG = yaml.safe_load(f)
 
+BASE_DIR = '/var/log'
 DATABASE_URL = CONFIG["mysql"]["connection"]
-LOG_FILE = CONFIG["logfile"]["foldername"] + os.sep + CONFIG["logfile"]["logfilename"]
-LOG_FILE_ERROR = CONFIG["logfile"]["foldername"] + os.sep + CONFIG["logfile"]["errorlogfilename"]
+LOG_FILE = BASE_DIR + os.sep + CONFIG["logfile"]["foldername"] + os.sep + CONFIG["logfile"]["logfilename"]
+LOG_FILE_ERROR = BASE_DIR + os.sep + CONFIG["logfile"]["foldername"] + os.sep + CONFIG["logfile"]["errorlogfilename"]
 RULESREDISHOST = CONFIG["ruleredis"]["host"]
 RULESREDISPORT = CONFIG["ruleredis"]["port"]
 RULESREDISDB = CONFIG["ruleredis"]["db"]
