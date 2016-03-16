@@ -6,6 +6,7 @@ from src.rules.rule import Rule
 from src.rules.validate import create_rule_object
 import binascii
 import datetime
+import copy
 from datetime import timedelta
 from src.sqlalchemydb import CouponsAlchemyDB
 
@@ -40,7 +41,7 @@ test_data_skeleton = {
     "user_id": "",
     "valid_on_order_no": []
 }
-test_data_1 = test_data_skeleton
+test_data_1 = copy.deepcopy(test_data_skeleton)
 test_data_1["name"] = "valid flat discount for some categories worth > 1000"
 test_data_1["amount"] = 120
 test_data_1["categories"]["in"] = [839, 732]
@@ -58,7 +59,7 @@ class CreateRule(unittest.TestCase):
         self.app_context.pop()
 
     def test_valid_create_rule(self):
-        test_data = test_data_1
+        test_data = copy.deepcopy(test_data_1)
         response = self.client.post(url_for('rule_api.create_coupon'), data=json.dumps(test_data),
                                     content_type='application/json')
         self.assertTrue(response.status_code == 200, u'{}-{}'.format(response.data, response.status_code))
@@ -73,7 +74,7 @@ class CreateRule(unittest.TestCase):
         db.delete_row("rule", **{'id': binascii.a2b_hex(rule_id)})
 
     def test_create_rule_dup(self):
-        test_data = test_data_1
+        test_data = copy.deepcopy(test_data_1)
         response = self.client.post(url_for('rule_api.create_coupon'), data=json.dumps(test_data),
                                     content_type='application/json')
         self.assertTrue(response.status_code == 200, u'{}-{}'.format(response.data, response.status_code))
@@ -90,17 +91,17 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         rule_id_dup = data.get('data', dict()).get('rule_id', None)
         rule_dup = Rule.find_one(rule_id_dup)
-        self.assertTrue(rule_id_dup == rule_dup,
+        self.assertTrue(rule_id_dup == rule_id,
                         u'Rule created again when same rule pushed again, RulePushed : {} Rule Criteria: {} Benefits: {}'
                         .format(test_data, rule.criteria_json, rule.benefits_json))
-        self.assertTrue(rule_dup == this_rule and rule_id_dup == rule_dup,
-                        u'Rule created is not same as rule pushed as json RulePushed : {} Rule Criteria: {} Benefits: {}'
+        self.assertTrue(rule_dup == this_rule,
+                        u'Rule created is not same as rule pushed, json RulePushed : {} Rule Criteria: {} Benefits: {}'
                         .format(test_data, rule.criteria_json, rule.benefits_json))
         db = CouponsAlchemyDB()
         db.delete_row("rule", **{'id': binascii.a2b_hex(rule_id)})
 
     def test_neg_create_rule_double_benefit(self):
-        test_data = test_data_1
+        test_data = copy.deepcopy(test_data_1)
         test_data["freebies"] = [[1,4,2]]
         response = self.client.post(url_for('rule_api.create_coupon'), data=json.dumps(test_data),
                                     content_type='application/json')
