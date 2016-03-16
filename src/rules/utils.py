@@ -73,7 +73,7 @@ def get_benefits(data, coupon_code):
     benefit_dict['channel'] = [Channels(c).name for c in rule.criteria_obj.channels]
     benefit_dict['couponCodes'] = [coupon_code]
     benefit_dict['status'] = 'success'
-    return benefit
+    return benefit_dict
 
 
 def apply_benefits(args, benefit):
