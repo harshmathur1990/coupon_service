@@ -58,7 +58,7 @@ def apply_coupon():
     success, data, error = validate_coupon(args)
     if success:
         # coupon is valid, try applying it
-        benefits = get_benefits(data)
+        benefits = get_benefits(data, args.get('coupon_codes')[0])
         benefits_applied = apply_benefits(args, benefits)
         if not benefits_applied:
             err = {

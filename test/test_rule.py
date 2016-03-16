@@ -310,3 +310,79 @@ class CreateRule(unittest.TestCase):
             db.delete_row("vouchers", **{'id': binascii.a2b_hex(voucher)})
             db.delete_row("all_vouchers", **{'id': binascii.a2b_hex(voucher)})
         db.delete_row("rule")
+
+    def test_use_coupon(self):
+        tomorrow = datetime.datetime.utcnow()
+        day_after = datetime.datetime.utcnow()+timedelta(days=2)
+        voucher_create_data = {
+            "name": "test rule",
+            "use_type": 3,
+            "no_of_uses_allowed_per_user": 1,
+            "no_of_total_uses_allowed": 100,
+            "range_min": 250,
+            "range_max": 2000,
+            "channels": [0],
+            "brands": [131, 131, 500, 225],
+            "products": [7645, 7538, 8772],
+            "categories": {
+                "in": [622, 745, 678],
+                "not_in": [4,7]
+            },
+            "sellers": [9],
+            "location": {
+                "country": [1],
+                "state": [47],
+                "city": [50616],
+                "area": [22324, 22323],
+                "zone": [159]
+            },
+            "payment_modes": ["VISA", "AMEX"],
+            "amount": None,
+            "percentage": 10,
+            "user_id": "10000",
+            "code": ["PAY50", "PAY20"],
+            "from": tomorrow.isoformat(),
+            "to": day_after.isoformat(),
+        }
+        response = self.client.post(url_for('voucher_api.create_voucher'), data=json.dumps(voucher_create_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, u'{}-{}'.format(response.data, response.status_code))
+        data = json.loads(response.data)
+        use_coupon_data = {
+            "order_id": "wjehw83728",
+            "customer_id": "1",
+            "area_id": 22323,
+            "products": [
+                {
+                    "item_id": 2,
+                    "quantity": 2
+                },
+                {
+                    "item_id": 3,
+                    "quantity": 2
+                },
+                {
+                    "item_id": 4,
+                    "quantity": 2
+                },
+                {
+                    "item_id": 5,
+                    "quantity": 2
+                },
+            ],
+            "coupon_codes": ["PAY50"],
+            "channel": [0]
+        }
+        response = self.client.post(url_for('voucher_api.apply_coupon'), data=json.dumps(use_coupon_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, u'{}-{}'.format(response.data, response.status_code))
+        voucher_id_list = list()
+        for voucher in data.get('data', dict()).get('success_list', list()):
+            voucher_id_list.append(voucher.get('id'))
+        db = CouponsAlchemyDB()
+        for voucher in voucher_id_list:
+            db.delete_row("voucher_use_tracker", **{'voucher_id': binascii.a2b_hex(voucher)})
+            db.delete_row("user_voucher_transaction_log", **{'voucher_id': binascii.a2b_hex(voucher)})
+            db.delete_row("vouchers", **{'id': binascii.a2b_hex(voucher)})
+            db.delete_row("all_vouchers", **{'id': binascii.a2b_hex(voucher)})
+        db.delete_row("rule")

@@ -2,7 +2,7 @@ import datetime
 import logging
 import json
 from vouchers import Vouchers, VoucherTransactionLog
-from src.enums import BenefitType, Channels
+from src.enums import BenefitType, Channels, VoucherTransactionStatus
 from rule import Rule
 import uuid
 from lib.utils import make_api_call
@@ -85,7 +85,8 @@ def apply_benefits(args, benefit):
         'id': uuid.uuid1().hex,
         'user_id': user_id,
         'voucher_id': voucher_id,
-        'order_id': order_id
+        'order_id': order_id,
+        'status': VoucherTransactionStatus.in_progress.value
     })
     return transaction_log.save()
 

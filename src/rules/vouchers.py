@@ -90,7 +90,7 @@ class VoucherTransactionLog(object):
             self.voucher_id_bin = binascii.a2b_hex(self.voucher_id)
         self.order_id = kwargs.get('order_id')
         self.status = kwargs.get('status')
-        if self.status:
+        if self.status in [l.value for l in list(VoucherTransactionStatus)]:
             self.status_enum = VoucherTransactionStatus(self.status)
 
     def save(self):
