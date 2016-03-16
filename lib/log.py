@@ -1,11 +1,7 @@
 import logging
 import logging.config
+import logging.handlers
 from config import LOG_FILE, LOG_FILE_ERROR
-import os
-
-basedir = os.path.abspath(os.path.dirname(__file__))
-
-env = os.getenv('SETTINGS') or 'development'
 
 
 def setup_logging():

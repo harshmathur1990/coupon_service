@@ -1,6 +1,8 @@
+"""
 import redis
 import pickle
 import logging
+
 from config import RULESREDISDB, RULESREDISHOST, RULESREDISPORT
 
 rules_pool = redis.ConnectionPool(
@@ -37,3 +39,6 @@ def delete(key, ctype='rules'):
     pool = cache_type.get(ctype)
     r = redis.StrictRedis(connection_pool=pool)
     return r.delete(key)
+
+
+"""
