@@ -75,7 +75,7 @@ class OrderData(object):
             return False, u'This coupon is not valid in your city'
         if rule.criteria_obj.zone and not get_intersection_of_lists(rule.criteria_obj.zone, self.zone):
             return False, u'This coupon is not valid in your area'
-        if rule.criteria_obj.area and not self.area not in rule.criteria_obj.area:
+        if rule.criteria_obj.area and self.area not in rule.criteria_obj.area:
             return False, u'This coupon is not valid in your area'
         matching_items = list()
         total = 0.0

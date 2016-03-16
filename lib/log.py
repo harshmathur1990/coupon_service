@@ -21,11 +21,11 @@ def setup_logging():
     errorhandler.setLevel(logging.ERROR)
     errorhandler.setFormatter(formatter)
 
-    if env is not 'production':
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setLevel(logging.ERROR)
-        consoleHandler.setFormatter(formatter)
-        logger.addHandler(consoleHandler)
+    # if env is not 'production':
+    #     consoleHandler = logging.StreamHandler()
+    #     consoleHandler.setLevel(logging.ERROR)
+    #     consoleHandler.setFormatter(formatter)
+    #     logger.addHandler(consoleHandler)
 
     logger.addHandler(handler)
     logger.addHandler(errorhandler)

@@ -133,7 +133,7 @@ def check_coupon():
     success, data, error = validate_coupon(args)
     if success:
         # coupon is valid, try applying it
-        benefits = get_benefits(data)
+        benefits = get_benefits(data, args.get('coupon_codes')[0])
         benefits['success'] = True
         return benefits
     else:
@@ -320,8 +320,6 @@ def create_voucher():
             missing=list(),
             location='json'
         ),
-
-        'description': fields.Str(required=False, missing=None, location='json'),
 
         'code': fields.List(fields.Str(), required=True, location='json'),
 

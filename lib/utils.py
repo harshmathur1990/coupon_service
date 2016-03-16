@@ -1,3 +1,6 @@
+import grequests
+
+
 def is_timezone_aware(datetime_obj):
     if datetime_obj.tzinfo is not None and datetime_obj.tzinfo.utcoffset(datetime_obj) is not None:
         return True
@@ -9,3 +12,8 @@ def get_intersection_of_lists(list1, list2, key=None):
         return [l for l in list1 if l in list2]
     else:
         return [l[key] for l in list1 if l in list2]
+
+
+def make_api_call(urls, headers=dict()):
+    rs = (grequests.get(u, headers=headers) for u in urls)
+    return grequests.map(rs)

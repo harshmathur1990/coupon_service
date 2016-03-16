@@ -18,4 +18,6 @@ subscriptionendpoint: /item/
 
 locationendpoint: /area/
 
-userendpoint: /user/
+userendpoint: /user/id/
+
+token: Z3IwY2VyeTpncjBjZXJ5QDIx

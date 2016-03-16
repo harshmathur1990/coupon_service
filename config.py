@@ -19,5 +19,6 @@ RULESREDISDB = CONFIG["ruleredis"]["db"]
 SUBSCRIPTIONURL = CONFIG["informationhosturl"] + CONFIG["subscriptionendpoint"]
 LOCATIONURL = CONFIG["informationhosturl"] + CONFIG["locationendpoint"]
 USERINFOURL = CONFIG["informationhosturl"] + CONFIG["userendpoint"]
+TOKEN = CONFIG["token"]
 
 
