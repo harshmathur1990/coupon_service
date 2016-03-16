@@ -91,10 +91,6 @@ def apply_benefits(args, benefit):
     return transaction_log.save()
 
 
-def mark_order_failure(args):
-    order_id = args.get('order_id')
-
-
 def get_item_details(response, total_length, item_to_quantity):
     # returns the list of instances of VerificationItemData
     try:
