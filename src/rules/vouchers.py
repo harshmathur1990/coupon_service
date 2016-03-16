@@ -5,6 +5,7 @@ from src.sqlalchemydb import CouponsAlchemyDB
 from src.enums import VoucherTransactionStatus
 from rule import Rule
 from lib import cache
+import uuid
 logger = logging.getLogger()
 
 
@@ -93,20 +94,24 @@ class VoucherTransactionLog(object):
         if self.status in [l.value for l in list(VoucherTransactionStatus)]:
             self.status_enum = VoucherTransactionStatus(self.status)
 
-    def save(self):
+    def save(self, db=None):
         values = self.get_value_dict_for_log()
-        db = CouponsAlchemyDB()
-        db.begin()
-        try:
+        if not db:
+            db = CouponsAlchemyDB()
+            db.begin()
+            try:
+                function = self.save_function().get(self.status_enum)
+                function(db, values)
+            except Exception as e:
+                logger.exception(e)
+                db.rollback()
+                return False
+            else:
+                db.commit()
+            return True
+        else:
             function = self.save_function().get(self.status_enum)
             function(db, values)
-        except Exception as e:
-            logger.exception(e)
-            db.rollback()
-            return False
-        else:
-            db.commit()
-        return True
 
     def get_value_dict_for_log(self):
         values = dict()
@@ -135,3 +140,53 @@ class VoucherTransactionLog(object):
             VoucherTransactionStatus.success: self.make_success_entry,
             VoucherTransactionStatus.failure: self.make_failure_entry
         }
+
+    @staticmethod
+    def dict_to_obj(data_dict):
+        data_dict['voucher_id'] = binascii.b2a_hex(data_dict['voucher_id'])
+        data_dict['id'] = binascii.b2a_hex(data_dict['id'])
+        return VoucherTransactionLog(**data_dict)
+
+    @staticmethod
+    def make_transaction_log_entry(args):
+        db = CouponsAlchemyDB()
+        db.begin()
+        success = True
+        error = None
+        try:
+            voucher_use_list_of_dict = db.find(
+                "user_voucher_transaction_log", order_by="_updated_on",
+                **{'order_id': args.get('order_id')})
+            if not voucher_use_list_of_dict:
+                success = False
+                error = u'No Order found for the given order id'
+            else:
+                last_log = VoucherTransactionLog.dict_to_obj(voucher_use_list_of_dict[0])
+                if last_log.status_enum is VoucherTransactionStatus.in_progress:
+                    if args.get('payment_status'):
+                        status = VoucherTransactionStatus.success.value
+                    else:
+                        status = VoucherTransactionStatus.failure.value
+                    id = uuid.uuid1().hex
+                    log = VoucherTransactionLog(**{
+                        'id': id,
+                        'user_id': last_log.user_id,
+                        'voucher_id': last_log.voucher_id,
+                        'order_id': last_log.order_id,
+                        'status': status
+                    })
+                    log.save(db)
+                    success = True
+                    error = None
+                else:
+                    success = False
+                    error = u'No Order in progress for the the given order id'
+        except Exception as e:
+            logger.exception(e)
+            db.rollback()
+            success = False
+            error = u'Unknown error'
+        else:
+            db.commit()
+
+        return success, error

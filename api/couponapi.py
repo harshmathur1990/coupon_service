@@ -8,6 +8,7 @@ from src.rules.validate import validate_coupon, validate_for_create_coupon,\
     create_rule_object, validate_for_create_voucher, create_voucher_object
 from src.rules.utils import get_benefits, apply_benefits
 from lib.utils import is_timezone_aware
+from src.rules.vouchers import VoucherTransactionLog
 
 
 @voucher_api.route('/apply', methods=['POST'])
@@ -388,3 +389,23 @@ def create_voucher():
             }
         }
         return rv
+
+
+@voucher_api.route('/confirm', methods=['POST'])
+@jsonify
+def confirm_order():
+    confirm_order_args = {
+        'order_id': fields.Str(required=True, location='json'),
+        'payment_status': fields.Bool(required=True, location='json')
+    }
+    args = parser.parse(confirm_order_args, request)
+    success, error = VoucherTransactionLog.make_transaction_log_entry(args)
+    rv = {
+        'success': success,
+    }
+    if not success:
+        rv['error'] = {
+            'code': 400,
+            'error': error
+        }
+    return rv
