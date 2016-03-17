@@ -1,10 +1,9 @@
 import logging
-from constants import VOUCHERS_KEY
 import binascii
 from src.sqlalchemydb import CouponsAlchemyDB
 from src.enums import VoucherTransactionStatus
+from data import OrderData
 from rule import Rule
-from lib import cache
 import uuid
 logger = logging.getLogger()
 
@@ -73,6 +72,50 @@ class Vouchers(object):
             voucher = Vouchers(**voucher_dict)
             return voucher
         return False
+
+    def match(self, order):
+        assert isinstance(order, OrderData)
+        if not self.is_coupon_valid_with_existing_coupon(order):
+            failed_dict = {
+                'voucher': self,
+                'error': u'This coupon is not valid with other coupons'
+            }
+            order.failed_vouchers.append(failed_dict)
+            return
+        rule = self.get_rule()
+        status = rule.check_usage(order.customer_id, self.id)
+        if not status.get('success', False):
+            failed_dict = {
+                'voucher': self,
+                'error': status.get('msg')
+            }
+            order.failed_vouchers.append(failed_dict)
+            return
+        success, data, error = rule.match(order)
+        if not success:
+            failed_dict = {
+                'voucher': self,
+                'error': error
+            }
+            order.failed_vouchers.append(failed_dict)
+            return
+        success_dict = {
+            'voucher': self,
+            'total': data.get('total'),
+            'subscription_id_list': data.get('subscription_id_list')
+        }
+        order.existing_vouchers.append(success_dict)
+        if len(order.existing_vouchers) == 2:
+            order.can_accomodate_new_vouchers = True
+
+    def is_coupon_valid_with_existing_coupon(self, order):
+        success = True
+
+        for existing_voucher in order.existing_vouchers:
+            if existing_voucher['voucher'].rule.rule_type == self.rule.rule_type:
+                success = False
+                break
+        return success
 
     # def update_cache(self):
     #     voucher = Vouchers.find_one(self.id)

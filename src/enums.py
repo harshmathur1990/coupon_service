@@ -50,3 +50,7 @@ class VoucherTransactionStatus(Enum):
     success = 1
     failure = 2
 
+
+class RuleType(Enum):
+    regular_coupon = 0
+    auto_freebie = 1
