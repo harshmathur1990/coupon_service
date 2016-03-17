@@ -50,9 +50,10 @@ def get_benefits(data, coupon_code):
             if discount:
                 for item in data['items']:
                     product_dict = dict()
-                    product_dict['item_id'] = item.variant
-                    product_dict['qty'] = item.quantity
-                    product_dict['discount'] = (item.quantity * item.price * discount)/data.get('total')
+                    product_dict['subscriptionId'] = item.subscription_id
+                    product_dict['quantity'] = item.quantity
+                    if item.discounted:
+                        product_dict['discount'] = (item.quantity * item.price * discount)/data.get('total')
                     products_list.append(product_dict)
         if benefit_type is BenefitType.percentage:
             percentage = benefit['value']
@@ -62,9 +63,10 @@ def get_benefits(data, coupon_code):
                     discount = max_discount
                 for item in data['items']:
                     product_dict = dict()
-                    product_dict['subscriptionId'] = item.variant
-                    product_dict['qty'] = item.quantity
-                    product_dict['discount'] = (item.quantity * item.price * discount)/data.get('total')
+                    product_dict['subscriptionId'] = item.subscription_id
+                    product_dict['quantity'] = item.quantity
+                    if item.discounted:
+                        product_dict['discount'] = (item.quantity * item.price * discount)/data.get('total')
                     products_list.append(product_dict)
     benefit_dict['products'] = products_list
     benefit_dict['freebies'] = freebie_list
@@ -108,6 +110,7 @@ def get_item_details(response, total_length, item_to_quantity):
             item_dict['variant'] = data.get('variantid')
             item_dict['price'] = data.get('offerprice')
             item_dict['quantity'] = item_to_quantity[data.get('itemid')]
+            item_dict['subscription_id'] = data.get('itemid')
             items_list.append(VerificationItemData(**item_dict))
         return True, items_list, None
     except Exception as e:

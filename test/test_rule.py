@@ -456,6 +456,10 @@ class CreateRule(unittest.TestCase):
                     "item_id": 5,
                     "quantity": 2
                 },
+                {
+                    "item_id": 7,
+                    "quantity": 2
+                },
             ],
             "coupon_codes": ["PAY50"],
             "channel": [0]

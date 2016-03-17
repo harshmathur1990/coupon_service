@@ -2,7 +2,7 @@ mysql:
     connection: mysql+pymysql://root:root@localhost/coupons_test
 
 logfile:
-    foldername: logs
+    foldername: couponlogs
     logfilename: CouponServiceTest.out
     errorlogfilename: CouponServiceTestError.log
 debug: True

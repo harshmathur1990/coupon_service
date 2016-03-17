@@ -13,6 +13,8 @@ class VerificationItemData(object):
         self.variant = kwargs.get('variant')
         self.price = kwargs.get('price')
         self.quantity = kwargs.get('quantity')
+        self.discounted = False
+        self.subscription_id = kwargs.get('subscription_id')
 
     def match(self, rule):
         assert isinstance(rule, Rule), "rule is not an instance of Rule"
@@ -30,6 +32,7 @@ class VerificationItemData(object):
             return False
         if rule_criteria.variants and self.variant not in rule_criteria.variants:
             return False
+        self.discounted = True
         return True
 
     def in_category(self, categories):
@@ -81,8 +84,8 @@ class OrderData(object):
         total = 0.0
         for item in self.items:
             if item.match(rule):
-                matching_items.append(item)
                 total += item.price * item.quantity
+            matching_items.append(item)
         if not matching_items:
             return False, None, u'No matching items found for this coupon'
 
