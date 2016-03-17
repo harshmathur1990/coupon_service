@@ -54,6 +54,8 @@ def get_benefits(data, coupon_code):
                     product_dict['quantity'] = item.quantity
                     if item.discounted:
                         product_dict['discount'] = (item.quantity * item.price * discount)/data.get('total')
+                    else:
+                        product_dict['discount'] = 0.0
                     products_list.append(product_dict)
         if benefit_type is BenefitType.percentage:
             percentage = benefit['value']
@@ -67,6 +69,8 @@ def get_benefits(data, coupon_code):
                     product_dict['quantity'] = item.quantity
                     if item.discounted:
                         product_dict['discount'] = (item.quantity * item.price * discount)/data.get('total')
+                    else:
+                        product_dict['discount'] = 0.0
                     products_list.append(product_dict)
     benefit_dict['products'] = products_list
     benefit_dict['freebies'] = freebie_list
