@@ -1,6 +1,7 @@
 from src.enums import *
 from rule import Rule, RuleCriteria, Benefits
-from utils import get_rule, get_voucher, fetch_order_detail
+from utils import get_voucher, fetch_order_detail
+from data import OrderData
 from vouchers import Vouchers
 import uuid, datetime
 import logging
@@ -82,7 +83,7 @@ def create_rule_object(data):
     id = uuid.uuid1().hex
     rule = Rule(id=id, name=data.get('name'), description=data.get('description'),
                 criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
-                created_by=data.get('user_id'), updated_by=data.get('user_id'))
+                created_by=data.get('user_id'), updated_by=data.get('user_id'), rule_type=data.get('rule_type'))
     return rule
 
 
@@ -104,6 +105,7 @@ def validate_for_create_voucher(data_dict, rule_id):
 
     return success, error
 
+
 def create_voucher_object(data, rule_id, code):
     kwargs = dict()
     id = uuid.uuid1().hex
@@ -120,23 +122,25 @@ def create_voucher_object(data, rule_id, code):
 
 
 def validate_coupon(args):
-    # this is where all the magic happens
-    coupon_code = args.get('coupon_codes')[0]
-    voucher = get_voucher(coupon_code)
-    if not voucher:
-        False, None, {'error': u'Voucher {} is not valid'.format(coupon_code)}
-    rule = get_rule(voucher.rule_id)
-    if not rule:
-        # should not happen, hence put a logger
-        logger.error(u'No rule exists for voucher code {} with rule_id {}'.format(coupon_code, voucher.rule_id))
-        return False, None, {'error': u'Voucher {} is not valid'.format(coupon_code)}
-    rv = rule.check_usage(args.get('customer_id'), voucher.id)
-    if not rv['success']:
-        return False, None, rv['msg']
-    success, order_details, error = fetch_order_detail(args)
+    success, order, error = fetch_order_detail(args)
+    assert isinstance(order, OrderData)
     if not success:
-        return success, None, {'error': error}
-    success, data = order_details.match(rule)
-    if success:
-        return success, {'rule': rule, 'items': data.get('items'), 'total': data.get('total')}, None
-    return success, None, {'error': data}
+        return success, None, error
+
+    for a_coupon in args.get('coupon_codes'):
+        voucher = get_voucher(a_coupon)
+        if not voucher:
+            failed_dict = {
+                'voucher': a_coupon,
+                'error': u'Voucher does not exist'
+            }
+            order.failed_vouchers.append(failed_dict)
+            continue
+        voucher.match(order)
+        if not order.can_accomodate_new_vouchers:
+            break
+
+    if order.existing_vouchers:
+        return True, order, None
+    else:
+        return False, None, u'No matching items found for these coupons'

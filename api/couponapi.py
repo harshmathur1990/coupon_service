@@ -56,11 +56,11 @@ def apply_coupon():
         )
     }
     args = parser.parse(apply_coupon_args, request)
-    success, data, error = validate_coupon(args)
+    success, order, error = validate_coupon(args)
     if success:
         # coupon is valid, try applying it
-        benefits = get_benefits(data, args.get('coupon_codes')[0])
-        benefits_applied = apply_benefits(args, benefits)
+        benefits = get_benefits(order)
+        benefits_applied = apply_benefits(args, order)
         if not benefits_applied:
             err = {
                 'success': False,
@@ -83,7 +83,7 @@ def apply_coupon():
             'totalDiscount': 0.0,
             'channel': [],
             'paymentModes': [],
-            'message': error['error']
+            'message': error
         }
 
 
@@ -131,25 +131,24 @@ def check_coupon():
         )
     }
     args = parser.parse(check_coupon_args, request)
-    success, data, error = validate_coupon(args)
+    success, order, error = validate_coupon(args)
     if success:
         # coupon is valid, try applying it
-        benefits = get_benefits(data, args.get('coupon_codes')[0])
+        benefits = get_benefits(order)
         benefits['success'] = True
         return benefits
-    else:
-        return {
-            'success': False,
-            'error': {
-                'code': 400
-            },
-            'products': [],
-            'freebies': [],
-            'totalDiscount': 0.0,
-            'channel': [],
-            'paymentModes': [],
-            'message': error['error']
-        }
+    return {
+        'success': False,
+        'error': {
+            'code': 400
+        },
+        'products': [],
+        'freebies': [],
+        'totalDiscount': 0.0,
+        'channel': [],
+        'paymentModes': [],
+        'message': error
+    }
 
 
 @voucher_api.route('/create', methods=['POST'])
@@ -159,6 +158,10 @@ def create_voucher():
         'name': fields.Str(required=False, missing=None, location='json'),
 
         'description': fields.Str(required=False, missing=None, location='json'),
+
+        'rule_type': fields.Int(required=False, missing=RuleType.regular_coupon.value,
+                                validate=validate.OneOf([l.value for l in list(RuleType)],
+                                                        [l.name for l in list(RuleType)])),
 
         'use_type': fields.Int(required=False, missing=UseType.not_available.value,
                                location='json', validate=validate.OneOf(

@@ -14,6 +14,10 @@ def create_coupon(id=None):
     coupon_create_args = {
         'name': fields.Str(required=False, missing=None, location='json'),
 
+        'rule_type': fields.Int(required=False, missing=RuleType.regular_coupon.value,
+                                validate=validate.OneOf([l.value for l in list(RuleType)],
+                                                        [l.name for l in list(RuleType)])),
+
         'description': fields.Str(required=False, missing=None, location='json'),
 
         'use_type': fields.Int(required=False, missing=UseType.not_available.value,

@@ -2,10 +2,10 @@ import logging
 import canonicaljson
 import hashlib
 import binascii
-from src.enums import UseType, BenefitType
+from src.enums import UseType, BenefitType, RuleType, Channels
 from src.sqlalchemydb import CouponsAlchemyDB
-from lib import cache
-from constants import RULE_CACHE_KEY
+from data import OrderData, VerificationItemData
+from lib.utils import get_intersection_of_lists
 logger = logging.getLogger()
 
 
@@ -40,8 +40,7 @@ class Rule(object):
             self.benefits_obj = Benefits(**benefits_dict)
 
     def get_rule_type(self):
-        self.rule_type = 0
-        pass
+        self.rule_type = RuleType.regular_coupon.value
 
     def save(self):
         values = self.get_value_dict()
@@ -51,24 +50,23 @@ class Rule(object):
         try:
             # check if the rule being created already exists, if yes, just return rule id
             existing_rule = db.find_one("rule", **{'id': self.id_bin})
-            if not existing_rule:
-                # no existing rule exists for this id, now check if a rule exists for given attributes
-                rule_list = db.find("rule", **{'sha2hash': values.get('sha2hash')})
-                if rule_list:
-                    for rule in rule_list:
-                        rule['id'] = binascii.b2a_hex(rule['id'])
-                        rule_obj = Rule(**rule)
-                        if self == rule_obj:
-                            self.id = rule_obj.id
-                            break
-                else:
-                    # update_cache = True
-                    db.insert_row("rule", **values)
-            else:
+            if existing_rule:
                 # call is to update the existing rule with new attributes, just update and save it
                 # update_cache = True
                 logger.error('Trying to update an existing rule {}'.format(self.__dict__))
                 assert False, "A Rule is immutable."
+            # no existing rule exists for this id, now check if a rule exists for given attributes
+            rule_list = db.find("rule", **{'sha2hash': values.get('sha2hash')})
+            if rule_list:
+                for rule in rule_list:
+                    rule['id'] = binascii.b2a_hex(rule['id'])
+                    rule_obj = Rule(**rule)
+                    if self == rule_obj:
+                        self.id = rule_obj.id
+                        break
+            else:
+                # update_cache = True
+                db.insert_row("rule", **values)
         except Exception as e:
             logger.exception(e)
             db.rollback()
@@ -90,7 +88,7 @@ class Rule(object):
         values['criteria_json'] = self.criteria_json
         values['benefits_json'] = self.benefits_json
         un_hashed_string = unicode(self.criteria_json) + \
-                          unicode(self.benefits_json)
+            unicode(self.benefits_json) + unicode(self.rule_type)
         values['sha2hash'] = hashlib.sha256(un_hashed_string).hexdigest()
         values['active'] = self.active
         if self.created_by:
@@ -101,7 +99,8 @@ class Rule(object):
 
     def __eq__(self, other):
         if self.criteria_obj == other.criteria_obj and \
-                self.benefits_obj == other.benefits_obj:
+                self.benefits_obj == other.benefits_obj and \
+                self.rule_type == other.rule_type:
             return True
         return False
 
@@ -161,10 +160,41 @@ class Rule(object):
             return True
         return False
 
-    # def update_cache(self):
-    #     rule = Rule.find_one(self.id)
-    #     rule_key = RULE_CACHE_KEY + rule.id
-    #     cache.set(rule_key, rule)
+    def match(self, order):
+        assert isinstance(order, OrderData)
+        if self.criteria_obj.valid_on_order_no and order.order_no not in self.criteria_obj.valid_on_order_no:
+            return False, u'This coupon is only valid on orders {}'.format(
+                ','.join(self.criteria_obj.valid_on_order_no))
+        if self.criteria_obj.channels and order.channel in self.criteria_obj.channels:
+            return False, None, u'This coupon is only valid on orders from {}'.format(
+                ','.join([Channels(c).name for c in self.criteria_obj.channels]))
+        if self.criteria_obj.country and not get_intersection_of_lists(self.criteria_obj.country, order.country):
+            return False, None, u'This coupon is not valid in your country'
+        if self.criteria_obj.state and not get_intersection_of_lists(self.criteria_obj.state, order.state):
+            return False, None, u'This coupon is not valid in your state'
+        if self.criteria_obj.city and not get_intersection_of_lists(self.criteria_obj.city, order.city):
+            return False, None, u'This coupon is not valid in your city'
+        if self.criteria_obj.zone and not get_intersection_of_lists(self.criteria_obj.zone, order.zone):
+            return False, None, u'This coupon is not valid in your area'
+        if self.criteria_obj.area and order.area not in self.criteria_obj.area:
+            return False, None, u'This coupon is not valid in your area'
+        subscription_id_list = list()
+        total = 0.0
+        for item in order.items:
+            assert isinstance(item, VerificationItemData)
+            if self.criteria_obj.match_item(item):
+                total += item.price * item.quantity
+                subscription_id_list.append(item.subscription_id)
+
+        if not subscription_id_list:
+            return False, None, u'No matching items found for this coupon'
+
+        if self.criteria_obj.range_min and total < self.criteria_obj.range_min:
+            return False, None, u'Total Order price is less than minimum {}'.format(self.criteria_obj.range_min)
+        if self.criteria_obj.range_max and total > self.criteria_obj.range_max:
+            return False, None, u'Coupon is valid only till max amount {}'.format(self.criteria_obj.range_max)
+
+        return True, {'total': total, 'subscription_id_list': subscription_id_list}, None
 
 
 class RuleCriteria(object):
@@ -217,6 +247,25 @@ class RuleCriteria(object):
 
     def canonical_json(self):
         return canonicaljson.encode_canonical_json(self.__dict__)
+
+    def match_item(self, item):
+        assert isinstance(item, VerificationItemData)
+        if self.brands and item.brand not in self.brands:
+            return False
+
+        if not get_intersection_of_lists(self.categories['in'], item.category) or \
+                get_intersection_of_lists(self.categories['not_in'], item.category):
+            return False
+        if self.products and item.product not in self.products:
+            return False
+        if self.sellers and item.seller not in self.sellers:
+            return False
+        if self.storefronts and item.storefront not in self.storefronts:
+            return False
+        if self.variants and item.variant not in self.variants:
+            return False
+
+        return True
 
 
 class Benefits(object):
