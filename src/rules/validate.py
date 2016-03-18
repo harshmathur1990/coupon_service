@@ -130,6 +130,11 @@ def validate_coupon(args):
     for a_coupon in args.get('coupon_codes'):
         voucher = get_voucher(a_coupon)
         if not voucher:
+            failed_dict = {
+                'voucher': a_coupon,
+                'error': u'Voucher does not exist'
+            }
+            order.failed_vouchers.append(failed_dict)
             continue
         voucher.match(order)
         if not order.can_accomodate_new_vouchers:

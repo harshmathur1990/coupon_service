@@ -5,6 +5,7 @@ from src.enums import VoucherTransactionStatus
 from data import OrderData
 from rule import Rule
 import uuid
+import sqlalchemy
 logger = logging.getLogger()
 
 
@@ -40,6 +41,9 @@ class Vouchers(object):
         try:
             db.insert_row("vouchers", **values)
             db.insert_row("all_vouchers", **values)
+        except sqlalchemy.exc.IntegrityError as e:
+            db.rollback()
+            return False
         except Exception as e:
             # TODO Exception handling for primary key dedup
             logger.exception(e)
@@ -75,6 +79,7 @@ class Vouchers(object):
 
     def match(self, order):
         assert isinstance(order, OrderData)
+        rule = self.get_rule()
         if not self.is_coupon_valid_with_existing_coupon(order):
             failed_dict = {
                 'voucher': self,
@@ -82,7 +87,7 @@ class Vouchers(object):
             }
             order.failed_vouchers.append(failed_dict)
             return
-        rule = self.get_rule()
+
         status = rule.check_usage(order.customer_id, self.id)
         if not status.get('success', False):
             failed_dict = {

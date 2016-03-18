@@ -22,7 +22,8 @@ def get_rule(rule_id):
 
 def get_voucher(voucher_code):
     voucher = Vouchers.find_one(voucher_code)
-    if voucher and voucher.to_date > datetime.datetime.utcnow():
+    now = datetime.datetime.utcnow()
+    if voucher and voucher.from_date <= now <= voucher.to_date:
         return voucher
     return None
 
@@ -43,7 +44,7 @@ def get_benefits(order):
         for benefit in benefit_list:
             benefit_type = BenefitType(benefit['type'])
             if benefit_type is BenefitType.freebie:
-                freebie_list.append(benefit)
+                freebie_list.append(benefit['value'])
             if benefit_type is BenefitType.amount and benefit['value']:
                 if max_discount and benefit['value'] > max_discount:
                     discount = max_discount

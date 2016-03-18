@@ -83,7 +83,7 @@ def apply_coupon():
             'totalDiscount': 0.0,
             'channel': [],
             'paymentModes': [],
-            'message': error['error']
+            'message': error
         }
 
 
