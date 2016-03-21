@@ -1,5 +1,5 @@
-from flask import Flask
 from api import rule_api, voucher_api
+from flask import Flask
 from lib import log
 from lib.converters import HexConverter
 from src.sqlalchemydb import CouponsAlchemyDB

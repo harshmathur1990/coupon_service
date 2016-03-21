@@ -1,11 +1,13 @@
-import logging
-import canonicaljson
-import hashlib
 import binascii
-from src.enums import UseType, BenefitType, RuleType, Channels
-from src.sqlalchemydb import CouponsAlchemyDB
+import hashlib
+import logging
+
+import canonicaljson
 from data import OrderData, VerificationItemData
 from lib.utils import get_intersection_of_lists
+from src.enums import UseType, BenefitType, RuleType, Channels
+from src.sqlalchemydb import CouponsAlchemyDB
+
 logger = logging.getLogger()
 
 

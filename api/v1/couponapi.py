@@ -1,14 +1,14 @@
-from webargs import fields, validate
-from src.enums import *
-from . import voucher_api
 from flask import request
-from webargs.flaskparser import parser
 from lib.decorator import jsonify
-from src.rules.validate import validate_coupon, validate_for_create_coupon,\
-    create_rule_object, validate_for_create_voucher, create_voucher_object
-from src.rules.utils import get_benefits, apply_benefits
 from lib.utils import is_timezone_aware
-from src.rules.vouchers import VoucherTransactionLog
+from src.enums import *
+from src.rules import VoucherTransactionLog
+from src.rules import get_benefits, apply_benefits
+from src.rules import validate_coupon, validate_for_create_coupon,\
+    create_rule_object, validate_for_create_voucher, create_voucher_object
+from webargs import fields, validate
+from webargs.flaskparser import parser
+from api import voucher_api
 
 
 @voucher_api.route('/apply', methods=['POST'])

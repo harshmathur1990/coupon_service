@@ -1,11 +1,13 @@
-import logging
 import binascii
-from src.sqlalchemydb import CouponsAlchemyDB
-from src.enums import VoucherTransactionStatus
+import logging
+import uuid
+
+import sqlalchemy
 from data import OrderData
 from rule import Rule
-import uuid
-import sqlalchemy
+from src.enums import VoucherTransactionStatus
+from src.sqlalchemydb import CouponsAlchemyDB
+
 logger = logging.getLogger()
 
 

@@ -1,12 +1,10 @@
-import pytz
-from pytz import timezone
-from webargs import fields
 from flask import request
-from webargs.flaskparser import parser
 from lib.decorator import jsonify
-from src.rules.validate import validate_for_create_voucher, create_voucher_object
-from . import rule_api
 from lib.utils import is_timezone_aware
+from src.rules import validate_for_create_voucher, create_voucher_object
+from webargs import fields
+from webargs.flaskparser import parser
+from api import rule_api
 
 
 @rule_api.route('/<hex:rule_id>/vouchers', methods=['POST'])

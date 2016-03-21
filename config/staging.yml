@@ -1,3 +1,5 @@
+port: 8000
+
 mysql:
     connection: mysql+pymysql://coupon:coupon1234@coupon.c0wj8qdslqom.ap-southeast-1.rds.amazonaws.com/coupon
 

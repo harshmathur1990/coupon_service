@@ -1,10 +1,12 @@
-from src.enums import *
-from rule import Rule, RuleCriteria, Benefits
-from utils import get_voucher, fetch_order_detail
-from data import OrderData
-from vouchers import Vouchers
-import uuid, datetime
+import datetime
 import logging
+import uuid
+
+from data import OrderData
+from rule import Rule, RuleCriteria, Benefits
+from src.enums import *
+from utils import get_voucher, fetch_order_detail
+from vouchers import Vouchers
 
 logger = logging.getLogger(__name__)
 

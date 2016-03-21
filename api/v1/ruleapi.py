@@ -1,10 +1,10 @@
-from webargs import fields, validate
-from src.enums import *
-from . import rule_api
 from flask import request
-from webargs.flaskparser import parser
 from lib.decorator import jsonify
-from src.rules.validate import validate_for_create_coupon, create_rule_object
+from src.enums import *
+from src.rules import validate_for_create_coupon, create_rule_object
+from webargs import fields, validate
+from webargs.flaskparser import parser
+from api import rule_api
 
 
 # @rule_api.route('/<hex:id>', methods=['PUT'])

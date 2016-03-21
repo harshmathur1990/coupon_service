@@ -1,13 +1,14 @@
-import unittest
-from flask import url_for
-import json
-from __init__ import create_app
-from src.rules.rule import Rule
-from src.rules.validate import create_rule_object
 import binascii
-import datetime
 import copy
+import datetime
+import json
+import unittest
 from datetime import timedelta
+
+from __init__ import create_app
+from flask import url_for
+from src.rules import Rule
+from src.rules import create_rule_object
 from src.sqlalchemydb import CouponsAlchemyDB
 
 test_data_skeleton = {

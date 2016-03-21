@@ -1,3 +1,5 @@
+port: 8000
+
 mysql:
     connection: mysql+pymysql://root:root@localhost/coupons_test
 

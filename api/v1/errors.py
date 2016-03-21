@@ -1,4 +1,4 @@
-from . import rule_api, voucher_api
+from api import rule_api, voucher_api
 from flask import jsonify
 
 
