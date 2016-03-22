@@ -2,9 +2,9 @@ from flask import request
 from lib.decorator import jsonify
 from lib.utils import is_timezone_aware
 from src.enums import *
-from src.rules import VoucherTransactionLog
-from src.rules import get_benefits, apply_benefits
-from src.rules import validate_coupon, validate_for_create_coupon,\
+from src.rules.vouchers import VoucherTransactionLog
+from src.rules.utils import get_benefits, apply_benefits
+from src.rules.validate import validate_coupon, validate_for_create_coupon,\
     create_rule_object, validate_for_create_voucher, create_voucher_object
 from webargs import fields, validate
 from webargs.flaskparser import parser
@@ -159,171 +159,11 @@ def create_voucher():
 
         'description': fields.Str(required=False, missing=None, location='json'),
 
-        'rule_type': fields.Int(required=False, missing=RuleType.regular_coupon.value,
-                                validate=validate.OneOf([l.value for l in list(RuleType)],
-                                                        [l.name for l in list(RuleType)])),
-
-        'use_type': fields.Int(required=False, missing=UseType.not_available.value,
-                               location='json', validate=validate.OneOf(
-            [l.value for l in list(UseType)], [l.name for l in list(UseType)])),
-
-        'no_of_uses_allowed_per_user': fields.Int(required=False, missing=None,
-                                                  validate=validate.Range(min=0), location='json'),
-
-        'no_of_total_uses_allowed': fields.Int(required=False, missing=None,
-                                               location='json', validate=validate.Range(min=0)),
-
-        'range_min': fields.Int(required=False, missing=None,
-                                location='json', validate=validate.Range(min=0)),
-
-        'range_max': fields.Int(required=False, missing=None,
-                                location='json', validate=validate.Range(min=0)),
-
-        'channels': fields.List(
-            fields.Int(
-                validate=validate.OneOf(
-                    [l.value for l in list(Channels)], [l.name for l in list(Channels)])),
-            required=False,
-            missing=list(),
-            location='json'
-        ),
-
-        'brands': fields.List(
-            fields.Int(
-                validate=validate.Range(min=0)
-            ),
-            required=False,
-            missing=list(),
-            location='json'
-        ),
-
-        'products': fields.List(
-            fields.Int(
-                validate=validate.Range(min=0)
-            ),
-            required=False,
-            missing=list(),
-            location='json'
-        ),
-
-        'categories': fields.Nested(
-            {
-                'in': fields.List(
-                    fields.Int(
-                        validate=validate.Range(min=0)
-                    ),
-                    required=False,
-                    missing=list(),
-                ),
-                'not_in': fields.List(
-                    fields.Int(
-                        validate=validate.Range(min=0)
-                    ),
-                    required=False,
-                    missing=list(),
-                )
-            },
-            required=False,
-            missing={'in': [], 'not_in': []},
-            location='json'
-        ),
-
-        'storefronts': fields.List(
-            fields.Int(
-                validate=validate.Range(min=0)
-            ),
-            required=False,
-            missing=list(),
-            location='json'
-        ),
-
-        'variants': fields.List(
-            fields.Int(
-                validate=validate.Range(min=0)
-            ),
-            required=False,
-            missing=list(),
-            location='json'
-        ),
-
-        'sellers': fields.List(
-            fields.Int(
-                validate=validate.Range(min=0)
-            ),
-            required=False,
-            missing=list(),
-            location='json'
-        ),
-
-        'location': fields.Nested(
-            {
-                'country': fields.List(
-                    fields.Int(
-                        validate=validate.Range(min=0)
-                    ),
-                ),
-                'state': fields.List(
-                    fields.Int(
-                        validate=validate.Range(min=0)
-                    ),
-                ),
-                'city': fields.List(
-                    fields.Int(
-                        validate=validate.Range(min=0)
-                    ),
-                ),
-                'area': fields.List(
-                    fields.Int(
-                        validate=validate.Range(min=0)
-                    ),
-                ),
-                'zone': fields.List(
-                    fields.Int(),
-                ),
-            },
-            required=False,
-            missing={'country': [], 'state': [], 'city': [], 'area': [], 'zone': []},
-            location='json'
-        ),
-
-        'payment_modes': fields.List(
-            fields.Str(),
-            missing=list(),
-            required=False,
-            location='json'
-        ),
-
-        'freebies': fields.List(
-            fields.List(
-                fields.Int(
-                validate=validate.Range(min=0)
-                ),
-            ),
-            required=False,
-            missing=list(),
-            location='json'
-        ),
-
-        'amount': fields.Int(
-            required=False, missing=None, validate=validate.Range(min=0), location='json'
-        ),
-
-        'percentage': fields.Int(
-            required=False, missing=None, validate=validate.Range(min=0, max=100), location='json'
-        ),
-
-        'max_discount': fields.Int(
-            required=False, validate=validate.Range(min=0), location='json'
-        ),
+        'type': fields.Int(required=False, missing=RuleType.regular_coupon.value,
+                           location='json', validate=validate.OneOf(
+                [l.value for l in list(RuleType)], [l.name for l in list(RuleType)])),
 
         'user_id': fields.Str(required=False),
-
-        'valid_on_order_no': fields.List(
-            fields.Int(validate=validate.Range(min=1)),
-            required=False,
-            missing=list(),
-            location='json'
-        ),
 
         'code': fields.List(fields.Str(), required=True, location='json'),
 
@@ -331,7 +171,170 @@ def create_voucher():
 
         'to': fields.DateTime(required=True, location='json'),
 
-        'user_id': fields.Str(required=True, location='json')
+        'rules': fields.List(
+            fields.Nested(
+                {
+                    'description': fields.Str(required=False),
+
+                    'criteria': fields.Nested({
+                        'no_of_uses_allowed_per_user': fields.Int(required=False, missing=None,
+                                                          validate=validate.Range(min=0)),
+
+                        'no_of_total_uses_allowed': fields.Int(required=False, missing=None,
+                                                               validate=validate.Range(min=0)),
+
+                        'range_min': fields.Int(required=False, missing=None,
+                                                validate=validate.Range(min=0)),
+
+                        'range_max': fields.Int(required=False, missing=None,
+                                                validate=validate.Range(min=0)),
+
+                        "cart_range_min": fields.Int(required=False, missing=None,
+                                                     validate=validate.Range(min=0)),
+
+                        "cart_range_max": fields.Int(required=False, missing=None,
+                                                     validate=validate.Range(min=0)),
+
+                        'channels': fields.List(
+                            fields.Int(
+                                validate=validate.OneOf(
+                                    [l.value for l in list(Channels)], [l.name for l in list(Channels)])),
+                            required=False,
+                            missing=list()
+                        ),
+
+                        'brands': fields.List(
+                            fields.Int(
+                                validate=validate.Range(min=0)
+                            ),
+                            required=False,
+                            missing=list()
+                        ),
+
+                        'products': fields.List(
+                            fields.Int(
+                                validate=validate.Range(min=0)
+                            ),
+                            required=False,
+                            missing=list()
+                        ),
+
+                        'categories': fields.Nested(
+                            {
+                                'in': fields.List(
+                                    fields.Int(
+                                        validate=validate.Range(min=0)
+                                    ),
+                                    required=False,
+                                    missing=list(),
+                                ),
+                                'not_in': fields.List(
+                                    fields.Int(
+                                        validate=validate.Range(min=0)
+                                    ),
+                                    required=False,
+                                    missing=list(),
+                                )
+                            },
+                            required=False,
+                            missing={'in': [], 'not_in': []}
+                        ),
+
+                        'storefronts': fields.List(
+                            fields.Int(
+                                validate=validate.Range(min=0)
+                            ),
+                            required=False,
+                            missing=list()
+                        ),
+
+                        'variants': fields.List(
+                            fields.Int(
+                                validate=validate.Range(min=0)
+                            ),
+                            required=False,
+                            missing=list()
+                        ),
+
+                        'sellers': fields.List(
+                            fields.Int(
+                                validate=validate.Range(min=0)
+                            ),
+                            required=False,
+                            missing=list()
+                        ),
+
+                        'location': fields.Nested(
+                            {
+                                'country': fields.List(
+                                    fields.Int(
+                                        validate=validate.Range(min=0)
+                                    ),
+                                ),
+                                'state': fields.List(
+                                    fields.Int(
+                                        validate=validate.Range(min=0)
+                                    ),
+                                ),
+                                'city': fields.List(
+                                    fields.Int(
+                                        validate=validate.Range(min=0)
+                                    ),
+                                ),
+                                'area': fields.List(
+                                    fields.Int(
+                                        validate=validate.Range(min=0)
+                                    ),
+                                ),
+                                'zone': fields.List(
+                                    fields.Int(),
+                                ),
+                            },
+                            required=False,
+                            missing={'country': [], 'state': [], 'city': [], 'area': [], 'zone': []}
+                        ),
+
+                        'payment_modes': fields.List(
+                            fields.Str(),
+                            missing=list(),
+                            required=False
+                        ),
+
+                        'valid_on_order_no': fields.List(
+                            fields.Str(),
+                            required=False,
+                            missing=list()
+                        ),
+                    }),
+
+                    'benefits': fields.Nested({
+                        'freebies': fields.List(
+                            fields.List(
+                                fields.Int(
+                                validate=validate.Range(min=0)
+                                ),
+                            ),
+                            required=False,
+                            missing=list()
+                        ),
+
+                        'amount': fields.Int(
+                            required=False, missing=None, validate=validate.Range(min=0)
+                        ),
+
+                        'percentage': fields.Int(
+                            required=False, missing=None, validate=validate.Range(min=0, max=100)
+                        ),
+
+                        'max_discount': fields.Int(
+                            required=False, validate=validate.Range(min=0)
+                        )
+                    })
+                }
+            ),
+            location='json'
+        )
+
     }
     args = parser.parse(coupon_create_args, request)
     success, error = validate_for_create_coupon(args)

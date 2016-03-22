@@ -7,6 +7,7 @@ from rule import Rule, RuleCriteria, Benefits
 from src.enums import *
 from utils import get_voucher, fetch_order_detail
 from vouchers import Vouchers
+from lib.utils import get_intersection_of_lists
 
 logger = logging.getLogger(__name__)
 
@@ -15,31 +16,28 @@ def validate_for_create_coupon(data):
     error = list()
     success = True
 
-    if data.get('use_type') in [UseType.global_use.value, UseType.both.value]\
-            and not data.get('no_of_total_uses_allowed'):
-        success = False
-        error.append(u'no_of_total_uses_allowed is mandatory if use_type in (global_use, both')
+    rules = data.get('rules')
 
-    if data.get('use_type') in [UseType.per_user.value, UseType.both.value]\
-            and not data.get('no_of_uses_allowed_per_user'):
-        success = False
-        error.append(u'no_of_uses_allowed_per_user is mandatory if use_type in (per_user, both')
+    for rule in rules:
+        criteria = rule.get('criteria')
 
-    if data.get('range_min') and data.get('range_max') and data.get('range_max') <= data.get('range_min'):
-        success = False
-        error.append(u'range_max must be greater than range_min')
+        if criteria.get('range_max') and criteria.get('range_min') and \
+                        criteria.get('range_max') <= criteria.get('range_min'):
+            success = False
+            error.append(u'range_max must be greater than range_min')
 
-    benefit_count = 0
-    if data.get('freebies'):
-        benefit_count += 1
-    if data.get('amount'):
-        benefit_count += 1
-    if data.get('percentage'):
-        benefit_count += 1
+        if criteria.get('cart_range_max') and criteria.get('cart_range_min') and \
+                        criteria.get('cart_range_max') <= criteria.get('cart_range_min'):
+            success = False
+            error.append(u'cart_range_max must be greater than cart_range_min')
 
-    if benefit_count!= 1:
-        success = False
-        error.append(u'Benefit must have one of the values in freebies or amount or percentage')
+        in_categories = criteria.get('categories').get('in')
+
+        not_in_categories = criteria.get('categories').get('not_in')
+
+        if in_categories and not_in_categories and get_intersection_of_lists(in_categories, not_in_categories):
+            success = False
+            error.append(u'Categories[in] and Categories[not_in] must not have any intersection in a rule')
 
     return success, error
 
