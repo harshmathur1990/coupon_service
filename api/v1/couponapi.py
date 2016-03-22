@@ -3,12 +3,13 @@ from lib.decorator import jsonify
 from lib.utils import is_timezone_aware
 from src.enums import *
 from src.rules.vouchers import VoucherTransactionLog
-from src.rules.utils import get_benefits, apply_benefits
+from src.rules.utils import get_benefits, apply_benefits, create_and_save_rule_list, save_vouchers
 from src.rules.validate import validate_coupon, validate_for_create_coupon,\
-    create_rule_object, validate_for_create_voucher, create_voucher_object
+    validate_for_create_voucher
 from webargs import fields, validate
 from webargs.flaskparser import parser
 from api import voucher_api
+from validate import validate_for_create_api_v1
 
 
 @voucher_api.route('/apply', methods=['POST'])
@@ -332,12 +333,15 @@ def create_voucher():
                     })
                 }
             ),
+            missing = list(),
             location='json'
         )
 
     }
     args = parser.parse(coupon_create_args, request)
-    success, error = validate_for_create_coupon(args)
+
+    # api specific validation
+    success, error = validate_for_create_api_v1(args)
     if not success:
         rv = {
             'success': success,
@@ -347,54 +351,59 @@ def create_voucher():
             }
         }
         return rv
-    rule = create_rule_object(args)
-    success = rule.save()
+
+    # general validations
+    success, error = validate_for_create_coupon(args)
+
     if not success:
         rv = {
             'success': success,
             'error': {
                 'code': 400,
-            }
-        }
-    else:
-        rule_id = success
-        if is_timezone_aware(args.get('from')):
-            args['from'] = args.get('from').replace(tzinfo=None)
-
-        if is_timezone_aware(args.get('to')):
-            args['to'] = args.get('to').replace(tzinfo=None)
-        success, error = validate_for_create_voucher(args, rule_id)
-        if not success:
-            rv = {
-                'success': success,
-                'error': {
-                    'code': 400,
-                    'error': error
-                }
-            }
-            return rv
-        code_list = args.get('code')
-        success_list = list()
-        error_list = list()
-        for code in code_list:
-            voucher = create_voucher_object(args, rule_id, code)
-            success = voucher.save()
-            if success:
-                success_list.append(success)
-            else:
-                error = {
-                    'code': code,
-                    'reason': u'{} already exists'.format(code)
-                }
-                error_list.append(error)
-        rv = {
-            'success': True,
-            'data': {
-                'success_list': success_list,
-                'error_list': error_list
+                'error': error
             }
         }
         return rv
+
+    rule_id_list = create_and_save_rule_list(args)
+
+    if not rule_id_list:
+        rv = {
+            'success': False,
+            'error': {
+                'code': 400,
+                'error': u'Unknown Exception'
+            }
+        }
+        return rv
+
+    if is_timezone_aware(args.get('from')):
+        args['from'] = args.get('from').replace(tzinfo=None)
+
+    if is_timezone_aware(args.get('to')):
+        args['to'] = args.get('to').replace(tzinfo=None)
+
+    success, error = validate_for_create_voucher(args)
+    if not success:
+        rv = {
+            'success': success,
+            'error': {
+                'code': 400,
+                'error': error
+            }
+        }
+        return rv
+
+    success_list, error_list = save_vouchers(args, rule_id_list)
+
+    rv = {
+        'success': True,
+        'data': {
+            'success_list': success_list,
+            'error_list': error_list
+        }
+    }
+    return rv
 
 
 @voucher_api.route('/confirm', methods=['POST'])

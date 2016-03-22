@@ -32,7 +32,7 @@ class Rule(object):
         self.updated_by = kwargs.get('updated_by')
         self.created_at = kwargs.get('created_at')
         self.updated_at = kwargs.get('updated_at')
-        if not self.rule_type:
+        if not self.type:
             self.get_rule_type()
         if not self.criteria_obj:
             criteria_dict = canonicaljson.json.loads(self.criteria_json)
@@ -42,12 +42,12 @@ class Rule(object):
             self.benefits_obj = Benefits(**benefits_dict)
 
     def get_rule_type(self):
-        self.rule_type = RuleType.regular_coupon.value
+        self.type = RuleType.regular_coupon.value
 
     def save(self):
         values = self.get_value_dict()
         db = CouponsAlchemyDB()
-        db.begin() # TODO db transaction should start outside of Rule class. We might want Rule creation and voucher creation as part of single transaction
+        db.begin()
         # update_cache = False
         try:
             # check if the rule being created already exists, if yes, just return rule id
@@ -86,11 +86,11 @@ class Rule(object):
             values['name'] = self.name
         if self.description:
             values['description'] = self.description
-        values['rule_type'] = self.rule_type
+        values['type'] = self.type
         values['criteria_json'] = self.criteria_json
         values['benefits_json'] = self.benefits_json
         un_hashed_string = unicode(self.criteria_json) + \
-            unicode(self.benefits_json) + unicode(self.rule_type)
+            unicode(self.benefits_json) + unicode(self.type)
         values['sha2hash'] = hashlib.sha256(un_hashed_string).hexdigest()
         values['active'] = self.active
         if self.created_by:
@@ -102,7 +102,7 @@ class Rule(object):
     def __eq__(self, other):
         if self.criteria_obj == other.criteria_obj and \
                 self.benefits_obj == other.benefits_obj and \
-                self.rule_type == other.rule_type:
+                self.type == other.type:
             return True
         return False
 
@@ -164,9 +164,20 @@ class Rule(object):
 
     def match(self, order):
         assert isinstance(order, OrderData)
-        if self.criteria_obj.valid_on_order_no and order.order_no not in self.criteria_obj.valid_on_order_no:
-            return False, u'This coupon is only valid on orders {}'.format(
-                ','.join(self.criteria_obj.valid_on_order_no))
+        if self.criteria_obj.valid_on_order_no:
+            exact_order_no_list = list()
+            min_order_no = None
+            for an_order_no in self.criteria_obj.valid_on_order_no:
+                try:
+                    # to convert order nos which are exact integers
+                    exact_order_no_list.append(int(an_order_no))
+                except ValueError:
+                    # to convert order nos which are like 4+ means minimum order no 4
+                    if not min_order_no:
+                        min_order_no = int(an_order_no[:-1])
+            if (exact_order_no_list and order.order_no not in exact_order_no_list) or \
+                    (min_order_no and order.order_no < min_order_no):
+                return False, u'This coupon is not applicable on this order {}'.format(order.order_no)
         if self.criteria_obj.channels and order.channel in self.criteria_obj.channels:
             return False, None, u'This coupon is only valid on orders from {}'.format(
                 ','.join([Channels(c).name for c in self.criteria_obj.channels]))
@@ -233,14 +244,20 @@ class RuleCriteria(object):
         self.storefronts.sort()
         self.valid_on_order_no = kwargs.get('valid_on_order_no', list())
         self.valid_on_order_no.sort()
-        use_type = kwargs.get('use_type', 0)
         no_of_uses_allowed_per_user = kwargs.get('no_of_uses_allowed_per_user', None)
         no_of_total_uses_allowed = kwargs.get('no_of_total_uses_allowed', None)
         self.usage = {
-            'use_type': use_type,
             'no_of_uses_allowed_per_user': no_of_uses_allowed_per_user,
             'no_of_total_uses_allowed': no_of_total_uses_allowed
         }
+        if self.usage.get('no_of_uses_allowed_per_user') and self.usage.get('no_of_total_uses_allowed'):
+            self.usage['use_type'] = UseType.both.value
+        elif self.usage.get('no_of_uses_allowed_per_user'):
+            self.usage['use_type'] = UseType.per_user.value
+        elif self.usage.get('no_of_total_uses_allowed'):
+            self.usage['use_type'] = UseType.global_use.value
+        else:
+            self.usage['use_type'] = UseType.not_available.value
         self.variants = kwargs.get('variants', list())
         self.variants.sort()
         self.zone = kwargs.get('zone', list())

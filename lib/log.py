@@ -2,7 +2,7 @@ import os
 import logging
 import logging.config
 import logging.handlers
-from config import BASE_DIR, LOG_DIR, LOG_FILE, LOG_FILE_ERROR, APP_NAME
+from config import BASE_DIR, LOG_DIR, LOG_FILE, LOG_FILE_ERROR, env
 
 
 def setup_logging():
@@ -24,11 +24,11 @@ def setup_logging():
     errorhandler.setLevel(logging.ERROR)
     errorhandler.setFormatter(formatter)
 
-    # if env is not 'production':
-    #     consoleHandler = logging.StreamHandler()
-    #     consoleHandler.setLevel(logging.ERROR)
-    #     consoleHandler.setFormatter(formatter)
-    #     logger.addHandler(consoleHandler)
+    if env is not 'production':
+        consoleHandler = logging.StreamHandler()
+        consoleHandler.setLevel(logging.ERROR)
+        consoleHandler.setFormatter(formatter)
+        logger.addHandler(consoleHandler)
 
     logger.addHandler(handler)
     logger.addHandler(errorhandler)

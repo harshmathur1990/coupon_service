@@ -3,7 +3,6 @@ from flask import jsonify
 
 
 @voucher_api.app_errorhandler(422)
-@rule_api.app_errorhandler(422)
 def handle_error(error):
     rv = {
         'success': False,

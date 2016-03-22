@@ -9,7 +9,7 @@ def create_app():
     app = Flask(__name__)
     app.url_map.converters['hex'] = HexConverter
     app.register_blueprint(rule_api, url_prefix='/rules')
-    app.register_blueprint(voucher_api, url_prefix='/vouchers')
+    app.register_blueprint(voucher_api, url_prefix='/vouchers/v1')
     log.setup_logging()
     CouponsAlchemyDB.init()
     return app

@@ -18,9 +18,7 @@ class Vouchers(object):
         self.id = id
         if self.id:
             self.id_bin = binascii.a2b_hex(self.id)
-        self.rule_id = kwargs.get('rule_id')
-        if self.rule_id:
-            self.rule_id_bin = binascii.a2b_hex(self.rule_id)
+        self.rules = kwargs.get('rules')
         self.code = kwargs.get('code')
         self.description = kwargs.get('description')
         self.from_date = kwargs.get('from')
@@ -29,12 +27,17 @@ class Vouchers(object):
         self.updated_by = kwargs.get('updated_by')
         self.created_at = kwargs.get('created_at')
         self.updated_at = kwargs.get('updated_at')
-        self.rule = kwargs.get('rule')
+        self.rules_list = kwargs.get('rules_list')
+        self.custom = kwargs.get('custom')
 
     def get_rule(self):
-        if not self.rule:
-            self.rule = Rule.find_one(self.rule_id)
-        return self.rule
+        rule_id_list = self.rules.split(',')
+        rules_list = list()
+        for rule_id in rule_id_list:
+            rule = Rule.find_one(rule_id)
+            rules_list.append(rule)
+        self.rules_list = rules_list
+        return rules_list
 
     def save(self):
         values = self.get_value_dict()
@@ -47,7 +50,6 @@ class Vouchers(object):
             db.rollback()
             return False
         except Exception as e:
-            # TODO Exception handling for primary key dedup
             logger.exception(e)
             db.rollback()
             return False
@@ -59,13 +61,14 @@ class Vouchers(object):
         values = dict()
         values['id'] = self.id_bin
         values['code'] = self.code
-        values['rule_id'] = self.rule_id_bin
+        values['rules'] = self.rules
         values['description'] = self.description
         values['from'] = self.from_date
         values['to'] = self.to_date
         if self.created_by:
             values['created_by'] = self.created_by
         values['updated_by'] = self.updated_by
+        values['custom'] = self.custom
         return values
 
     @staticmethod
@@ -74,7 +77,6 @@ class Vouchers(object):
         voucher_dict = db.find_one("vouchers", **{'code': code})
         if voucher_dict:
             voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
-            voucher_dict['rule_id'] = binascii.b2a_hex(voucher_dict['rule_id'])
             voucher = Vouchers(**voucher_dict)
             return voucher
         return False
