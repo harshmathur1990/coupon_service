@@ -5,7 +5,7 @@ import uuid
 import sqlalchemy
 from data import OrderData
 from rule import Rule
-from src.enums import VoucherTransactionStatus
+from src.enums import VoucherTransactionStatus, RuleType
 from src.sqlalchemydb import CouponsAlchemyDB
 
 logger = logging.getLogger()
@@ -75,6 +75,16 @@ class Vouchers(object):
     def find_one(code):
         db = CouponsAlchemyDB()
         voucher_dict = db.find_one("vouchers", **{'code': code})
+        if voucher_dict:
+            voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
+            voucher = Vouchers(**voucher_dict)
+            return voucher
+        return False
+
+    @staticmethod
+    def find_one_by_id(id):
+        db = CouponsAlchemyDB()
+        voucher_dict = db.find_one("vouchers", **{'id': id})
         if voucher_dict:
             voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
             voucher = Vouchers(**voucher_dict)

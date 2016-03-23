@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 from sqlalchemy import Table, MetaData, create_engine, exc, BINARY, ForeignKey,\
-    VARCHAR, BOOLEAN, DATETIME, Column, and_, or_
+    VARCHAR, BOOLEAN, DATETIME, Column, and_, or_, BIGINT
 from sqlalchemy.dialects.mysql import TINYINT, INTEGER, BIGINT
 from sqlalchemy import asc, desc, select, exists
 from config import DATABASE_URL
@@ -106,6 +106,21 @@ class CouponsAlchemyDB:
             )
 
             CouponsAlchemyDB._table["user_voucher_transaction_log"] = CouponsAlchemyDB.user_voucher_transaction_log
+
+            CouponsAlchemyDB.auto_freebie_search = Table(
+                'auto_freebie_search', metadata,
+                Column('id', BIGINT, primary_key=True, autoincrement=True),
+                Column('type', INTEGER, index=True, nullable=False),
+                Column('category', INTEGER, index=True),
+                Column('zone', INTEGER, index=True, nullable=False),
+                Column('range_min', INTEGER, index=True),
+                Column('range_max', INTEGER, index=True),
+                Column('cart_range_min', INTEGER, index=True),
+                Column('cart_range_max', INTEGER, index=True),
+                Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False, index=True)
+            )
+
+            CouponsAlchemyDB._table["auto_freebie_search"] = CouponsAlchemyDB.auto_freebie_search
 
             metadata.create_all(CouponsAlchemyDB.engine)
 

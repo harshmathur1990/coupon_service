@@ -10,6 +10,7 @@ from webargs import fields, validate
 from webargs.flaskparser import parser
 from api import voucher_api
 from validate import validate_for_create_api_v1
+from utils import create_freebie_coupon
 
 
 @voucher_api.route('/apply', methods=['POST'])
@@ -365,45 +366,64 @@ def create_voucher():
         }
         return rv
 
-    rule_id_list = create_and_save_rule_list(args)
+    if args.get('type') is RuleType.regular_coupon.value:
+        rule_id_list, rule_list = create_and_save_rule_list(args)
+        if not rule_id_list:
+            rv = {
+                'success': False,
+                'error': {
+                    'code': 400,
+                    'error': u'Unknown Exception'
+                }
+            }
+            return rv
 
-    if not rule_id_list:
+        if is_timezone_aware(args.get('from')):
+            args['from'] = args.get('from').replace(tzinfo=None)
+
+        if is_timezone_aware(args.get('to')):
+            args['to'] = args.get('to').replace(tzinfo=None)
+
+        success, error = validate_for_create_voucher(args)
+        if not success:
+            rv = {
+                'success': success,
+                'error': {
+                    'code': 400,
+                    'error': error
+                }
+            }
+            return rv
+
+        success_list, error_list = save_vouchers(args, rule_id_list)
+
         rv = {
-            'success': False,
-            'error': {
-                'code': 400,
-                'error': u'Unknown Exception'
+            'success': True,
+            'data': {
+                'success_list': success_list,
+                'error_list': error_list
             }
         }
         return rv
-
-    if is_timezone_aware(args.get('from')):
-        args['from'] = args.get('from').replace(tzinfo=None)
-
-    if is_timezone_aware(args.get('to')):
-        args['to'] = args.get('to').replace(tzinfo=None)
-
-    success, error = validate_for_create_voucher(args)
-    if not success:
+    else:
+        success, data, error = create_freebie_coupon(args)
+        if not success:
+            rv = {
+                'success': success,
+                'error': {
+                    'code': 400,
+                    'error': error
+                }
+            }
+            return rv
         rv = {
-            'success': success,
-            'error': {
-                'code': 400,
-                'error': error
+            'success': True,
+            'data': {
+                'success_list': data,
+                'error_list': error
             }
         }
         return rv
-
-    success_list, error_list = save_vouchers(args, rule_id_list)
-
-    rv = {
-        'success': True,
-        'data': {
-            'success_list': success_list,
-            'error_list': error_list
-        }
-    }
-    return rv
 
 
 @voucher_api.route('/confirm', methods=['POST'])

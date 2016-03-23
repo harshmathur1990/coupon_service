@@ -32,17 +32,12 @@ class Rule(object):
         self.updated_by = kwargs.get('updated_by')
         self.created_at = kwargs.get('created_at')
         self.updated_at = kwargs.get('updated_at')
-        if not self.type:
-            self.get_rule_type()
         if not self.criteria_obj:
             criteria_dict = canonicaljson.json.loads(self.criteria_json)
             self.criteria_obj = RuleCriteria(**criteria_dict)
         if not self.benefits_obj:
             benefits_dict = canonicaljson.json.loads(self.benefits_json)
             self.benefits_obj = Benefits(**benefits_dict)
-
-    def get_rule_type(self):
-        self.type = RuleType.regular_coupon.value
 
     def save(self):
         values = self.get_value_dict()
@@ -213,7 +208,6 @@ class Rule(object):
 class RuleCriteria(object):
     def __init__(self, **kwargs):
         self.area = kwargs.get('area', list())
-        self.area.sort()
         self.brands = kwargs.get('brands', list())
         self.brands.sort()
         self.categories = {
