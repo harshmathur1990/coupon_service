@@ -545,3 +545,100 @@ class CreateRule(unittest.TestCase):
                                     content_type='application/json')
         data = json.loads(response.data)
         self.assertTrue(response.status_code == 200, response.data)
+
+    def test_multi_rule_vouchers(self):
+        # To test thar created rule is same as the rule being pushed
+        # and also the vouchers are created successfully
+        today = datetime.datetime.utcnow()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1", "TEST1CODE2"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": 100,
+                        "range_max": 1000,
+                        "cart_range_min": 100,
+                        "cart_range_max": 1000,
+                        "channels": [0],
+                        "brands": [1, 2],
+                        "products": [2, 3],
+                        "categories": {
+                            "in": [100, 200],
+                            "not_in": []
+                        },
+                        "storefronts": [5, 6],
+                        "variants": [8, 9],
+                        "sellers": [45, 76],
+                        "location": {
+                            "country": [1],
+                            "state": [1, 4],
+                            "city": [5, 8],
+                            "area": [56, 90],
+                            "zone": [34, 78]
+                        },
+                        "payment_modes": ["VISA"],
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "percentage": 10,
+                        "max_discount": 250
+                    }
+                },
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": 100,
+                        "range_max": 1000,
+                        "cart_range_min": 100,
+                        "cart_range_max": 1000,
+                        "channels": [0],
+                        "brands": [1, 2],
+                        "products": [2, 3],
+                        "categories": {
+                            "in": [],
+                            "not_in": [100, 200]
+                        },
+                        "storefronts": [5, 6],
+                        "variants": [8, 9],
+                        "sellers": [45, 76],
+                        "location": {
+                            "country": [1],
+                            "state": [1, 4],
+                            "city": [5, 8],
+                            "area": [56, 90],
+                            "zone": [34, 78]
+                        },
+                        "payment_modes": ["VISA"],
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "percentage": 5,
+                        "max_discount": 250
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(not data.get('data',dict()).get('error_list') and
+                        len(data.get('data', dict()).get('success_list', list())) is 2, response.data)
+        test1code1_voucher = Vouchers.find_one('TEST1CODE1')
+        voucher_rule_list = test1code1_voucher.get_rule()
+        rule_list = create_rule_list(rule_create_data)
+        for test_rule, created_rule in zip(voucher_rule_list, rule_list):
+            self.assertTrue(
+                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
+                    rule_create_data, test_rule.__dict__))
