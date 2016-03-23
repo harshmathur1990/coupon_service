@@ -486,3 +486,62 @@ class CreateRule(unittest.TestCase):
                                     content_type='application/json')
         data = json.loads(response.data)
         self.assertTrue(response.status_code == 200, response.data)
+
+    def test_update_to_date_vouchers(self):
+        today = datetime.datetime.utcnow()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE14", "TEST1CODE25"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": 100,
+                        "range_max": 1000,
+                        "cart_range_min": 100,
+                        "cart_range_max": 1000,
+                        "channels": [0],
+                        "brands": [1, 2, 3],
+                        "products": [2, 3, 4],
+                        "categories": {
+                            "in": [1, 2],
+                            "not_in": [3, 4]
+                        },
+                        "storefronts": [5, 6],
+                        "variants": [8, 9],
+                        "sellers": [45, 76],
+                        "location": {
+                            "country": [1],
+                            "state": [1, 4],
+                            "city": [5, 8],
+                            "area": [56, 90],
+                            "zone": [34, 78]
+                        },
+                        "payment_modes": ["VISA"],
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "amount": 100,
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        today = datetime.datetime.utcnow()
+        tomorrow = today+timedelta(days=4)
+        args = {
+            'to': tomorrow.isoformat()
+        }
+        response = self.client.put(url_for('voucher_api/v1.update_coupon', coupon_code='TEST1CODE14'), data=json.dumps(args),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(response.status_code == 200, response.data)
