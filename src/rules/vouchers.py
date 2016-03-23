@@ -57,6 +57,20 @@ class Vouchers(object):
             db.commit()
         return {'id': self.id, 'code': self.code}
 
+    def update_to_date(self):
+        db = CouponsAlchemyDB()
+        db.begin()
+        try:
+            db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
+            db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
+        except Exception as e:
+            logger.exception(e)
+            db.rollback()
+            return False
+        else:
+            db.commit()
+        return True
+
     def get_value_dict(self):
         values = dict()
         values['id'] = self.id_bin

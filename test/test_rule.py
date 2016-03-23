@@ -340,3 +340,149 @@ class CreateRule(unittest.TestCase):
                                     content_type='application/json')
         data = json.loads(response.data)
         self.assertTrue(response.status_code == 200, response.data)
+
+    def test_auto_freebie_update_fail(self):
+        today = datetime.datetime.utcnow()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_auto_freebie_1",
+            "description": "test_auto_freebie_description_1",
+            "type": 0,
+            "user_id": "1000",
+            "code": ["TEST1CODE5"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": 100,
+                        "range_max": 1000,
+                        "categories": {
+                            "in": [1],
+                            "not_in": []
+                        },
+                        "location": {
+                            "zone": [35]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[1]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        rule_create_data = {
+            "name": "test_auto_freebie_1",
+            "description": "test_auto_freebie_description_1",
+            "type": 0,
+            "user_id": "1000",
+            "code": ["TEST1CODE6"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": 100,
+                        "range_max": 1000,
+                        "categories": {
+                            "in": [1],
+                            "not_in": []
+                        },
+                        "location": {
+                            "zone": [35]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[1]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(response.status_code == 400, response.data)
+
+    def test_auto_freebie_update_success(self):
+        today = datetime.datetime.utcnow()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_auto_freebie_1",
+            "description": "test_auto_freebie_description_1",
+            "type": 0,
+            "user_id": "1000",
+            "code": ["TEST1CODE5"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": 100,
+                        "range_max": 1000,
+                        "categories": {
+                            "in": [1],
+                            "not_in": []
+                        },
+                        "location": {
+                            "zone": [35]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[1]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        rule_create_data = {
+            "name": "test_auto_freebie_1",
+            "description": "test_auto_freebie_description_1",
+            "type": 0,
+            "user_id": "1000",
+            "code": ["TEST1CODE5"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": 100,
+                        "range_max": 1000,
+                        "categories": {
+                            "in": [1],
+                            "not_in": []
+                        },
+                        "location": {
+                            "zone": [35]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[1]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(response.status_code == 200, response.data)

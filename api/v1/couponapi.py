@@ -2,7 +2,7 @@ from flask import request
 from lib.decorator import jsonify
 from lib.utils import is_timezone_aware
 from src.enums import *
-from src.rules.vouchers import VoucherTransactionLog
+from src.rules.vouchers import VoucherTransactionLog, Vouchers
 from src.rules.utils import get_benefits, apply_benefits, create_and_save_rule_list, save_vouchers
 from src.rules.validate import validate_coupon, validate_for_create_coupon,\
     validate_for_create_voucher
@@ -442,5 +442,39 @@ def confirm_order():
         rv['error'] = {
             'code': 400,
             'error': error
+        }
+    return rv
+
+
+@voucher_api.route('/update/<coupon_code>', methods=['PUT'])
+@jsonify
+def update_coupon(coupon_code):
+    update_coupon_args = {
+        'to': fields.DateTime(required=True, location='json'),
+    }
+    args = parser.parse(update_coupon_args, request)
+
+    if is_timezone_aware(args.get('to')):
+        args['to'] = args.get('to').replace(tzinfo=None)
+
+    voucher = Vouchers.find_one(coupon_code)
+    if not voucher:
+        rv = {
+            'success': False,
+            'error': {
+                'code': 400,
+                'error': u'Voucher with code {} not found'.format(coupon_code)
+            }
+        }
+        return rv
+    voucher.to_date = args['to']
+    success = voucher.update_to_date()
+    rv = {
+        'success': success,
+    }
+    if not success:
+        rv['error'] = {
+            'code': 400,
+            'error': u'Unknown Error'
         }
     return rv

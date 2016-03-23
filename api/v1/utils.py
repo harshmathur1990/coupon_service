@@ -8,6 +8,9 @@ from src.rules.utils import create_rule_object, save_vouchers
 def create_freebie_coupon(args):
     # code must have only 1 element and it has been validated before
     # hence safe in accessing directly 0th element
+    # in case of update, delete the voucher, delete entry from auto_freebie_search
+    # create a new rule and create a new voucher on the created rule, and an entry in auto_freebie_search
+    # Also it is ensured that at a time only one entry per zone, spending range and category can be there.
     code = args.get('code')[0]
     rule = args.get('rules')[0]
     criteria = rule.get('criteria')
@@ -25,7 +28,8 @@ def create_freebie_coupon(args):
             if voucher.code != code:
                 return False, None, u'Existing voucher exists for the given criteria with code {}'.format(voucher.code)
             db.delete_row("auto_freebie_search", **{'voucher_id': binascii.a2b_hex(voucher.id)})
-            db.delete_row("rule", **{'id': binascii.a2b_hex(voucher.rules)})
+            db.delete_row("vouchers", **{'id': binascii.a2b_hex(voucher.id)})
+
         data = {
             'criteria': {
                 'categories': {
@@ -89,7 +93,7 @@ def create_freebie_coupon(args):
             if voucher.code != code:
                 return False, None, u'Existing voucher exists for the given criteria with code {}'.format(voucher.code)
             db.delete_row("auto_freebie_search", **{'voucher_id': binascii.a2b_hex(voucher.id)})
-            db.delete_row("rule", **{'id': binascii.a2b_hex(voucher.rules)})
+            db.delete_row("vouchers", **{'id': binascii.a2b_hex(voucher.id)})
         data = {
             'criteria': {
                 'categories': {
