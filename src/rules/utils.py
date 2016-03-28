@@ -1,15 +1,17 @@
 import datetime
-import logging
 import json
-from vouchers import Vouchers, VoucherTransactionLog
-from src.enums import BenefitType, Channels, VoucherTransactionStatus
-from rule import Rule
+import logging
 import uuid
-from lib.utils import make_api_call
+
 from config import LOCATIONURL, SUBSCRIPTIONURL, USERINFOURL, TOKEN
-from data import VerificationItemData
 from data import OrderData
+from data import VerificationItemData
+from lib.utils import make_api_call
 from src.sqlalchemydb import CouponsAlchemyDB
+from vouchers import Vouchers, VoucherTransactionLog
+from rule import Rule, RuleCriteria, Benefits
+from src.enums import *
+
 logger = logging.getLogger(__name__)
 
 
@@ -218,3 +220,103 @@ def fetch_order_detail(args):
     order_data_dict['customer_id'] = args.get('customer_id')
     order_data = OrderData(**order_data_dict)
     return True, order_data, None
+
+
+def save_rule_list(rule_list):
+    rule_id_list = list()
+    for rule in rule_list:
+        rule.save()
+        rule_id_list.append(rule.id)
+    return rule_id_list
+
+
+def create_voucher_object(data, rule_id_list, code):
+    kwargs = dict()
+    id = uuid.uuid1().hex
+    kwargs['id'] = id
+    kwargs['created_by'] = data.get('user_id')
+    kwargs['code'] = code
+    kwargs['rules'] = ','.join(rule_id_list)
+    kwargs['description'] = data.get('description')
+    kwargs['from'] = data.get('from')
+    kwargs['to'] = data.get('to')
+    kwargs['updated_by'] = data.get('user_id')
+    kwargs['custom'] = data.get('custom')
+    voucher = Vouchers(**kwargs)
+    return voucher
+
+
+def save_vouchers(args, rule_id_list):
+    success_list = list()
+    error_list = list()
+    code_list = set(args.get('code'))
+    for code in code_list:
+        voucher = create_voucher_object(args, rule_id_list, code)
+        success = voucher.save()
+        if not success:
+            error = {
+                'code': code,
+                'reason': u'{} already exists'.format(code)
+            }
+            error_list.append(error)
+        else:
+            success_list.append(success)
+    return success_list, error_list
+
+
+def create_rule_object(data, type, user_id=None):
+    criteria = data.get('criteria')
+    benefits = data.get('benefits')
+    description = data.get('description')
+    rule_criteria_kwargs = dict()
+    rule_criteria_keys = [
+        'brands', 'categories', 'channels', 'valid_on_order_no',
+        'payment_modes', 'products', 'range_max', 'cart_range_min',
+        'range_min', 'sellers', 'storefronts', 'cart_range_max',
+        'no_of_uses_allowed_per_user', 'no_of_total_uses_allowed',
+        'variants', 'location.country', 'location.state',
+        'location.city', 'location.area', 'location.zone'
+    ]
+
+    for a_key in rule_criteria_keys:
+        keys = a_key.split('.')
+        if len(keys) == 2:
+            rule_criteria_kwargs[keys[1]] = criteria.get(keys[0], dict()).get(keys[1])
+        else:
+            rule_criteria_kwargs[keys[0]] = criteria.get(keys[0])
+    rule_criteria = RuleCriteria(**rule_criteria_kwargs)
+    freebie_benefit_list = list()
+    for freebie in benefits.get('freebies', list()):
+        freebie_dict = dict()
+        freebie_dict['type'] = BenefitType.freebie.value
+        freebie_dict['value'] = freebie
+        freebie_benefit_list.append(freebie_dict)
+    amount_benefit = {
+        'type': BenefitType.amount.value,
+        'value': benefits.get('amount')
+    }
+    percentage_benefit = {
+        'type': BenefitType.percentage.value,
+        'value': benefits.get('percentage')
+    }
+    benefit_list = freebie_benefit_list
+    benefit_list.append(amount_benefit)
+    benefit_list.append(percentage_benefit)
+    benefits = Benefits(max_discount=benefits.get('max_discount'), data=benefit_list)
+    id = uuid.uuid1().hex
+    rule = Rule(id=id, description=description,
+                criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
+                created_by=user_id, updated_by=user_id, type=type)
+    return rule
+
+
+def create_rule_list(args):
+    rule_list = list()
+    for rule in args.get('rules', list()):
+        rule_list.append(create_rule_object(rule, args.get('type'), args.get('user_id')))
+    return rule_list
+
+
+def create_and_save_rule_list(args):
+    rule_list = create_rule_list(args)
+    return save_rule_list(rule_list), rule_list

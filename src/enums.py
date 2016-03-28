@@ -52,5 +52,6 @@ class VoucherTransactionStatus(Enum):
 
 
 class RuleType(Enum):
-    regular_coupon = 0
-    auto_freebie = 1
+    auto_freebie = 0
+    regular_freebie = 1
+    regular_coupon = 2

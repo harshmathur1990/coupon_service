@@ -1,9 +1,8 @@
-from . import rule_api, voucher_api
+from api import rule_api, voucher_api
 from flask import jsonify
 
 
 @voucher_api.app_errorhandler(422)
-@rule_api.app_errorhandler(422)
 def handle_error(error):
     rv = {
         'success': False,

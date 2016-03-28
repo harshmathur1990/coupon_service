@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 from sqlalchemy import Table, MetaData, create_engine, exc, BINARY, ForeignKey,\
-    VARCHAR, BOOLEAN, DATETIME, Column, and_, or_
+    VARCHAR, BOOLEAN, DATETIME, Column, and_, or_, BIGINT
 from sqlalchemy.dialects.mysql import TINYINT, INTEGER, BIGINT
 from sqlalchemy import asc, desc, select, exists
 from config import DATABASE_URL
@@ -37,7 +37,7 @@ class CouponsAlchemyDB:
                 Column('id', BINARY(16), primary_key=True),
                 Column('name', VARCHAR(255)),
                 Column('description', VARCHAR(255)),
-                Column('rule_type', TINYINT(unsigned=True), nullable=False),
+                Column('type', TINYINT(unsigned=True), nullable=False),
                 Column('criteria_json', VARCHAR(8000), nullable=False),
                 Column('benefits_json', VARCHAR(2000), nullable=False),
                 Column('sha2hash', VARCHAR(64), index=True),
@@ -54,7 +54,8 @@ class CouponsAlchemyDB:
                 'vouchers', metadata,
                 Column('id', BINARY(16), unique=True, nullable=False),
                 Column('code', VARCHAR(20), primary_key=True),
-                Column('rule_id', BINARY(16), ForeignKey("rule.id"), nullable=False),
+                Column('rules', VARCHAR(150), nullable=False),
+                Column('custom', VARCHAR(1000)),
                 Column('description', VARCHAR(255)),
                 Column('from', DATETIME),
                 Column('to', DATETIME),
@@ -70,7 +71,8 @@ class CouponsAlchemyDB:
                 'all_vouchers', metadata,
                 Column('id', BINARY(16), primary_key=True),
                 Column('code', VARCHAR(20), nullable=False),
-                Column('rule_id', BINARY(16), ForeignKey("rule.id"), nullable=False),
+                Column('rules', VARCHAR(150), nullable=False),
+                Column('custom', VARCHAR(1000)),
                 Column('description', VARCHAR(255)),
                 Column('from', DATETIME),
                 Column('to', DATETIME),
@@ -104,6 +106,21 @@ class CouponsAlchemyDB:
             )
 
             CouponsAlchemyDB._table["user_voucher_transaction_log"] = CouponsAlchemyDB.user_voucher_transaction_log
+
+            CouponsAlchemyDB.auto_freebie_search = Table(
+                'auto_freebie_search', metadata,
+                Column('id', BIGINT, primary_key=True, autoincrement=True),
+                Column('type', INTEGER, index=True, nullable=False),
+                Column('category', INTEGER, index=True),
+                Column('zone', INTEGER, index=True, nullable=False),
+                Column('range_min', INTEGER, index=True),
+                Column('range_max', INTEGER, index=True),
+                Column('cart_range_min', INTEGER, index=True),
+                Column('cart_range_max', INTEGER, index=True),
+                Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False, index=True)
+            )
+
+            CouponsAlchemyDB._table["auto_freebie_search"] = CouponsAlchemyDB.auto_freebie_search
 
             metadata.create_all(CouponsAlchemyDB.engine)
 
