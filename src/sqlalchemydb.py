@@ -37,7 +37,6 @@ class CouponsAlchemyDB:
                 Column('id', BINARY(16), primary_key=True),
                 Column('name', VARCHAR(255)),
                 Column('description', VARCHAR(255)),
-                Column('type', TINYINT(unsigned=True), nullable=False),
                 Column('criteria_json', VARCHAR(8000), nullable=False),
                 Column('benefits_json', VARCHAR(2000), nullable=False),
                 Column('sha2hash', VARCHAR(64), index=True),
@@ -59,6 +58,8 @@ class CouponsAlchemyDB:
                 Column('description', VARCHAR(255)),
                 Column('from', DATETIME),
                 Column('to', DATETIME),
+                Column('mutable', BOOLEAN, default=False),
+                Column('type', TINYINT(unsigned=True), nullable=False),
                 Column('created_by', VARCHAR(32), nullable=False, default=''),
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
@@ -76,6 +77,8 @@ class CouponsAlchemyDB:
                 Column('description', VARCHAR(255)),
                 Column('from', DATETIME),
                 Column('to', DATETIME),
+                Column('mutable', BOOLEAN, default=False),
+                Column('type', TINYINT(unsigned=True), nullable=False),
                 Column('created_by', VARCHAR(32), nullable=False, default=''),
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
@@ -86,7 +89,7 @@ class CouponsAlchemyDB:
 
             CouponsAlchemyDB.voucher_use_tracker = Table(
                 'voucher_use_tracker', metadata,
-                Column('id', BINARY(16), primary_key=True),
+                Column('id', BINARY(16), primary_key=True),   # COMM: auto-increment?
                 Column('user_id', VARCHAR(32), nullable=False),
                 Column('applied_on', DATETIME, default=datetime.utcnow, nullable=False),
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
@@ -97,7 +100,7 @@ class CouponsAlchemyDB:
 
             CouponsAlchemyDB.user_voucher_transaction_log = Table(
                 'user_voucher_transaction_log', metadata,
-                Column('id', BINARY(16), primary_key=True),
+                Column('id', BINARY(16), primary_key=True),  # COMM: auto-increment?
                 Column('user_id', VARCHAR(32), nullable=False),
                 Column('updated_on', DATETIME, default=datetime.utcnow, nullable=False),
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),

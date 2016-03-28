@@ -5,7 +5,7 @@ import logging
 import canonicaljson
 from data import OrderData, VerificationItemData
 from lib.utils import get_intersection_of_lists
-from src.enums import UseType, BenefitType, RuleType, Channels
+from src.enums import UseType, BenefitType, VoucherType, Channels
 from src.sqlalchemydb import CouponsAlchemyDB
 
 logger = logging.getLogger()
@@ -21,7 +21,6 @@ class Rule(object):
             self.id_bin = binascii.a2b_hex(self.id)
         self.name = kwargs.get('name')
         self.description = kwargs.get('description')
-        self.type = kwargs.get('type')
         self.criteria_obj = kwargs.get('criteria_obj')
         self.criteria_json = kwargs.get('criteria_json')
         self.benefits_json = kwargs.get('benefits_json')
@@ -81,11 +80,10 @@ class Rule(object):
             values['name'] = self.name
         if self.description:
             values['description'] = self.description
-        values['type'] = self.type
         values['criteria_json'] = self.criteria_json
         values['benefits_json'] = self.benefits_json
         un_hashed_string = unicode(self.criteria_json) + \
-            unicode(self.benefits_json) + unicode(self.type)
+            unicode(self.benefits_json)
         values['sha2hash'] = hashlib.sha256(un_hashed_string).hexdigest()
         values['active'] = self.active
         if self.created_by:
@@ -96,8 +94,7 @@ class Rule(object):
 
     def __eq__(self, other):
         if self.criteria_obj == other.criteria_obj and \
-                self.benefits_obj == other.benefits_obj and \
-                self.type == other.type:
+                self.benefits_obj == other.benefits_obj:
             return True
         return False
 

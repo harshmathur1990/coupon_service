@@ -1,6 +1,6 @@
 from flask import request
 from lib.decorator import jsonify
-from lib.utils import is_timezone_aware
+from lib.utils import is_timezone_aware, create_error_response, create_success_response
 from src.enums import *
 from src.rules.vouchers import VoucherTransactionLog, Vouchers
 from src.rules.utils import get_benefits, apply_benefits, create_and_save_rule_list, save_vouchers
@@ -161,9 +161,9 @@ def create_voucher():
 
         'description': fields.Str(required=False, missing=None, location='json'),
 
-        'type': fields.Int(required=False, missing=RuleType.regular_coupon.value,
+        'type': fields.Int(required=False, missing=VoucherType.regular_coupon.value,
                            location='json', validate=validate.OneOf(
-                [l.value for l in list(RuleType)], [l.name for l in list(RuleType)])),
+                [l.value for l in list(VoucherType)], [l.name for l in list(VoucherType)])),
 
         'user_id': fields.Str(required=False),
 
@@ -344,39 +344,19 @@ def create_voucher():
     # api specific validation
     success, error = validate_for_create_api_v1(args)
     if not success:
-        rv = {
-            'success': success,
-            'error': {
-                'code': 400,
-                'error': error
-            }
-        }
-        return rv
+        return create_error_response(400, error)
 
     # general validations
     success, error = validate_for_create_coupon(args)
 
     if not success:
-        rv = {
-            'success': success,
-            'error': {
-                'code': 400,
-                'error': error
-            }
-        }
-        return rv
+        return create_error_response(400, error)
 
-    if args.get('type') is RuleType.regular_coupon.value:
+    if args.get('type') is VoucherType.regular_coupon.value:
         rule_id_list, rule_list = create_and_save_rule_list(args)
+        assert(len(rule_list) == len(rule_id_list))
         if not rule_id_list:
-            rv = {
-                'success': False,
-                'error': {
-                    'code': 400,
-                    'error': u'Unknown Exception'
-                }
-            }
-            return rv
+            return create_error_response(400, u'Unknown Exception')
 
         if is_timezone_aware(args.get('from')):
             args['from'] = args.get('from').replace(tzinfo=None)
@@ -386,44 +366,16 @@ def create_voucher():
 
         success, error = validate_for_create_voucher(args)
         if not success:
-            rv = {
-                'success': success,
-                'error': {
-                    'code': 400,
-                    'error': error
-                }
-            }
-            return rv
+            return create_error_response(400, error)
 
         success_list, error_list = save_vouchers(args, rule_id_list)
 
-        rv = {
-            'success': True,
-            'data': {
-                'success_list': success_list,
-                'error_list': error_list
-            }
-        }
-        return rv
+        return create_success_response(success_list, error_list)
     else:
         success, data, error = create_freebie_coupon(args)
         if not success:
-            rv = {
-                'success': success,
-                'error': {
-                    'code': 400,
-                    'error': error
-                }
-            }
-            return rv
-        rv = {
-            'success': True,
-            'data': {
-                'success_list': data,
-                'error_list': error
-            }
-        }
-        return rv
+            return create_error_response(400, error)
+        return create_success_response(data, error)
 
 
 @voucher_api.route('/confirm', methods=['POST'])
@@ -435,18 +387,14 @@ def confirm_order():
     }
     args = parser.parse(confirm_order_args, request)
     success, error = VoucherTransactionLog.make_transaction_log_entry(args)
-    rv = {
-        'success': success,
-    }
     if not success:
-        rv['error'] = {
-            'code': 400,
-            'error': error
-        }
+        rv = create_error_response(400, error)
+    else:
+        rv = {'success': success }
     return rv
 
 
-@voucher_api.route('/update/<coupon_code>', methods=['PUT'])
+@voucher_api.route('/update/<coupon_code>', methods=['PUT', 'POST'])
 @jsonify
 def update_coupon(coupon_code):
     update_coupon_args = {
@@ -459,22 +407,11 @@ def update_coupon(coupon_code):
 
     voucher = Vouchers.find_one(coupon_code)
     if not voucher:
-        rv = {
-            'success': False,
-            'error': {
-                'code': 400,
-                'error': u'Voucher with code {} not found'.format(coupon_code)
-            }
-        }
-        return rv
+        return create_error_response(400, u'Voucher with code {} not found'.format(coupon_code))
     voucher.to_date = args['to']
     success = voucher.update_to_date()
-    rv = {
-        'success': success,
-    }
     if not success:
-        rv['error'] = {
-            'code': 400,
-            'error': u'Unknown Error'
-        }
+        rv = create_error_response(400, u'Unknown Error')
+    else:
+        rv = {'success': success}
     return rv

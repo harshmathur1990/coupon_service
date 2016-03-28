@@ -5,7 +5,7 @@ import uuid
 import sqlalchemy
 from data import OrderData
 from rule import Rule
-from src.enums import VoucherTransactionStatus, RuleType
+from src.enums import VoucherTransactionStatus, VoucherType
 from src.sqlalchemydb import CouponsAlchemyDB
 
 logger = logging.getLogger()
@@ -23,6 +23,7 @@ class Vouchers(object):
         self.description = kwargs.get('description')
         self.from_date = kwargs.get('from')
         self.to_date = kwargs.get('to')
+        self.type = kwargs.get('type')
         self.created_by = kwargs.get('created_by')
         self.updated_by = kwargs.get('updated_by')
         self.created_at = kwargs.get('created_at')
@@ -79,6 +80,7 @@ class Vouchers(object):
         values['description'] = self.description
         values['from'] = self.from_date
         values['to'] = self.to_date
+        values['type'] = self.type
         if self.created_by:
             values['created_by'] = self.created_by
         values['updated_by'] = self.updated_by
@@ -107,6 +109,7 @@ class Vouchers(object):
 
     def match(self, order):
         assert isinstance(order, OrderData)
+        # TODO: need to change rule to rules here
         rule = self.get_rule()
         if not self.is_coupon_valid_with_existing_coupon(order):
             failed_dict = {
@@ -138,16 +141,18 @@ class Vouchers(object):
             'subscription_id_list': data.get('subscription_id_list')
         }
         order.existing_vouchers.append(success_dict)
-        if len(order.existing_vouchers) == 2:
-            order.can_accomodate_new_vouchers = False
+# removed below check because we can have any number of auto-applied vouchers. TODO: it would be better if we can still have such preemptive check for regular vouchers beyond a threshold like 1 or 2
+#        if len(order.existing_vouchers) == 2:
+#            order.can_accommodate_new_vouchers = False
 
     def is_coupon_valid_with_existing_coupon(self, order):
         success = True
-
-        for existing_voucher in order.existing_vouchers:
-            if existing_voucher['voucher'].rule.rule_type == self.rule.rule_type:
-                success = False
-                break
+        single_voucher_types_list = [VoucherType.regular_coupon, VoucherType.regular_freebie]
+        if self.type in single_voucher_types_list:
+            for existing_voucher in order.existing_vouchers:
+                if existing_voucher['voucher'].type in single_voucher_types_list:
+                    success = False
+                    break
         return success
 
     # def update_cache(self):

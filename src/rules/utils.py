@@ -35,6 +35,8 @@ def get_benefits(order):
     freebie_list = list()
     products_list = list()
     benefit_dict = dict()
+    #TODO: total discount computation needs to be revisited;
+    #TODO: change rule to rules
     for existing_voucher in order.existing_vouchers:
         rule = existing_voucher['voucher'].rule
         benefits = rule.benefits_obj
@@ -193,6 +195,8 @@ def fetch_order_detail(args):
     items = list()
     order_no = 0
     location_dict = dict()
+    success = True
+    error = ''
 
     for index, response in enumerate(list_of_responses):
         if index is 0:
@@ -240,6 +244,7 @@ def create_voucher_object(data, rule_id_list, code):
     kwargs['description'] = data.get('description')
     kwargs['from'] = data.get('from')
     kwargs['to'] = data.get('to')
+    kwargs['type'] = data.get('type')
     kwargs['updated_by'] = data.get('user_id')
     kwargs['custom'] = data.get('custom')
     voucher = Vouchers(**kwargs)
@@ -264,7 +269,7 @@ def save_vouchers(args, rule_id_list):
     return success_list, error_list
 
 
-def create_rule_object(data, type, user_id=None):
+def create_rule_object(data, user_id=None):
     criteria = data.get('criteria')
     benefits = data.get('benefits')
     description = data.get('description')
@@ -306,14 +311,14 @@ def create_rule_object(data, type, user_id=None):
     id = uuid.uuid1().hex
     rule = Rule(id=id, description=description,
                 criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
-                created_by=user_id, updated_by=user_id, type=type)
+                created_by=user_id, updated_by=user_id)
     return rule
 
 
 def create_rule_list(args):
     rule_list = list()
     for rule in args.get('rules', list()):
-        rule_list.append(create_rule_object(rule, args.get('type'), args.get('user_id')))
+        rule_list.append(create_rule_object(rule, args.get('user_id')))
     return rule_list
 
 

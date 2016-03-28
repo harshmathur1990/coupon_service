@@ -1,7 +1,7 @@
-port: 8000
+port: 8001
 
 mysql:
-    connection: mysql+pymysql://root:root@localhost/coupons
+    connection: mysql+pymysql://root@localhost/coupons
 
 logfile:
     foldername: couponlogs

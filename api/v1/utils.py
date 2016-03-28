@@ -1,6 +1,6 @@
 import binascii
 from src.sqlalchemydb import CouponsAlchemyDB
-from src.enums import RuleType
+from src.enums import VoucherType
 from src.rules.vouchers import Vouchers
 from src.rules.utils import create_rule_object, save_vouchers
 
@@ -14,10 +14,10 @@ def create_freebie_coupon(args):
     code = args.get('code')[0]
     rule = args.get('rules')[0]
     criteria = rule.get('criteria')
-    if args.get('type') is RuleType.auto_freebie.value:
+    if args.get('type') is VoucherType.auto_freebie.value:
         db = CouponsAlchemyDB()
         existing_voucher = db.find("auto_freebie_search", **{
-            'type': RuleType.auto_freebie.value,
+            'type': VoucherType.auto_freebie.value,
             'category': criteria.get('categories').get('in')[0],
             'zone': criteria.get('location').get('zone')[0],
             'range_min': criteria.get('range_min'),
@@ -66,13 +66,13 @@ def create_freebie_coupon(args):
             },
             'description': rule.get('description')
         }
-        rule_obj = create_rule_object(data, RuleType.auto_freebie.value, args.get('user_id'))
+        rule_obj = create_rule_object(data, args.get('user_id'))
         rule_obj.save()
         success_list, error_list = save_vouchers(args, [rule_obj.id])
         if not error_list:
             voucher_id = success_list[0]['id']
             auto_freebie_values = dict()
-            auto_freebie_values['type'] = RuleType.auto_freebie.value
+            auto_freebie_values['type'] = VoucherType.auto_freebie.value
             auto_freebie_values['zone'] = criteria.get('location').get('zone')[0],
             auto_freebie_values['range_min'] = criteria.get('range_min')
             auto_freebie_values['range_max'] = criteria.get('range_max')
@@ -82,7 +82,7 @@ def create_freebie_coupon(args):
     else:
         db = CouponsAlchemyDB()
         existing_voucher = db.find("auto_freebie_search", **{
-            'type': RuleType.regular_freebie.value,
+            'type': VoucherType.regular_freebie.value,
             'category': None,
             'zone': criteria.get('location').get('zone')[0],
             'cart_range_min': criteria.get('cart_range_min'),
@@ -130,13 +130,13 @@ def create_freebie_coupon(args):
             },
             'description': rule.get('description')
         }
-        rule_obj = create_rule_object(data, RuleType.regular_freebie.value, args.get('user_id'))
+        rule_obj = create_rule_object(data, args.get('user_id'))
         rule_obj.save()
         success_list, error_list = save_vouchers(args, [rule_obj.id])
         if not error_list:
             voucher_id = success_list[0]['id']
             auto_freebie_values = dict()
-            auto_freebie_values['type'] = RuleType.regular_freebie.value
+            auto_freebie_values['type'] = VoucherType.regular_freebie.value
             auto_freebie_values['zone'] = criteria.get('location').get('zone')[0],
             auto_freebie_values['cart_range_min'] = criteria.get('cart_range_min')
             auto_freebie_values['cart_range_max'] = criteria.get('cart_range_max')
