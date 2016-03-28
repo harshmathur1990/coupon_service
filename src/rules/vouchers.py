@@ -139,7 +139,7 @@ class Vouchers(object):
         }
         order.existing_vouchers.append(success_dict)
         if len(order.existing_vouchers) == 2:
-            order.can_accomodate_new_vouchers = True
+            order.can_accomodate_new_vouchers = False
 
     def is_coupon_valid_with_existing_coupon(self, order):
         success = True
