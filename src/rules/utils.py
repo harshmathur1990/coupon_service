@@ -308,6 +308,7 @@ def create_rule_object(data, user_id=None):
             rule_criteria_kwargs[keys[1]] = criteria.get(keys[0], dict()).get(keys[1])
         else:
             rule_criteria_kwargs[keys[0]] = criteria.get(keys[0])
+
     rule_criteria = RuleCriteria(**rule_criteria_kwargs)
     freebie_benefit_list = list()
     for freebie in benefits.get('freebies', list()):

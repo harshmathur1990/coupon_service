@@ -114,7 +114,7 @@ class CouponsAlchemyDB:
                 'auto_freebie_search', metadata,
                 Column('id', BIGINT, primary_key=True, autoincrement=True),
                 Column('type', INTEGER, index=True, nullable=False),
-                Column('category', INTEGER, index=True),
+                Column('variants', INTEGER, index=True),
                 Column('zone', INTEGER, index=True, nullable=False),
                 Column('range_min', INTEGER, index=True),
                 Column('range_max', INTEGER, index=True),

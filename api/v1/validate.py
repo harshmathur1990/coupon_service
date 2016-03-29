@@ -60,9 +60,8 @@ def validate_for_create_api_v1(data):
                 success = False
                 error.append(u'Range min and Range max is mandatory for auto freebie')
 
-            if not criteria.get('categories', dict()).get('in') or \
-                            len(criteria.get('categories', dict()).get('in')) != 1:
+            if not criteria.get('variants') or len(criteria.get('variants')) != 1:
                 success = False
-                error.append(u'Only 1 category is allowed in a auto freebie voucher')
+                error.append(u'Only 1 variant is allowed in a auto freebie voucher')
 
     return success, error

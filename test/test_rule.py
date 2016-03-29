@@ -111,10 +111,7 @@ class CreateRule(unittest.TestCase):
                         "range_max": 1000,
                         "cart_range_min": 100,
                         "cart_range_max": 1000,
-                        "categories": {
-                            "in": [1, 2],
-                            "not_in": []
-                        },
+                        "variants": [1, 2],
                         "location": {
                             "zone": [34, 56]
                         },
@@ -150,10 +147,7 @@ class CreateRule(unittest.TestCase):
                         "no_of_total_uses_allowed": 100,
                         "range_min": 100,
                         "range_max": 1000,
-                        "categories": {
-                            "in": [1],
-                            "not_in": []
-                        },
+                        "variants": [1],
                         "location": {
                             "zone": [34]
                         },
@@ -360,10 +354,7 @@ class CreateRule(unittest.TestCase):
                         "no_of_total_uses_allowed": 100,
                         "range_min": 100,
                         "range_max": 1000,
-                        "categories": {
-                            "in": [1],
-                            "not_in": []
-                        },
+                        "variants": [1],
                         "location": {
                             "zone": [35]
                         },
@@ -394,10 +385,7 @@ class CreateRule(unittest.TestCase):
                         "no_of_total_uses_allowed": 100,
                         "range_min": 100,
                         "range_max": 1000,
-                        "categories": {
-                            "in": [1],
-                            "not_in": []
-                        },
+                        "variants": [1],
                         "location": {
                             "zone": [35]
                         },
@@ -433,10 +421,7 @@ class CreateRule(unittest.TestCase):
                         "no_of_total_uses_allowed": 100,
                         "range_min": 100,
                         "range_max": 1000,
-                        "categories": {
-                            "in": [1],
-                            "not_in": []
-                        },
+                        "variants": [1],
                         "location": {
                             "zone": [35]
                         },
@@ -467,10 +452,7 @@ class CreateRule(unittest.TestCase):
                         "no_of_total_uses_allowed": 100,
                         "range_min": 100,
                         "range_max": 1000,
-                        "categories": {
-                            "in": [1],
-                            "not_in": []
-                        },
+                        "variants": [1],
                         "location": {
                             "zone": [35]
                         },

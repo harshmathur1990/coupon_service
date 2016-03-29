@@ -309,32 +309,41 @@ def create_voucher():
                         ),
                     }),
 
-                    'benefits': fields.Nested({
-                        'freebies': fields.List(
-                            fields.List(
-                                fields.Int(
-                                validate=validate.Range(min=0)
+                    'benefits': fields.Nested(
+                        {
+                            'freebies': fields.List(
+                                fields.List(
+                                    fields.Int(
+                                        validate=validate.Range(min=0)
+                                    ),
                                 ),
+                                required=False,
+                                missing=list()
                             ),
-                            required=False,
-                            missing=list()
-                        ),
 
-                        'amount': fields.Int(
-                            required=False, missing=None, validate=validate.Range(min=0)
-                        ),
+                            'amount': fields.Int(
+                                required=False, missing=None, validate=validate.Range(min=0)
+                            ),
 
-                        'percentage': fields.Int(
-                            required=False, missing=None, validate=validate.Range(min=0, max=100)
-                        ),
+                            'percentage': fields.Int(
+                                required=False, missing=None, validate=validate.Range(min=0, max=100)
+                            ),
 
-                        'max_discount': fields.Int(
-                            required=False, validate=validate.Range(min=0)
-                        )
-                    })
+                            'max_discount': fields.Int(
+                                required=False, validate=validate.Range(min=0)
+                            )
+                        },
+                        required=False,
+                        missing={
+                            'freebies': [[]],
+                            'amount': None,
+                            'percentage': None,
+                            'max_discount': None
+                        }
+                    )
                 }
             ),
-            missing = list(),
+            missing=list(),
             location='json'
         )
 
