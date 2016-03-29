@@ -70,9 +70,9 @@ def validate_for_create_voucher(data_dict):
 
 def validate_coupon(args):
     success, order, error = fetch_order_detail(args)
-    assert isinstance(order, OrderData)
     if not success:
         return success, None, error
+    assert isinstance(order, OrderData)
 
     for a_coupon in args.get('coupon_codes'):
         voucher = get_voucher(a_coupon)

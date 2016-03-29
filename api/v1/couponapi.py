@@ -116,21 +116,33 @@ def check_coupon():
         'coupon_codes': fields.List(
             fields.Str(),
             location='json',
-            required=True
-        ),
-
-        'freebies': fields.List(
-            fields.Int(),
             required=False,
-            location='json',
             missing=list()
         ),
 
-        'channel': fields.List(
-            fields.Int(validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)])),
-            required=True,
+        'benefits': fields.List(
+            fields.Nested(
+                {
+                    'items': fields.List(fields.Int, required=True),
+                    'couponCode': fields.Str(required=True),
+                    'freebies': fields.List(fields.Int, required=False),
+                    'discount': fields.Float(validate=validate.Range(min=0), required=False),
+                    'type': fields.Int(validate=validate.OneOf([l.value for l in list(VoucherType)], [l.name for l in list(VoucherType)]), required=True),
+                    'paymentMode': fields.List(fields.Int, required=False),
+                    'channel': fields.Int(validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]), required=False)
+                }
+            ),
+            required=False,
             location='json'
-        )
+        ),
+
+        'channel': fields.Int(validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
+                required=True,
+                location='json'
+            ),
+
+        'order_id': fields.Str(required=False, location='json'),
+
     }
     args = parser.parse(check_coupon_args, request)
     success, order, error = validate_coupon(args)
