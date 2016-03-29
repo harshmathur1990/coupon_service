@@ -1,6 +1,7 @@
 import binascii
 import logging
 import uuid
+import copy
 
 import sqlalchemy
 from data import OrderData
@@ -110,37 +111,40 @@ class Vouchers(object):
     def match(self, order):
         assert isinstance(order, OrderData)
         # TODO: need to change rule to rules here
-        rule = self.get_rule()
-        if not self.is_coupon_valid_with_existing_coupon(order):
-            failed_dict = {
-                'voucher': self,
-                'error': u'This coupon is not valid with other coupons'
-            }
-            order.failed_vouchers.append(failed_dict)
-            return
+        rules = self.get_rule()
+        for rule in rules:
+            if not self.is_coupon_valid_with_existing_coupon(order):
+                failed_dict = {
+                    'voucher': self,
+                    'error': u'This coupon is not valid with other coupons'
+                }
+                order.failed_vouchers.append(failed_dict)
+                return
 
-        status = rule.check_usage(order.customer_id, self.id)
-        if not status.get('success', False):
-            failed_dict = {
-                'voucher': self,
-                'error': status.get('msg')
+            status = rule.check_usage(order.customer_id, self.id)
+            if not status.get('success', False):
+                failed_dict = {
+                    'voucher': self,
+                    'error': status.get('msg')
+                }
+                order.failed_vouchers.append(failed_dict)
+                return
+            success, data, error = rule.match(order)
+            if not success:
+                failed_dict = {
+                    'voucher': self,
+                    'error': error
+                }
+                order.failed_vouchers.append(failed_dict)
+                return
+            effectiveVoucher = copy.deepcopy(self)
+            effectiveVoucher.rules = [rule]
+            success_dict = {
+                'voucher': effectiveVoucher,
+                'total': data.get('total'),
+                'subscription_id_list': data.get('subscription_id_list')
             }
-            order.failed_vouchers.append(failed_dict)
-            return
-        success, data, error = rule.match(order)
-        if not success:
-            failed_dict = {
-                'voucher': self,
-                'error': error
-            }
-            order.failed_vouchers.append(failed_dict)
-            return
-        success_dict = {
-            'voucher': self,
-            'total': data.get('total'),
-            'subscription_id_list': data.get('subscription_id_list')
-        }
-        order.existing_vouchers.append(success_dict)
+            order.existing_vouchers.append(success_dict)
 # removed below check because we can have any number of auto-applied vouchers. TODO: it would be better if we can still have such preemptive check for regular vouchers beyond a threshold like 1 or 2
 #        if len(order.existing_vouchers) == 2:
 #            order.can_accommodate_new_vouchers = False

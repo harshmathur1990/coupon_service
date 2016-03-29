@@ -5,7 +5,7 @@ import logging
 import canonicaljson
 from data import OrderData, VerificationItemData
 from lib.utils import get_intersection_of_lists
-from src.enums import UseType, BenefitType, VoucherType, Channels
+from src.enums import UseType, BenefitType, Channels
 from src.sqlalchemydb import CouponsAlchemyDB
 
 logger = logging.getLogger()
@@ -195,7 +195,7 @@ class Rule(object):
             return False, None, u'No matching items found for this coupon'
 
         if self.criteria_obj.range_min and total < self.criteria_obj.range_min:
-            return False, None, u'Total Order price is less than minimum {}'.format(self.criteria_obj.range_min)
+            return False, None, u'Total Order price for eligible items is less than minimum {}'.format(self.criteria_obj.range_min)
         if self.criteria_obj.range_max and total > self.criteria_obj.range_max:
             return False, None, u'Coupon is valid only till max amount {}'.format(self.criteria_obj.range_max)
 
