@@ -34,7 +34,21 @@ def validate_for_create_coupon(data):
             intersection = get_intersection_of_lists(in_categories, not_in_categories)
             if intersection:
                 success = False
-                error.append(u'Categories[in] and Categories[not_in] must not have any category in common in a rule {}'.format(intersection))
+                error.append(
+                    u'Categories[in] and Categories[not_in] must not have any category in common in a rule {}'.format(
+                        intersection))
+
+        in_products = criteria.get('products').get('in')
+
+        not_in_products = criteria.get('products').get('not_in')
+
+        if in_products and not_in_products:
+            intersection = get_intersection_of_lists(in_products, not_in_products)
+            if intersection:
+                success = False
+                error.append(
+                    u'Products[in] and products[not_in] must not have any product in common in a rule {}'.format(
+                        intersection))
 
     return success, error
 

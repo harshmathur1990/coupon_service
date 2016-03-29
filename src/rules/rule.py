@@ -221,8 +221,12 @@ class RuleCriteria(object):
         self.country.sort()
         self.payment_modes = kwargs.get('payment_modes', list())
         self.payment_modes.sort()
-        self.products = kwargs.get('products', list())
-        self.products.sort()
+        self.products = {
+            'in': kwargs.get('products')['in'],
+            'not_in': kwargs.get('products')['not_in']
+        }
+        self.products['in'].sort()
+        self.products['not_in'].sort()
         self.range_max = kwargs.get('range_max', None)
         self.range_min = kwargs.get('range_min', None)
         self.cart_range_max = kwargs.get('cart_range_max', None)

@@ -53,7 +53,10 @@ class CreateRule(unittest.TestCase):
                         "cart_range_max": 1000,
                         "channels": [0],
                         "brands": [1, 2],
-                        "products": [2, 3],
+                        "products": {
+                            'in':[2, 3],
+                            'not_in': []
+                        },
                         "categories": {
                             "in": [1, 2],
                             "not_in": [3, 4]
@@ -492,7 +495,10 @@ class CreateRule(unittest.TestCase):
                         "cart_range_max": 1000,
                         "channels": [0],
                         "brands": [1, 2, 3],
-                        "products": [2, 3, 4],
+                        "products": {
+                            'in':[2, 3, 4],
+                            'not_in': []
+                        },
                         "categories": {
                             "in": [1, 2],
                             "not_in": [3, 4]
@@ -553,7 +559,10 @@ class CreateRule(unittest.TestCase):
                         "cart_range_max": 1000,
                         "channels": [0],
                         "brands": [1, 2],
-                        "products": [2, 3],
+                        "products": {
+                            'in':[2, 3],
+                            'not_in': []
+                        },
                         "categories": {
                             "in": [100, 200],
                             "not_in": []
@@ -587,7 +596,10 @@ class CreateRule(unittest.TestCase):
                         "cart_range_max": 1000,
                         "channels": [0],
                         "brands": [1, 2],
-                        "products": [2, 3],
+                        "products": {
+                            'in':[2, 3],
+                            'not_in': []
+                        },
                         "categories": {
                             "in": [],
                             "not_in": [100, 200]

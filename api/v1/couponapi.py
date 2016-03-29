@@ -213,12 +213,25 @@ def create_voucher():
                             missing=list()
                         ),
 
-                        'products': fields.List(
-                            fields.Int(
-                                validate=validate.Range(min=0)
-                            ),
+                        'products': fields.Nested(
+                            {
+                                'in': fields.List(
+                                    fields.Int(
+                                        validate=validate.Range(min=0)
+                                    ),
+                                    required=False,
+                                    missing=list(),
+                                ),
+                                'not_in': fields.List(
+                                    fields.Int(
+                                        validate=validate.Range(min=0)
+                                    ),
+                                    required=False,
+                                    missing=list(),
+                                )
+                            },
                             required=False,
-                            missing=list()
+                            missing={'in': [], 'not_in': []}
                         ),
 
                         'categories': fields.Nested(

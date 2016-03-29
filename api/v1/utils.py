@@ -42,7 +42,10 @@ def create_freebie_coupon(args):
             'cart_range_max': None,
             'channels': [],
             'brands': [],
-            'products': [],
+            'products': {
+                'in': [],
+                'not_in': []
+            },
             'storefronts': [],
             'sellers': [],
             'payment_modes': []
