@@ -44,7 +44,7 @@ def get_benefits(order):
         product_dict['freebies'] = list()
         products_dict[item.subscription_id] = product_dict
     for existing_voucher in order.existing_vouchers:
-        rules = existing_voucher['voucher'].rule
+        rules = existing_voucher['voucher'].rules
         for rule in rules:
             benefits = rule.benefits_obj
             benefit_list = benefits.data
@@ -88,7 +88,8 @@ def get_benefits(order):
                     channels_list = get_intersection_of_lists(channels_list, benefit_dict['channel'])
     total_discount = 0.0
     products_list = list()
-    for product_dict in products_dict:
+    for item in products_dict:
+        product_dict = products_dict[item]
         products_list.append(product_dict)
         total_discount += product_dict['discount']
 
@@ -304,7 +305,11 @@ def create_rule_object(data, user_id=None):
 
     for a_key in rule_criteria_keys:
         keys = a_key.split('.')
+        if keys[0] not in criteria:
+            continue
         if len(keys) == 2:
+            if keys[1] not in criteria[keys[0]]:
+                continue
             rule_criteria_kwargs[keys[1]] = criteria.get(keys[0], dict()).get(keys[1])
         else:
             rule_criteria_kwargs[keys[0]] = criteria.get(keys[0])

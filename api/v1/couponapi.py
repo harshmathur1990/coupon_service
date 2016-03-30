@@ -296,25 +296,25 @@ def create_voucher():
                                 'country': fields.List(
                                     fields.Int(
                                         validate=validate.Range(min=0)
-                                    ),
+                                    ), required=False, missing=list()
                                 ),
                                 'state': fields.List(
                                     fields.Int(
                                         validate=validate.Range(min=0)
-                                    ),
+                                    ), required=False, missing=list()
                                 ),
                                 'city': fields.List(
                                     fields.Int(
                                         validate=validate.Range(min=0)
-                                    ),
+                                    ), required=False, missing=list()
                                 ),
                                 'area': fields.List(
                                     fields.Int(
                                         validate=validate.Range(min=0)
-                                    ),
+                                    ), required=False, missing=list()
                                 ),
                                 'zone': fields.List(
-                                    fields.Int(),
+                                    fields.Int(), required=False, missing=list()
                                 ),
                             },
                             required=False,

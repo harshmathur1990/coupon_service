@@ -207,9 +207,13 @@ class RuleCriteria(object):
         self.area = kwargs.get('area', list())
         self.brands = kwargs.get('brands', list())
         self.brands.sort()
+        default_in_not_in = dict()
+        default_in_not_in['in'] = list()
+        default_in_not_in['not_in'] = list()
+        category = kwargs.get('categories', default_in_not_in)
         self.categories = {
-            'in': kwargs.get('categories')['in'],
-            'not_in': kwargs.get('categories')['not_in']
+            'in': category.get('in', list()),
+            'not_in': category.get('not_in', list())
         }
         self.categories['in'].sort()
         self.categories['not_in'].sort()
@@ -221,9 +225,10 @@ class RuleCriteria(object):
         self.country.sort()
         self.payment_modes = kwargs.get('payment_modes', list())
         self.payment_modes.sort()
+        product = kwargs.get('products', default_in_not_in)
         self.products = {
-            'in': kwargs.get('products')['in'],
-            'not_in': kwargs.get('products')['not_in']
+            'in': product.get('in', list()),
+            'not_in': product.get('not_in', list())
         }
         self.products['in'].sort()
         self.products['not_in'].sort()
@@ -268,11 +273,11 @@ class RuleCriteria(object):
         assert isinstance(item, VerificationItemData)
         if self.brands and item.brand not in self.brands:
             return False
-
-        if not get_intersection_of_lists(self.categories['in'], item.category) or \
-                get_intersection_of_lists(self.categories['not_in'], item.category):
+        if (self.categories['in'] and not get_intersection_of_lists(self.categories['in'], item.category)) or \
+                (self.categories['not_in'] and get_intersection_of_lists(self.categories['not_in'], item.category)):
             return False
-        if self.products and item.product not in self.products:
+        if (self.products['in'] and not get_intersection_of_lists(self.products['in'], item.product)) or \
+                (self.products['not_in'] and get_intersection_of_lists(self.products['not_in'], item.product)):
             return False
         if self.sellers and item.seller not in self.sellers:
             return False
