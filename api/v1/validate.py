@@ -1,4 +1,4 @@
-from src.enums import RuleType
+from src.enums import VoucherType
 
 
 def validate_for_create_api_v1(data):
@@ -9,10 +9,10 @@ def validate_for_create_api_v1(data):
 
     rules = data.get('rules')
 
-    if voucher_type is RuleType.regular_coupon.value:
+    if voucher_type is VoucherType.regular_coupon.value:
         if len(rules) > 2 or len(rules) <= 0:
             success = False
-            error.append(u'Minimum 1 rule and maximum 2 rules per voucher are supported')
+            error.append(u'Minimum one rule and maximum two rules per voucher are supported')
             return success, error
 
         for rule in rules:
@@ -24,7 +24,7 @@ def validate_for_create_api_v1(data):
     else:
         if len(rules) != 1:
             success = False
-            error.append(u'Only 1 rule can be present in freebie vouchers')
+            error.append(u'Only one rule can be present in freebie vouchers')
             return success, error
 
         codes = data.get('code')
@@ -45,7 +45,7 @@ def validate_for_create_api_v1(data):
             success = False
             error.append(u'Only 1 zone can be present in regular or auto freebie coupon')
 
-        if voucher_type is RuleType.regular_freebie.value:
+        if voucher_type is VoucherType.regular_freebie.value:
             if criteria.get('cart_range_min') is None or criteria.get('cart_range_max') is None:
                 success = False
                 error.append(u'Cart Range min and Cart Range max is mandatory for regular freebie')
@@ -60,9 +60,8 @@ def validate_for_create_api_v1(data):
                 success = False
                 error.append(u'Range min and Range max is mandatory for auto freebie')
 
-            if not criteria.get('categories', dict()).get('in') or \
-                            len(criteria.get('categories', dict()).get('in')) != 1:
+            if not criteria.get('variants') or len(criteria.get('variants')) != 1:
                 success = False
-                error.append(u'Only 1 category is allowed in a auto freebie voucher')
+                error.append(u'Only 1 variant is allowed in a auto freebie voucher')
 
     return success, error

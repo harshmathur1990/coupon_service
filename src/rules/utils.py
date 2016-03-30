@@ -6,7 +6,7 @@ import uuid
 from config import LOCATIONURL, SUBSCRIPTIONURL, USERINFOURL, TOKEN
 from data import OrderData
 from data import VerificationItemData
-from lib.utils import make_api_call
+from lib.utils import make_api_call, get_intersection_of_lists
 from src.sqlalchemydb import CouponsAlchemyDB
 from vouchers import Vouchers, VoucherTransactionLog
 from rule import Rule, RuleCriteria, Benefits
@@ -32,55 +32,77 @@ def get_voucher(voucher_code):
 
 def get_benefits(order):
     assert isinstance(order, OrderData)
-    freebie_list = list()
-    products_list = list()
-    benefit_dict = dict()
+    products_dict = dict()
+    benefits_list = list()
+    payment_modes_list = list()
+    channels_list = list()
+    for item in order.items:
+        product_dict = dict()
+        product_dict['subscriptionId'] = item.subscription_id
+        product_dict['quantity'] = item.quantity
+        product_dict['discount'] = 0.0
+        product_dict['freebies'] = list()
+        products_dict[item.subscription_id] = product_dict
     for existing_voucher in order.existing_vouchers:
-        rule = existing_voucher['voucher'].rule
-        benefits = rule.benefits_obj
-        benefit_list = benefits.data
-        discount = 0.0
-        total = existing_voucher['total']
-        subscription_id_list = existing_voucher['subscription_id_list']
-        max_discount = benefits.maximum_discount
-        for benefit in benefit_list:
-            benefit_type = BenefitType(benefit['type'])
-            if benefit_type is BenefitType.freebie:
-                freebie_list.append(benefit['value'])
-            if benefit_type is BenefitType.amount and benefit['value']:
-                if max_discount and benefit['value'] > max_discount:
-                    discount = max_discount
+        rules = existing_voucher['voucher'].rules
+        for rule in rules:
+            benefits = rule.benefits_obj
+            benefit_list = benefits.data
+            discount = 0.0
+            freebie_list = list()
+            total = existing_voucher['total']
+            subscription_id_list = existing_voucher['subscription_id_list']
+            max_discount = benefits.maximum_discount
+            benefit_dict = dict()
+            for benefit in benefit_list:
+                benefit_type = BenefitType(benefit['type'])
+                if benefit_type is BenefitType.freebie:
+                    freebie_list.append(benefit['value'])
                 else:
-                    discount = benefit['value']
-                for item in order.items:
-                    product_dict = dict()
-                    product_dict['subscriptionId'] = item.subscription_id
-                    product_dict['quantity'] = item.quantity
-                    product_dict['discount'] = 0.0
-                    products_list.append(product_dict)
-                    if item.subscription_id in subscription_id_list:
-                        product_dict['discount'] = (item.quantity * item.price * discount)/total
-            if benefit_type is BenefitType.percentage and benefit['value']:
-                percentage = benefit['value']
-                discount = percentage * total / 100
-                if max_discount and discount > max_discount:
-                    discount = max_discount
-                for item in order.items:
-                    product_dict = dict()
-                    product_dict['subscriptionId'] = item.subscription_id
-                    product_dict['quantity'] = item.quantity
-                    product_dict['discount'] = 0.0
-                    products_list.append(product_dict)
-                    if item.subscription_id in subscription_id_list:
-                        product_dict['discount'] = (item.quantity * item.price * discount)/total
-    benefit_dict['products'] = products_list
-    benefit_dict['freebies'] = freebie_list
-    benefit_dict['totalDiscount'] = discount
-    benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
-    benefit_dict['channel'] = [Channels(c).name for c in rule.criteria_obj.channels]
-    benefit_dict['couponCodes'] = [existing_voucher['voucher'].code for existing_voucher in order.existing_vouchers]
-    benefit_dict['status'] = 'success'
-    return benefit_dict
+                    if benefit_type is BenefitType.amount and benefit['value']:
+                        discount = benefit['value']
+                    elif benefit_type is BenefitType.percentage and benefit['value']:
+                        percentage = benefit['value']
+                        discount = percentage * total / 100
+                    if max_discount and discount > max_discount:
+                        discount = max_discount
+                    for subscriptionId in subscription_id_list:
+                        item_discount = (item.quantity * item.price * discount)/total
+                        products_dict[subscriptionId]['discount'] = max(
+                            products_dict[subscriptionId]['discount'], item_discount)
+                benefit_dict['couponCode'] = existing_voucher['voucher'].code
+                benefit_dict['discount'] = discount
+                benefit_dict['freebies'] = freebie_list
+                benefit_dict['items'] = subscription_id_list
+                benefit_dict['type'] = existing_voucher['voucher'].type
+                benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
+                benefit_dict['channel'] = [Channels(c).name for c in rule.criteria_obj.channels]
+                benefits_list.append(benefit_dict)
+                if not payment_modes_list:
+                    payment_modes_list = benefit_dict['paymentMode']
+                else:
+                    payment_modes_list = get_intersection_of_lists(payment_modes_list, benefit_dict['paymentMode'])
+                if not channels_list:
+                    channels_list = benefit_dict['channel']
+                else:
+                    channels_list = get_intersection_of_lists(channels_list, benefit_dict['channel'])
+    total_discount = 0.0
+    products_list = list()
+    for item in products_dict:
+        product_dict = products_dict[item]
+        products_list.append(product_dict)
+        total_discount += product_dict['discount']
+
+    response_dict = dict()
+
+    response_dict['products'] = products_list
+    response_dict['benefits'] = benefits_list
+    response_dict['totalDiscount'] = total_discount
+    response_dict['paymentMode'] = payment_modes_list
+    response_dict['channel'] = channels_list
+    response_dict['couponCodes'] = [existing_voucher['voucher'].code for existing_voucher in order.existing_vouchers]
+    response_dict['status'] = 'success'
+    return response_dict
 
 
 def apply_benefits(args, order):
@@ -193,6 +215,8 @@ def fetch_order_detail(args):
     items = list()
     order_no = 0
     location_dict = dict()
+    success = True
+    error = ''
 
     for index, response in enumerate(list_of_responses):
         if index is 0:
@@ -240,6 +264,7 @@ def create_voucher_object(data, rule_id_list, code):
     kwargs['description'] = data.get('description')
     kwargs['from'] = data.get('from')
     kwargs['to'] = data.get('to')
+    kwargs['type'] = data.get('type')
     kwargs['updated_by'] = data.get('user_id')
     kwargs['custom'] = data.get('custom')
     voucher = Vouchers(**kwargs)
@@ -264,7 +289,7 @@ def save_vouchers(args, rule_id_list):
     return success_list, error_list
 
 
-def create_rule_object(data, type, user_id=None):
+def create_rule_object(data, user_id=None):
     criteria = data.get('criteria')
     benefits = data.get('benefits')
     description = data.get('description')
@@ -280,10 +305,15 @@ def create_rule_object(data, type, user_id=None):
 
     for a_key in rule_criteria_keys:
         keys = a_key.split('.')
+        if keys[0] not in criteria:
+            continue
         if len(keys) == 2:
+            if keys[1] not in criteria[keys[0]]:
+                continue
             rule_criteria_kwargs[keys[1]] = criteria.get(keys[0], dict()).get(keys[1])
         else:
             rule_criteria_kwargs[keys[0]] = criteria.get(keys[0])
+
     rule_criteria = RuleCriteria(**rule_criteria_kwargs)
     freebie_benefit_list = list()
     for freebie in benefits.get('freebies', list()):
@@ -306,14 +336,14 @@ def create_rule_object(data, type, user_id=None):
     id = uuid.uuid1().hex
     rule = Rule(id=id, description=description,
                 criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
-                created_by=user_id, updated_by=user_id, type=type)
+                created_by=user_id, updated_by=user_id)
     return rule
 
 
 def create_rule_list(args):
     rule_list = list()
     for rule in args.get('rules', list()):
-        rule_list.append(create_rule_object(rule, args.get('type'), args.get('user_id')))
+        rule_list.append(create_rule_object(rule, args.get('user_id')))
     return rule_list
 
 

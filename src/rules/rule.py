@@ -5,7 +5,7 @@ import logging
 import canonicaljson
 from data import OrderData, VerificationItemData
 from lib.utils import get_intersection_of_lists
-from src.enums import UseType, BenefitType, RuleType, Channels
+from src.enums import UseType, BenefitType, Channels
 from src.sqlalchemydb import CouponsAlchemyDB
 
 logger = logging.getLogger()
@@ -21,7 +21,6 @@ class Rule(object):
             self.id_bin = binascii.a2b_hex(self.id)
         self.name = kwargs.get('name')
         self.description = kwargs.get('description')
-        self.type = kwargs.get('type')
         self.criteria_obj = kwargs.get('criteria_obj')
         self.criteria_json = kwargs.get('criteria_json')
         self.benefits_json = kwargs.get('benefits_json')
@@ -81,11 +80,10 @@ class Rule(object):
             values['name'] = self.name
         if self.description:
             values['description'] = self.description
-        values['type'] = self.type
         values['criteria_json'] = self.criteria_json
         values['benefits_json'] = self.benefits_json
         un_hashed_string = unicode(self.criteria_json) + \
-            unicode(self.benefits_json) + unicode(self.type)
+            unicode(self.benefits_json)
         values['sha2hash'] = hashlib.sha256(un_hashed_string).hexdigest()
         values['active'] = self.active
         if self.created_by:
@@ -96,8 +94,7 @@ class Rule(object):
 
     def __eq__(self, other):
         if self.criteria_obj == other.criteria_obj and \
-                self.benefits_obj == other.benefits_obj and \
-                self.type == other.type:
+                self.benefits_obj == other.benefits_obj:
             return True
         return False
 
@@ -198,7 +195,7 @@ class Rule(object):
             return False, None, u'No matching items found for this coupon'
 
         if self.criteria_obj.range_min and total < self.criteria_obj.range_min:
-            return False, None, u'Total Order price is less than minimum {}'.format(self.criteria_obj.range_min)
+            return False, None, u'Total Order price for eligible items is less than minimum {}'.format(self.criteria_obj.range_min)
         if self.criteria_obj.range_max and total > self.criteria_obj.range_max:
             return False, None, u'Coupon is valid only till max amount {}'.format(self.criteria_obj.range_max)
 
@@ -210,9 +207,13 @@ class RuleCriteria(object):
         self.area = kwargs.get('area', list())
         self.brands = kwargs.get('brands', list())
         self.brands.sort()
+        default_in_not_in = dict()
+        default_in_not_in['in'] = list()
+        default_in_not_in['not_in'] = list()
+        category = kwargs.get('categories', default_in_not_in)
         self.categories = {
-            'in': kwargs.get('categories')['in'],
-            'not_in': kwargs.get('categories')['not_in']
+            'in': category.get('in', list()),
+            'not_in': category.get('not_in', list())
         }
         self.categories['in'].sort()
         self.categories['not_in'].sort()
@@ -224,8 +225,13 @@ class RuleCriteria(object):
         self.country.sort()
         self.payment_modes = kwargs.get('payment_modes', list())
         self.payment_modes.sort()
-        self.products = kwargs.get('products', list())
-        self.products.sort()
+        product = kwargs.get('products', default_in_not_in)
+        self.products = {
+            'in': product.get('in', list()),
+            'not_in': product.get('not_in', list())
+        }
+        self.products['in'].sort()
+        self.products['not_in'].sort()
         self.range_max = kwargs.get('range_max', None)
         self.range_min = kwargs.get('range_min', None)
         self.cart_range_max = kwargs.get('cart_range_max', None)
@@ -267,11 +273,11 @@ class RuleCriteria(object):
         assert isinstance(item, VerificationItemData)
         if self.brands and item.brand not in self.brands:
             return False
-
-        if not get_intersection_of_lists(self.categories['in'], item.category) or \
-                get_intersection_of_lists(self.categories['not_in'], item.category):
+        if (self.categories['in'] and not get_intersection_of_lists(self.categories['in'], item.category)) or \
+                (self.categories['not_in'] and get_intersection_of_lists(self.categories['not_in'], item.category)):
             return False
-        if self.products and item.product not in self.products:
+        if (self.products['in'] and not get_intersection_of_lists(self.products['in'], item.product)) or \
+                (self.products['not_in'] and get_intersection_of_lists(self.products['not_in'], item.product)):
             return False
         if self.sellers and item.seller not in self.sellers:
             return False

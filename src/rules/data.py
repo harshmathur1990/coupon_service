@@ -26,5 +26,5 @@ class OrderData(object):
             self.total_price += item.price * item.quantity
         self.customer_id = kwargs.get('customer_id')
         self.existing_vouchers = list()
-        self.can_accomodate_new_vouchers = True
+        self.can_accommodate_new_vouchers = True
         self.failed_vouchers = list()
