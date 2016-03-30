@@ -26,11 +26,13 @@ def get_voucher(voucher_code):
     voucher = Vouchers.find_one(voucher_code)
     now = datetime.datetime.utcnow()
     if voucher and voucher.from_date <= now <= voucher.to_date:
-        return voucher
+        return voucher, None
     elif voucher and now > voucher.to_date:
         db = CouponsAlchemyDB()
         db.delete_row("vouchers", **{'code': voucher.code})
-    return None
+        return None, u'The voucher {} has expired'.format(voucher.code)
+    else:
+        return None, u'The voucher {} does not exist'.format(voucher_code)
 
 
 def get_benefits(order):
@@ -44,20 +46,21 @@ def get_benefits(order):
         product_dict['subscriptionId'] = item.subscription_id
         product_dict['quantity'] = item.quantity
         product_dict['discount'] = 0.0
-        product_dict['freebies'] = list()
         products_dict[item.subscription_id] = product_dict
     for existing_voucher in order.existing_vouchers:
         rules = existing_voucher['voucher'].rules_list
         for rule in rules:
             benefits = rule.benefits_obj
             benefit_list = benefits.data
-            discount = 0.0
-            freebie_list = list()
             total = existing_voucher['total']
             subscription_id_list = existing_voucher['subscription_id_list']
             max_discount = benefits.max_discount
             benefit_dict = dict()
             for benefit in benefit_list:
+                if benefit['value'] is None:
+                    continue
+                discount = 0.0
+                freebie_list = list()
                 benefit_type = BenefitType(benefit['type'])
                 if benefit_type is BenefitType.freebie:
                     freebie_list.append(benefit['value'])
@@ -104,7 +107,6 @@ def get_benefits(order):
     response_dict['paymentMode'] = payment_modes_list
     response_dict['channel'] = channels_list
     response_dict['couponCodes'] = [existing_voucher['voucher'].code for existing_voucher in order.existing_vouchers]
-    response_dict['status'] = 'success'
     return response_dict
 
 
@@ -381,8 +383,9 @@ def fetch_auto_benefits(order, freebie_type=VoucherType.regular_freebie):
     if freebie_type is VoucherType.auto_freebie:
         for item in order.items:
             variant_total_map[item.variant] = variant_total_map.get(item.variant, 0.0) + (item.price * item.quantity)
-            subscription_variant_map[item.variant] = subscription_variant_map.get(item.variant, list())\
-                .append(item.subscription_id)
+            list_of_subscription_id = subscription_variant_map.get(item.variant, list())
+            list_of_subscription_id.append(item.subscription_id)
+            subscription_variant_map[item.variant] = list_of_subscription_id
         where_clause, params = get_where_clauses(variant_total_map)
         sql = 'select  v.*,a.`type`, a.`variants`, a.`zone`  from `vouchers` v join (select * from `auto_freebie_search` where (type = :type and zone in :zone and ('+where_clause+') and (cart_range_min is null or cart_range_min <= :ordertotal) and (cart_range_max is null or cart_range_max >= :ordertotal) and :now > `from` and :now < `to`)) a'
     else:
@@ -391,7 +394,7 @@ def fetch_auto_benefits(order, freebie_type=VoucherType.regular_freebie):
         params = dict()
         sql = 'select v.*,a.`type`, a.`variants`, a.`zone` from `vouchers` v join (select * from `auto_freebie_search` where (type = :type and zone in :zone and (cart_range_min is null or cart_range_min <= :ordertotal) and (cart_range_max is null or cart_range_max >= :ordertotal) and :now > `from` and :now < `to`)) a'
     params['ordertotal'] = order.total_price
-    params['type'] = VoucherType.auto_freebie.value
+    params['type'] = freebie_type.value
     params['zone'] = order.zone
     params['now'] = datetime.datetime.utcnow()
     db = CouponsAlchemyDB()

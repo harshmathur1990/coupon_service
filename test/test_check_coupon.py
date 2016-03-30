@@ -97,7 +97,7 @@ class CheckCoupon(unittest.TestCase):
             "type": 2,
             "user_id": "1000",
             "code": ["TEST1CODE3"],
-            "from": today.isoformat(),
+            "from": today.date().isoformat(),
             "to": tomorrow.isoformat(),
             "rules": [
                 {
@@ -141,6 +141,32 @@ class CheckCoupon(unittest.TestCase):
     def test_check_coupon(self):
         today = datetime.datetime.utcnow()
         tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_rule_2",
+            "description": "test_some_description_2",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE3"],
+            "from": today.date().isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "location": {
+                            "zone": [2]
+                        }
+                    },
+                    "benefits": {
+                        "amount": 100
+                    }
+                }
+            ]
+        }
+#        print json.dumps(rule_create_data)
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code==200, u'{}'.format(response.data))
         order_data = {
             "area_id": 29557,
             "customer_id": "1234",

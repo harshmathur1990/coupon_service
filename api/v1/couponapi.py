@@ -154,25 +154,27 @@ def check_coupon():
     success, order, error = validate_coupon(args)
     if success and not order.existing_vouchers:
         fetch_auto_benefits(order, VoucherType.regular_freebie)
-        pass
-    fetch_auto_benefits(order, VoucherType.auto_freebie)
+    if order:
+        fetch_auto_benefits(order, VoucherType.auto_freebie)
     benefits = get_benefits(order)
 
     if success:
         # coupon is valid, try applying it
         benefits['success'] = True
+        benefits['errors'] = error
         return benefits
     return {
         'success': False,
         'error': {
-            'code': 400
+            'code': 400,
+            'error': ','.join(error)
         },
         'products': [],
         'freebies': [],
         'totalDiscount': 0.0,
         'channel': [],
         'paymentModes': [],
-        'message': error
+        'errors': error
     }
 
 
