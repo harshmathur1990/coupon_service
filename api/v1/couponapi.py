@@ -3,7 +3,7 @@ from lib.decorator import jsonify
 from lib.utils import is_timezone_aware, create_error_response, create_success_response
 from src.enums import *
 from src.rules.vouchers import VoucherTransactionLog, Vouchers
-from src.rules.utils import get_benefits, apply_benefits, create_and_save_rule_list, save_vouchers
+from src.rules.utils import get_benefits, apply_benefits, create_and_save_rule_list, save_vouchers, fetch_auto_benefits
 from src.rules.validate import validate_coupon, validate_for_create_coupon,\
     validate_for_create_voucher
 from webargs import fields, validate
@@ -58,7 +58,7 @@ def apply_coupon():
         )
     }
     args = parser.parse(apply_coupon_args, request)
-    success, order, error = validate_coupon(args)
+    success, order, error = validate_coupon(args, validate_for_apply=True)
     if success:
         # coupon is valid, try applying it
         benefits = get_benefits(order)
@@ -127,18 +127,24 @@ def check_coupon():
                     'couponCode': fields.Str(required=True),
                     'freebies': fields.List(fields.Int, required=False),
                     'discount': fields.Float(validate=validate.Range(min=0), required=False),
-                    'type': fields.Int(validate=validate.OneOf([l.value for l in list(VoucherType)], [l.name for l in list(VoucherType)]), required=True),
+                    'type': fields.Int(
+                        validate=validate.OneOf(
+                            [l.value for l in list(VoucherType)], [l.name for l in list(VoucherType)]),
+                        required=True),
                     'paymentMode': fields.List(fields.Int, required=False),
-                    'channel': fields.Int(validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]), required=False)
+                    'channel': fields.Int(
+                        validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
+                        required=False)
                 }
             ),
             required=False,
             location='json'
         ),
 
-        'channel': fields.Int(validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
-                required=True,
-                location='json'
+        'channel': fields.Int(
+            validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
+            required=True,
+            location='json'
             ),
 
         'order_id': fields.Str(required=False, location='json'),
@@ -146,9 +152,14 @@ def check_coupon():
     }
     args = parser.parse(check_coupon_args, request)
     success, order, error = validate_coupon(args)
+    if success and not order.existing_vouchers:
+        fetch_auto_benefits(order, VoucherType.regular_freebie)
+        pass
+    fetch_auto_benefits(order, VoucherType.auto_freebie)
+    benefits = get_benefits(order)
+
     if success:
         # coupon is valid, try applying it
-        benefits = get_benefits(order)
         benefits['success'] = True
         return benefits
     return {

@@ -110,35 +110,23 @@ class Vouchers(object):
 
     def match(self, order):
         assert isinstance(order, OrderData)
-        # TODO: need to change rule to rules here
         rules = self.get_rule()
+        if not self.is_coupon_valid_with_existing_coupon(order):
+            failed_dict = {
+                'voucher': self,
+                'error': u'This coupon is not valid with other coupons'
+            }
+            order.failed_vouchers.append(failed_dict)
+            return
         for rule in rules:
-            if not self.is_coupon_valid_with_existing_coupon(order):
-                failed_dict = {
-                    'voucher': self,
-                    'error': u'This coupon is not valid with other coupons'
-                }
-                order.failed_vouchers.append(failed_dict)
-                return
-
             status = rule.check_usage(order.customer_id, self.id)
             if not status.get('success', False):
-                failed_dict = {
-                    'voucher': self,
-                    'error': status.get('msg')
-                }
-                order.failed_vouchers.append(failed_dict)
-                return
+                continue
             success, data, error = rule.match(order)
             if not success:
-                failed_dict = {
-                    'voucher': self,
-                    'error': error
-                }
-                order.failed_vouchers.append(failed_dict)
-                return
+                continue
             effectiveVoucher = copy.deepcopy(self)
-            effectiveVoucher.rules = [rule]
+            effectiveVoucher.rules_list = [rule]
             success_dict = {
                 'voucher': effectiveVoucher,
                 'total': data.get('total'),

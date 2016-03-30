@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import uuid
-
+import binascii
 from config import LOCATIONURL, SUBSCRIPTIONURL, USERINFOURL, TOKEN
 from data import OrderData
 from data import VerificationItemData
@@ -27,6 +27,9 @@ def get_voucher(voucher_code):
     now = datetime.datetime.utcnow()
     if voucher and voucher.from_date <= now <= voucher.to_date:
         return voucher
+    elif voucher and now > voucher.to_date:
+        db = CouponsAlchemyDB()
+        db.delete_row("vouchers", **{'code': voucher.code})
     return None
 
 
@@ -44,7 +47,7 @@ def get_benefits(order):
         product_dict['freebies'] = list()
         products_dict[item.subscription_id] = product_dict
     for existing_voucher in order.existing_vouchers:
-        rules = existing_voucher['voucher'].rules
+        rules = existing_voucher['voucher'].rules_list
         for rule in rules:
             benefits = rule.benefits_obj
             benefit_list = benefits.data
@@ -52,7 +55,7 @@ def get_benefits(order):
             freebie_list = list()
             total = existing_voucher['total']
             subscription_id_list = existing_voucher['subscription_id_list']
-            max_discount = benefits.maximum_discount
+            max_discount = benefits.max_discount
             benefit_dict = dict()
             for benefit in benefit_list:
                 benefit_type = BenefitType(benefit['type'])
@@ -336,7 +339,7 @@ def create_rule_object(data, user_id=None):
     id = uuid.uuid1().hex
     rule = Rule(id=id, description=description,
                 criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
-                created_by=user_id, updated_by=user_id)
+                created_by=user_id, updated_by=user_id, criteria_obj=rule_criteria, benefits_obj=benefits)
     return rule
 
 
@@ -350,3 +353,62 @@ def create_rule_list(args):
 def create_and_save_rule_list(args):
     rule_list = create_rule_list(args)
     return save_rule_list(rule_list), rule_list
+
+
+def get_where_clauses(variant_total_map):
+    variable_dict = dict()
+    final_query = ""
+    template = '(`variants`= :? and (`range_min` is null or `range_min` <= :?) and (`range_max` is null or `range_max` >= :?))'
+    for variant, total in variant_total_map.items():
+        variant_key = 'variant_'+str(variant)
+        total_key = 'total_'+str(variant)
+        variable_dict[variant_key] = variant
+        variable_dict[total_key] = total
+        query = template.replace('?', variant_key, 1)
+        query = query.replace('?', total_key)
+        if not final_query:
+            final_query += query
+        else:
+            final_query += 'or ' + query
+    return final_query, variable_dict
+
+
+def fetch_auto_benefits(order, freebie_type=VoucherType.regular_freebie):
+    assert isinstance(order, OrderData)
+    variant_total_map = dict()
+    item_list = list()
+    subscription_variant_map = dict()
+    if freebie_type is VoucherType.auto_freebie:
+        for item in order.items:
+            variant_total_map[item.variant] = variant_total_map.get(item.variant, 0.0) + (item.price * item.quantity)
+            subscription_variant_map[item.variant] = subscription_variant_map.get(item.variant, list())\
+                .append(item.subscription_id)
+        where_clause, params = get_where_clauses(variant_total_map)
+        sql = 'select  v.*,a.`type`, a.`variants`, a.`zone`  from `vouchers` v join (select * from `auto_freebie_search` where (type = :type and zone in :zone and ('+where_clause+') and (cart_range_min is null or cart_range_min <= :ordertotal) and (cart_range_max is null or cart_range_max >= :ordertotal) and :now > `from` and :now < `to`)) a'
+    else:
+        for item in order.items:
+            item_list.append(item.subscription_id)
+        params = dict()
+        sql = 'select v.*,a.`type`, a.`variants`, a.`zone` from `vouchers` v join (select * from `auto_freebie_search` where (type = :type and zone in :zone and (cart_range_min is null or cart_range_min <= :ordertotal) and (cart_range_max is null or cart_range_max >= :ordertotal) and :now > `from` and :now < `to`)) a'
+    params['ordertotal'] = order.total_price
+    params['type'] = VoucherType.auto_freebie.value
+    params['zone'] = order.zone
+    params['now'] = datetime.datetime.utcnow()
+    db = CouponsAlchemyDB()
+    l = db.execute_raw_sql(sql, params)
+    if not l:
+        return
+    for voucher_dict in l:
+        voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
+        effectiveVoucher = Vouchers(**voucher_dict)
+        effectiveVoucher.get_rule()
+        success_dict = {
+                'voucher': effectiveVoucher,
+            }
+        if freebie_type is VoucherType.auto_freebie:
+            success_dict['total'] = variant_total_map[voucher_dict['variants']]
+            success_dict['subscription_id_list'] = subscription_variant_map[voucher_dict['variants']]
+        else:
+            success_dict['total'] = order.total_price
+            success_dict['subscription_id_list'] = item_list
+        order.existing_vouchers.append(success_dict)

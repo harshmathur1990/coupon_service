@@ -156,6 +156,10 @@ class Rule(object):
 
     def match(self, order):
         assert isinstance(order, OrderData)
+        if self.criteria_obj.cart_range_min and order.total_price < self.criteria_obj.cart_range_min:
+            return False, None, u'Total Order price is less than minimum {}'.format(self.criteria_obj.cart_range_min)
+        if self.criteria_obj.cart_range_max and order.total_price > self.criteria_obj.cart_range_max:
+            return False, None, u'Coupon is valid only till max amount {}'.format(self.criteria_obj.cart_range_max)
         if self.criteria_obj.valid_on_order_no:
             exact_order_no_list = list()
             min_order_no = None
@@ -244,20 +248,23 @@ class RuleCriteria(object):
         self.storefronts.sort()
         self.valid_on_order_no = kwargs.get('valid_on_order_no', list())
         self.valid_on_order_no.sort()
-        no_of_uses_allowed_per_user = kwargs.get('no_of_uses_allowed_per_user', None)
-        no_of_total_uses_allowed = kwargs.get('no_of_total_uses_allowed', None)
-        self.usage = {
-            'no_of_uses_allowed_per_user': no_of_uses_allowed_per_user,
-            'no_of_total_uses_allowed': no_of_total_uses_allowed
-        }
-        if self.usage.get('no_of_uses_allowed_per_user') and self.usage.get('no_of_total_uses_allowed'):
-            self.usage['use_type'] = UseType.both.value
-        elif self.usage.get('no_of_uses_allowed_per_user'):
-            self.usage['use_type'] = UseType.per_user.value
-        elif self.usage.get('no_of_total_uses_allowed'):
-            self.usage['use_type'] = UseType.global_use.value
+        if kwargs.get('usage'):
+            self.usage = kwargs.get('usage')
         else:
-            self.usage['use_type'] = UseType.not_available.value
+            no_of_uses_allowed_per_user = kwargs.get('no_of_uses_allowed_per_user', None)
+            no_of_total_uses_allowed = kwargs.get('no_of_total_uses_allowed', None)
+            self.usage = {
+                'no_of_uses_allowed_per_user': no_of_uses_allowed_per_user,
+                'no_of_total_uses_allowed': no_of_total_uses_allowed
+            }
+            if self.usage.get('no_of_uses_allowed_per_user') and self.usage.get('no_of_total_uses_allowed'):
+                self.usage['use_type'] = UseType.both.value
+            elif self.usage.get('no_of_uses_allowed_per_user'):
+                self.usage['use_type'] = UseType.per_user.value
+            elif self.usage.get('no_of_total_uses_allowed'):
+                self.usage['use_type'] = UseType.global_use.value
+            else:
+                self.usage['use_type'] = UseType.not_available.value
         self.variants = kwargs.get('variants', list())
         self.variants.sort()
         self.zone = kwargs.get('zone', list())
@@ -291,7 +298,7 @@ class RuleCriteria(object):
 
 class Benefits(object):
     def __init__(self, **kwargs):
-        self.maximum_discount = kwargs.get('max_discount', None)
+        self.max_discount = kwargs.get('max_discount', None)
         self.data = kwargs.get('data', list())
         self.data.sort()
 
