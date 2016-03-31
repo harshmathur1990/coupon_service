@@ -120,7 +120,9 @@ class CouponsAlchemyDB:
                 Column('range_max', INTEGER, index=True),
                 Column('cart_range_min', INTEGER, index=True),
                 Column('cart_range_max', INTEGER, index=True),
-                Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False, index=True)
+                Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False, index=True),
+                Column('from', DATETIME, default=datetime.utcnow, nullable=False, index=True),
+                Column('to', DATETIME, default=datetime.utcnow, nullable=False, index=True)
             )
 
             CouponsAlchemyDB._table["auto_freebie_search"] = CouponsAlchemyDB.auto_freebie_search
@@ -345,4 +347,14 @@ class CouponsAlchemyDB:
             count = row.rowcount
         except exc.SQLAlchemyError as err:
             logger.error(err, exc_info=True)
+            return False
+
+    def execute_raw_sql(self, sql, kwargs):
+        try:
+            row = self.conn.execute(text(sql), kwargs)
+            tup = row.fetchall()
+            l = [dict(r) for r in tup]
+            return l
+        except Exception as e:
+            logger.exception(e)
             return False

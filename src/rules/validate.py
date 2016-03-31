@@ -3,6 +3,7 @@ import logging
 from data import OrderData
 from utils import get_voucher, fetch_order_detail
 from lib.utils import get_intersection_of_lists
+from src.enums import VoucherType
 
 logger = logging.getLogger(__name__)
 
@@ -68,26 +69,33 @@ def validate_for_create_voucher(data_dict):
     return success, error
 
 
-def validate_coupon(args):
+def validate_coupon(args, validate_for_apply=False):
     success, order, error = fetch_order_detail(args)
     if not success:
-        return success, None, error
+        return success, None, [error]
     assert isinstance(order, OrderData)
 
-    for a_coupon in args.get('coupon_codes'):
-        voucher = get_voucher(a_coupon)
+    for a_coupon in args.get('coupon_codes', list()):
+        voucher, error = get_voucher(a_coupon)
         if not voucher:
             failed_dict = {
                 'voucher': a_coupon,
-                'error': u'Voucher does not exist'
+                'error': error
             }
             order.failed_vouchers.append(failed_dict)
             continue
-        voucher.match(order)
-        if not order.can_accommodate_new_vouchers:
-            break
+        if validate_for_apply:
+            voucher.match(order)
+        else:
+            if voucher.type is VoucherType.regular_coupon.value:
+                voucher.match(order)
 
+        # if not order.can_accommodate_new_vouchers:
+        #     break
+
+    error_list = [failed_vouchers['error'] for failed_vouchers in order.failed_vouchers]
     if not order.existing_vouchers and len(args.get('coupon_codes', list())) > 0:
-        return False, None, u'No matching items found for these coupons'
+        error_list.append(u'No matching items found for these coupons')
+        return False, order, error_list
     else:
-        return True, order, None
+        return True, order, error_list

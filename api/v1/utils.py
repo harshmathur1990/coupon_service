@@ -86,6 +86,8 @@ def create_freebie_coupon(args):
         auto_freebie_values['range_max'] = criteria.get('range_max')
         auto_freebie_values['voucher_id'] = binascii.a2b_hex(voucher_id)
         auto_freebie_values['variants'] = existing_voucher_dict['variants']
+        auto_freebie_values['from'] = args.get('from')
+        auto_freebie_values['to'] = args.get('to')
         db.insert_row("auto_freebie_search", **auto_freebie_values)
 
     return True, success_list, error_list
