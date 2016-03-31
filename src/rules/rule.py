@@ -298,7 +298,7 @@ class RuleCriteria(object):
 
 class Benefits(object):
     def __init__(self, **kwargs):
-        self.max_discount = kwargs.get('max_discount', None)
+        self.max_discount = kwargs.get('max_discount', kwargs.get('maximum_discount', None))
         self.data = kwargs.get('data', list())
         self.data.sort()
 
