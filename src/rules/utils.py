@@ -286,6 +286,7 @@ def save_vouchers(args, rule_id_list):
         if not success:
             error = {
                 'code': code,
+                'error': u'{} already exists'.format(code),
                 'reason': u'{} already exists'.format(code)
             }
             error_list.append(error)
