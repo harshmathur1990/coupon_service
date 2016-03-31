@@ -89,12 +89,7 @@ def validate_coupon(args, validate_for_apply=False):
         else:
             if voucher.type is VoucherType.regular_coupon.value:
                 voucher.match(order)
-            else:
-                failed_dict = {
-                    'voucher': a_coupon,
-                    'error': 'The voucher {} is not allowed as it is a {} voucher'.format(a_coupon, voucher.type)
-                }
-                order.failed_vouchers.append(failed_dict)
+
         # if not order.can_accommodate_new_vouchers:
         #     break
 

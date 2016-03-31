@@ -43,7 +43,7 @@ def get_benefits(order):
     channels_list = list()
     for item in order.items:
         product_dict = dict()
-        product_dict['subscriptionId'] = item.subscription_id
+        product_dict['itemid'] = item.subscription_id
         product_dict['quantity'] = item.quantity
         product_dict['discount'] = 0.0
         products_dict[item.subscription_id] = product_dict

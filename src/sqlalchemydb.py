@@ -121,8 +121,8 @@ class CouponsAlchemyDB:
                 Column('cart_range_min', INTEGER, index=True),
                 Column('cart_range_max', INTEGER, index=True),
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False, index=True),
-                Column('from', DATETIME, default=datetime.utcnow, nullable=False),
-                Column('to', DATETIME, default=datetime.utcnow, nullable=False)
+                Column('from', DATETIME, default=datetime.utcnow, nullable=False, index=True),
+                Column('to', DATETIME, default=datetime.utcnow, nullable=False, index=True)
             )
 
             CouponsAlchemyDB._table["auto_freebie_search"] = CouponsAlchemyDB.auto_freebie_search

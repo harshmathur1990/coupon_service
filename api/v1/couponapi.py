@@ -73,19 +73,21 @@ def apply_coupon():
             }
             return err
         benefits['success'] = True
+        benefits['errors'] = error
         return benefits
     else:
         return {
             'success': False,
             'error': {
-                'code': 400
+                'code': 400,
+                'error': ','.join(error)
             },
             'products': [],
             'freebies': [],
             'totalDiscount': 0.0,
             'channel': [],
             'paymentModes': [],
-            'message': error
+            'errors': error
         }
 
 

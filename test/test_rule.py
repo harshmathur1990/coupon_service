@@ -656,6 +656,8 @@ class CreateRule(unittest.TestCase):
                         "no_of_total_uses_allowed": 100,
                         "range_min": 300,
                         "range_max": 500,
+                        "cart_range_min": 300,
+                        "cart_range_max": 500,
                         "variants": [11678],
                         "location": {
                             "zone": [2]
@@ -684,5 +686,56 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json')
         self.assertTrue(response.status_code == 200, u'{}'.format(response.data))
-        response_text = u'{"errors": [], "benefits": [{"couponCode": "TEST1CODE67", "items": [1], "paymentMode": [], "freebies": [[1]], "discount": 0.0, "type": 0, "channel": []}], "success": true, "paymentMode": [], "totalDiscount": 0.0, "products": [{"discount": 0.0, "subscriptionId": 1, "quantity": 1}], "channel": [], "couponCodes": ["TEST1CODE67"]}'
+        response_text = u'{"errors": [], "benefits": [{"couponCode": "TEST1CODE67", "items": [1], "paymentMode": [], "freebies": [[1]], "discount": 0.0, "type": 0, "channel": []}], "success": true, "paymentMode": [], "totalDiscount": 0.0, "products": [{"itemid": 1, "discount": 0.0, "quantity": 1}], "channel": [], "couponCodes": ["TEST1CODE67"]}'
         self.assertTrue(response.data == response_text, response.data)
+
+    def test_apply_coupon(self):
+        today = datetime.datetime.utcnow()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_auto_freebie_1",
+            "description": "test_auto_freebie_description_1",
+            "type": 0,
+            "user_id": "1000",
+            "code": ["TEST1CODE67"],
+            "from": today.date().isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": 300,
+                        "range_max": 500,
+                        "cart_range_min": 300,
+                        "cart_range_max": 500,
+                        "variants": [11678],
+                        "location": {
+                            "zone": [2]
+                        }
+                    },
+                    "benefits": {
+                        "freebies": [[1]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        order_data = {
+            "area_id": 29557,
+            "order_id": "32323",
+            "customer_id": "1234",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": 1,
+                    "quantity": 1
+                },
+            ],
+            "coupon_codes": ["TEST1CODE67"]
+        }
+        response = self.client.post(url_for('voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, u'{}'.format(response.data))
