@@ -30,6 +30,8 @@ def get_voucher(voucher_code):
     elif voucher and now > voucher.to_date:
         db = CouponsAlchemyDB()
         db.delete_row("vouchers", **{'code': voucher.code})
+        if voucher.type is not VoucherType.regular_coupon:
+            db.delete_row("auto_freebie_search", **{'voucher_id': voucher.id_bin})
         return None, u'The voucher {} has expired'.format(voucher.code)
     else:
         return None, u'The voucher {} does not exist'.format(voucher_code)
@@ -57,7 +59,7 @@ def get_benefits(order):
             max_discount = benefits.max_discount
             benefit_dict = dict()
             for benefit in benefit_list:
-                if benefit['value'] is None:
+                if not benefit['value']:
                     continue
                 discount = 0.0
                 freebie_list = list()

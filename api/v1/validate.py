@@ -31,7 +31,7 @@ def validate_for_create_api_v1(data):
 
         if len(codes) != 1:
             success = False
-            error.append(u'Only one voucher can be made of regular and auto freebie type coupons')
+            error.append(u'Only one voucher can be made of regular freebie and auto freebie type coupons')
             return success, error
 
         rule = rules[0]

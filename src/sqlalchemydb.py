@@ -7,11 +7,12 @@ from sqlalchemy import asc, desc, select, exists
 from config import DATABASE_URL
 from sqlalchemy.sql import text
 logger = logging.getLogger()
-
+from flask import request
 
 class CouponsAlchemyDB:
     engine = None
     _table = dict()
+    metadata = None
 
     def __init__(self):
         self.conn = CouponsAlchemyDB.get_connection()
@@ -30,10 +31,21 @@ class CouponsAlchemyDB:
                 convert_unicode=True
             )
 
-            metadata = MetaData()
+            CouponsAlchemyDB.metadata = MetaData()
+
+            CouponsAlchemyDB.tokens = Table(
+                'tokens', CouponsAlchemyDB.metadata,
+                Column('token', VARCHAR(250), primary_key=True),
+                Column('agent_id', INTEGER, index=True, unique=True, nullable=False),
+                Column('agent_name', VARCHAR(250), nullable=False),
+                Column('created_at', DATETIME),
+                Column('last_accessed_at', DATETIME),
+            )
+
+            CouponsAlchemyDB._table["tokens"] = CouponsAlchemyDB.tokens
 
             CouponsAlchemyDB.rule_table = Table(
-                'rule', metadata,
+                'rule', CouponsAlchemyDB.metadata,
                 Column('id', BINARY(16), primary_key=True),
                 Column('name', VARCHAR(255)),
                 Column('description', VARCHAR(255)),
@@ -44,13 +56,14 @@ class CouponsAlchemyDB:
                 Column('created_by', VARCHAR(32), nullable=False, default=''),
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
-                Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False)
+                Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False),
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 
             CouponsAlchemyDB._table["rule"] = CouponsAlchemyDB.rule_table
 
             CouponsAlchemyDB.vouchers_table = Table(
-                'vouchers', metadata,
+                'vouchers', CouponsAlchemyDB.metadata,
                 Column('id', BINARY(16), unique=True, nullable=False),
                 Column('code', VARCHAR(20), primary_key=True),
                 Column('rules', VARCHAR(150), nullable=False),
@@ -63,13 +76,14 @@ class CouponsAlchemyDB:
                 Column('created_by', VARCHAR(32), nullable=False, default=''),
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
-                Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False)
+                Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False),
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 
             CouponsAlchemyDB._table["vouchers"] = CouponsAlchemyDB.vouchers_table
 
             CouponsAlchemyDB.all_vouchers = Table(
-                'all_vouchers', metadata,
+                'all_vouchers', CouponsAlchemyDB.metadata,
                 Column('id', BINARY(16), primary_key=True),
                 Column('code', VARCHAR(20), nullable=False),
                 Column('rules', VARCHAR(150), nullable=False),
@@ -82,36 +96,39 @@ class CouponsAlchemyDB:
                 Column('created_by', VARCHAR(32), nullable=False, default=''),
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
-                Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False)
+                Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False),
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 
             CouponsAlchemyDB._table["all_vouchers"] = CouponsAlchemyDB.all_vouchers
 
             CouponsAlchemyDB.voucher_use_tracker = Table(
-                'voucher_use_tracker', metadata,
+                'voucher_use_tracker', CouponsAlchemyDB.metadata,
                 Column('id', BINARY(16), primary_key=True),   # COMM: auto-increment?
                 Column('user_id', VARCHAR(32), nullable=False),
                 Column('applied_on', DATETIME, default=datetime.utcnow, nullable=False),
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
-                Column('order_id', VARCHAR(32), nullable=False)
+                Column('order_id', VARCHAR(32), nullable=False),
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 
             CouponsAlchemyDB._table["voucher_use_tracker"] = CouponsAlchemyDB.voucher_use_tracker
 
             CouponsAlchemyDB.user_voucher_transaction_log = Table(
-                'user_voucher_transaction_log', metadata,
+                'user_voucher_transaction_log', CouponsAlchemyDB.metadata,
                 Column('id', BINARY(16), primary_key=True),  # COMM: auto-increment?
                 Column('user_id', VARCHAR(32), nullable=False),
                 Column('updated_on', DATETIME, default=datetime.utcnow, nullable=False),
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
                 Column('order_id', VARCHAR(32), nullable=False),
-                Column('status', TINYINT(unsigned=True), nullable=False)
+                Column('status', TINYINT(unsigned=True), nullable=False),
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 
             CouponsAlchemyDB._table["user_voucher_transaction_log"] = CouponsAlchemyDB.user_voucher_transaction_log
 
             CouponsAlchemyDB.auto_freebie_search = Table(
-                'auto_freebie_search', metadata,
+                'auto_freebie_search', CouponsAlchemyDB.metadata,
                 Column('id', BIGINT, primary_key=True, autoincrement=True),
                 Column('type', INTEGER, index=True, nullable=False),
                 Column('variants', INTEGER, index=True),
@@ -122,12 +139,16 @@ class CouponsAlchemyDB:
                 Column('cart_range_max', INTEGER, index=True),
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False, index=True),
                 Column('from', DATETIME, default=datetime.utcnow, nullable=False, index=True),
-                Column('to', DATETIME, default=datetime.utcnow, nullable=False, index=True)
+                Column('to', DATETIME, default=datetime.utcnow, nullable=False, index=True),
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 
             CouponsAlchemyDB._table["auto_freebie_search"] = CouponsAlchemyDB.auto_freebie_search
-
-            metadata.create_all(CouponsAlchemyDB.engine)
+            # no need of below statement. DB can be created by upgrade with initial migration script.
+            # But if we retain the below statement, then the database gets created before migration can
+            # check the difference between metadata model and the actual database,
+            # and hence will find no difference and will create empty migration script
+            #CouponsAlchemyDB.metadata.create_all(CouponsAlchemyDB.engine)
 
         except exc.SQLAlchemyError as err:
             logger.error(err, exc_info=True)

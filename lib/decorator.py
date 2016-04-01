@@ -3,7 +3,8 @@ import functools
 import logging
 import json
 from flask import Response
-from webargs import core, ValidationError
+from flask import request
+from utils import unauthenticated, is_logged_in
 logger = logging.getLogger(__name__)
 
 
@@ -36,7 +37,8 @@ def jsonify(f):
         resp = Response(
             response=json.dumps(rv), status=status_code,
             mimetype="application/json")
-        logger.info('Total time taken = %s', time.time() - start)
+        logger.info(u'URL: {} Arguments: {} Keyword Arguments: {} Body: {} Returned: {} Total time taken: {}'.format(
+            request.url_rule, args, kwargs, request.get_data(), rv, time.time() - start))
         return resp
     return wrapped
 
@@ -49,3 +51,14 @@ def logrequest(f):
         return rv
     return wrapped
 
+
+def check_login(method):
+    @functools.wraps(method)
+    def wrapper(*args, **kwargs):
+        agent_id = request.headers.get('X-API-USER', None)
+        authorization = request.headers.get('X-API-TOKEN', 'Acdlsdksl')
+        if authorization and is_logged_in(agent_id, authorization):
+            return method(*args, **kwargs)
+        else:
+            return unauthenticated()
+    return wrapper
