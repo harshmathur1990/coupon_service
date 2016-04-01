@@ -1,5 +1,5 @@
 from flask import request
-from lib.decorator import jsonify
+from lib.decorator import jsonify, check_login
 from lib.utils import is_timezone_aware, create_error_response, create_success_response
 from src.enums import *
 from src.rules.vouchers import VoucherTransactionLog, Vouchers
@@ -15,6 +15,7 @@ from utils import create_freebie_coupon
 
 @voucher_api.route('/apply', methods=['POST'])
 @jsonify
+@check_login
 def apply_coupon():
     apply_coupon_args = {
         'order_id': fields.Str(required=True, location='json'),
@@ -93,6 +94,7 @@ def apply_coupon():
 
 @voucher_api.route('/check', methods=['POST'])
 @jsonify
+@check_login
 def check_coupon():
     check_coupon_args = {
 
@@ -182,6 +184,7 @@ def check_coupon():
 
 @voucher_api.route('/create', methods=['POST'])
 @jsonify
+@check_login
 def create_voucher():
     coupon_create_args = {
         'name': fields.Str(required=False, missing=None, location='json'),
@@ -429,6 +432,7 @@ def create_voucher():
 
 @voucher_api.route('/confirm', methods=['POST'])
 @jsonify
+@check_login
 def confirm_order():
     confirm_order_args = {
         'order_id': fields.Str(required=True, location='json'),
@@ -439,12 +443,13 @@ def confirm_order():
     if not success:
         rv = create_error_response(400, error)
     else:
-        rv = {'success': success }
+        rv = {'success': success}
     return rv
 
 
 @voucher_api.route('/update/<coupon_code>', methods=['PUT', 'POST'])
 @jsonify
+@check_login
 def update_coupon(coupon_code):
     update_coupon_args = {
         'to': fields.DateTime(required=True, location='json'),

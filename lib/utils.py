@@ -1,5 +1,6 @@
 import grequests
-
+from flask import request
+from src.sqlalchemydb import CouponsAlchemyDB
 
 def is_timezone_aware(datetime_obj):
     if datetime_obj.tzinfo is not None and datetime_obj.tzinfo.utcoffset(datetime_obj) is not None:
@@ -39,3 +40,20 @@ def create_error_response(error_code, error_msg=''):
         }
     }
     return rv
+
+
+def unauthenticated():
+    return create_error_response(401, u'Unauthenticated Client')
+
+
+def is_logged_in(agent_id, authorization):
+    return True
+    # authenticated = False
+    # db = CouponsAlchemyDB()
+    # token = db.find_one("tokens", **{'token': authorization, 'agent_id': agent_id})
+    # if token:
+    #     user = dict()
+    #     user['agent_id'] = token['agent_id']
+    #     setattr(request, 'user', user)
+    #     authenticated = True
+    # return authenticated
