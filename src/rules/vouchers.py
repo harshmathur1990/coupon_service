@@ -118,12 +118,29 @@ class Vouchers(object):
             }
             order.failed_vouchers.append(failed_dict)
             return
+
+        voucher_match = False
+        failed_rule_list = list()
         for rule in rules:
             status = rule.check_usage(order.customer_id, self.id)
             if not status.get('success', False):
+                failed_voucher = copy.deepcopy(self)
+                failed_voucher.rules_list = [rule]
+                failed_dict = {
+                    'voucher': failed_voucher,
+                    'error': u'Voucher {} has been exhausted'.format(self.code)
+                }
+                failed_rule_list.append(failed_dict)
                 continue
             success, data, error = rule.match(order)
             if not success:
+                failed_voucher = copy.deepcopy(self)
+                failed_voucher.rules_list = [rule]
+                failed_dict = {
+                    'voucher': failed_voucher,
+                    'error': error
+                }
+                failed_rule_list.append(failed_dict)
                 continue
             effectiveVoucher = copy.deepcopy(self)
             effectiveVoucher.rules_list = [rule]
@@ -133,6 +150,9 @@ class Vouchers(object):
                 'subscription_id_list': data.get('subscription_id_list')
             }
             order.existing_vouchers.append(success_dict)
+            voucher_match = True
+        if not voucher_match:
+            order.failed_vouchers += failed_rule_list
 # removed below check because we can have any number of auto-applied vouchers. TODO: it would be better if we can still have such preemptive check for regular vouchers beyond a threshold like 1 or 2
 #        if len(order.existing_vouchers) == 2:
 #            order.can_accommodate_new_vouchers = False

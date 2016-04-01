@@ -178,15 +178,15 @@ class Rule(object):
             return False, None, u'This coupon is only valid on orders from {}'.format(
                 ','.join([Channels(c).name for c in self.criteria_obj.channels]))
         if self.criteria_obj.country and not get_intersection_of_lists(self.criteria_obj.country, order.country):
-            return False, None, u'This coupon is not valid in your country'
+            return False, None, u'This coupon is not valid in your country {}'.format(order.country)
         if self.criteria_obj.state and not get_intersection_of_lists(self.criteria_obj.state, order.state):
-            return False, None, u'This coupon is not valid in your state'
+            return False, None, u'This coupon is not valid in your state {}'.format(order.state)
         if self.criteria_obj.city and not get_intersection_of_lists(self.criteria_obj.city, order.city):
-            return False, None, u'This coupon is not valid in your city'
+            return False, None, u'This coupon is not valid in your city {}'.format(order.city)
         if self.criteria_obj.zone and not get_intersection_of_lists(self.criteria_obj.zone, order.zone):
-            return False, None, u'This coupon is not valid in your area'
+            return False, None, u'This coupon is not valid in your zone {}'.format(order.zone)
         if self.criteria_obj.area and order.area not in self.criteria_obj.area:
-            return False, None, u'This coupon is not valid in your area'
+            return False, None, u'This coupon is not valid in your area {}'.format(order.area)
         subscription_id_list = list()
         total = 0.0
         for item in order.items:
