@@ -90,4 +90,6 @@ def create_freebie_coupon(args):
         auto_freebie_values['to'] = args.get('to')
         db.insert_row("auto_freebie_search", **auto_freebie_values)
 
+    for s in success_list:
+        del s['id']
     return True, success_list, error_list

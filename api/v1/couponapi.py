@@ -1,3 +1,4 @@
+import json
 from flask import request
 from lib.decorator import jsonify, check_login
 from lib.utils import is_timezone_aware, create_error_response, create_success_response
@@ -9,7 +10,7 @@ from src.rules.validate import validate_coupon, validate_for_create_coupon,\
 from webargs import fields, validate
 from webargs.flaskparser import parser
 from api import voucher_api
-from validate import validate_for_create_api_v1
+from validate import validate_for_create_api_v1, validate_for_update
 from utils import create_freebie_coupon
 
 
@@ -422,6 +423,8 @@ def create_voucher():
 
         success_list, error_list = save_vouchers(args, rule_id_list)
 
+        for s in success_list:
+            del s['id']
         return create_success_response(success_list, error_list)
     else:
         success, data, error = create_freebie_coupon(args)
@@ -447,25 +450,48 @@ def confirm_order():
     return rv
 
 
-@voucher_api.route('/update/<coupon_code>', methods=['PUT', 'POST'])
+@voucher_api.route('/update', methods=['PUT', 'POST'])
 @jsonify
 @check_login
-def update_coupon(coupon_code):
-    update_coupon_args = {
-        'to': fields.DateTime(required=True, location='json'),
-    }
-    args = parser.parse(update_coupon_args, request)
+def update_coupon():
+    data_list = json.loads(request.get_data())
 
-    if is_timezone_aware(args.get('to')):
-        args['to'] = args.get('to').replace(tzinfo=None)
-
-    voucher = Vouchers.find_one(coupon_code)
-    if not voucher:
-        return create_error_response(400, u'Voucher with code {} not found'.format(coupon_code))
-    voucher.to_date = args['to']
-    success = voucher.update_to_date()
+    success, error = validate_for_update(data_list)
     if not success:
-        rv = create_error_response(400, u'Unknown Error')
-    else:
-        rv = {'success': success}
-    return rv
+        return create_error_response(400, error)
+
+    success_list = list()
+    error_list = list()
+
+    for data in data_list:
+        coupon_list = data.get('coupons')
+        to_date = data['update']['to']
+        if is_timezone_aware(to_date):
+            to_date = to_date.replace(tzinfo=None)
+        for coupon in coupon_list:
+            voucher = Vouchers.find_one(coupon)
+            if not voucher:
+                error_dict = {
+                    'code': coupon,
+                    'error': u'Voucher with code {} not found'.format(coupon)
+                }
+                error_list.append(error_dict)
+            voucher.to_date = to_date
+            success = voucher.update_to_date()
+            if not success:
+                error_dict = {
+                    'code': coupon,
+                    'error': u'Voucher with code {} cannot be updated due to unknown error. Contact Support'.format(coupon)
+                }
+                error_list.append(error_dict)
+            success_dict = {
+                'code': coupon
+            }
+            success_list.append(success_dict)
+    return {
+        'success': True,
+        'data': {
+            'success_list': success_list,
+            'error_list': error_list
+        }
+    }
