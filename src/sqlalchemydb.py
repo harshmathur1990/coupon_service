@@ -34,7 +34,7 @@ class CouponsAlchemyDB:
             CouponsAlchemyDB.metadata = MetaData()
 
             CouponsAlchemyDB.tokens = Table(
-                'tokens', metadata,
+                'tokens', CouponsAlchemyDB.metadata,
                 Column('token', VARCHAR(250), primary_key=True),
                 Column('agent_id', INTEGER, index=True, unique=True, nullable=False),
                 Column('agent_name', VARCHAR(250), nullable=False),
