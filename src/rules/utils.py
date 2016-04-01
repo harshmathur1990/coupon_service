@@ -243,6 +243,7 @@ def fetch_order_detail(args):
     if not success:
         return success, None, error
 
+    order_no += 1
     order_data_dict = dict()
     order_data_dict['order_no'] = order_no
     order_data_dict.update(location_dict)
