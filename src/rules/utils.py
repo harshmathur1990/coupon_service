@@ -74,10 +74,11 @@ def get_benefits(order):
                         discount = percentage * total / 100
                     if max_discount and discount > max_discount:
                         discount = max_discount
-                    for subscriptionId in subscription_id_list:
-                        item_discount = (item.quantity * item.price * discount)/total
-                        products_dict[subscriptionId]['discount'] = max(
-                            products_dict[subscriptionId]['discount'], item_discount)
+                    for item in order.items:
+                        if item.subscription_id in subscription_id_list:
+                            item_discount = (item.quantity * item.price * discount)/total
+                            products_dict[item.subscription_id]['discount'] = max(
+                                products_dict[item.subscription_id]['discount'], item_discount)
                 benefit_dict['couponCode'] = existing_voucher['voucher'].code
                 benefit_dict['discount'] = discount
                 benefit_dict['freebies'] = freebie_list
