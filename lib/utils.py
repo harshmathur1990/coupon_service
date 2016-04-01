@@ -36,9 +36,14 @@ def create_error_response(error_code, error_msg=''):
         'success': False,
         'error': {
             'code': error_code,
-            'error': error_msg
         }
     }
+    if isinstance(error_msg, list):
+        rv['error']['error'] = ','.join(error_msg)
+        rv['errors'] = error_msg
+    else:
+        rv['errors'] = [error_msg]
+        rv['error']['error'] = error_msg
     return rv
 
 
