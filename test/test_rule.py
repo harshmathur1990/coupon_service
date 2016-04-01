@@ -525,13 +525,71 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
                                     content_type='application/json')
         today = datetime.datetime.utcnow()
-        tomorrow = today+timedelta(days=4)
-        args = {
-            'to': tomorrow.isoformat()
-        }
-        response = self.client.put(url_for('voucher_api/v1.update_coupon', coupon_code='TEST1CODE14'), data=json.dumps(args),
+        two_days_after = today+timedelta(days=2)
+        four_days_after = today+timedelta(days=4)
+        coupon_missing_args = [
+            {
+                'update': {
+                    'to': two_days_after.isoformat()
+                }
+            },
+            {
+                'coupons': ['TEST1CODE25'],
+                'update': {
+                    'to': two_days_after.isoformat()
+                }
+            }
+        ]
+        response = self.client.put(url_for('voucher_api/v1.update_coupon'), data=json.dumps(coupon_missing_args),
                                     content_type='application/json')
-        data = json.loads(response.data)
+        self.assertTrue(response.status_code == 400, response.data)
+        wrong_date_format_args = [
+            {
+                'coupons': ['TEST1CODE14'],
+                'update': {
+                    'to': 'dssfds'
+                }
+            },
+            {
+                'coupons': ['TEST1CODE25'],
+                'update': {
+                    'to': four_days_after.isoformat()
+                }
+            }
+        ]
+        response = self.client.put(url_for('voucher_api/v1.update_coupon'), data=json.dumps(wrong_date_format_args),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 400, response.data)
+        no_date_args = [
+            {
+                'coupons': ['TEST1CODE14'],
+                'update': {
+                    'to': two_days_after.isoformat()
+                }
+            },
+            {
+                'coupons': ['TEST1CODE25'],
+            }
+        ]
+        response = self.client.put(url_for('voucher_api/v1.update_coupon'), data=json.dumps(no_date_args),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 400, response.data)
+        args = [
+            {
+                'coupons': ['TEST1CODE14'],
+                'update': {
+                    'to': two_days_after.isoformat()
+                }
+            },
+            {
+                'coupons': ['TEST1CODE25'],
+                'update': {
+                    'to': four_days_after.isoformat()
+                }
+            }
+        ]
+        response = self.client.put(url_for('voucher_api/v1.update_coupon'), data=json.dumps(args),
+                                    content_type='application/json')
         self.assertTrue(response.status_code == 200, response.data)
 
     def test_multi_rule_vouchers(self):

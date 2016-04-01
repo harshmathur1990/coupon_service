@@ -1,5 +1,5 @@
 from src.enums import VoucherType
-
+from dateutil import parser
 
 def validate_for_create_api_v1(data):
     success = True
@@ -65,3 +65,20 @@ def validate_for_create_api_v1(data):
                 error.append(u'Only 1 variant is allowed in a auto freebie voucher')
 
     return success, error
+
+
+def validate_for_update(data_list):
+    if not isinstance(data_list, list):
+        return False, u'Input is not list'
+
+    for data in data_list:
+        if not data.get('coupons') or not isinstance(data.get('coupons'), list):
+            return False, u'Every element of input list must have a list of coupons in key coupons'
+        if not data.get('update') or not data.get('update').get('to'):
+            return False, u'Every element of input list must have a to date in key update[to]'
+        try:
+            to_date = parser.parse(data.get('update').get('to'))
+            data['update']['to'] = to_date
+        except ValueError:
+            return False, u'Invalid Date format'
+    return True, None
