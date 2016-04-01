@@ -591,6 +591,25 @@ class CreateRule(unittest.TestCase):
         response = self.client.put(url_for('voucher_api/v1.update_coupon'), data=json.dumps(args),
                                     content_type='application/json')
         self.assertTrue(response.status_code == 200, response.data)
+        partial_args = [
+            {
+                'coupons': ['HARSHMATHUR'],
+                'update': {
+                    'to': two_days_after.isoformat()
+                }
+            },
+            {
+                'coupons': ['TEST1CODE25'],
+                'update': {
+                    'to': four_days_after.isoformat()
+                }
+            }
+        ]
+        response = self.client.put(url_for('voucher_api/v1.update_coupon'), data=json.dumps(partial_args),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+        data = json.loads(response.data)
+        self.assertTrue(data.get('data', dict()).get('error_list'))
 
     def test_multi_rule_vouchers(self):
         # To test thar created rule is same as the rule being pushed

@@ -462,7 +462,6 @@ def update_coupon():
 
     success_list = list()
     error_list = list()
-
     for data in data_list:
         coupon_list = data.get('coupons')
         to_date = data['update']['to']
@@ -476,6 +475,7 @@ def update_coupon():
                     'error': u'Voucher with code {} not found'.format(coupon)
                 }
                 error_list.append(error_dict)
+                continue
             voucher.to_date = to_date
             success = voucher.update_to_date()
             if not success:
@@ -484,6 +484,7 @@ def update_coupon():
                     'error': u'Voucher with code {} cannot be updated due to unknown error. Contact Support'.format(coupon)
                 }
                 error_list.append(error_dict)
+                continue
             success_dict = {
                 'code': coupon
             }
