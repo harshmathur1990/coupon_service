@@ -84,7 +84,7 @@ def get_benefits(order):
                 benefit_dict['items'] = subscription_id_list
                 benefit_dict['type'] = existing_voucher['voucher'].type
                 benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
-                benefit_dict['channel'] = [Channels(c).name for c in rule.criteria_obj.channels]
+                benefit_dict['channel'] = [Channels(c).value for c in rule.criteria_obj.channels]
                 benefits_list.append(benefit_dict)
                 if not payment_modes_list:
                     payment_modes_list = benefit_dict['paymentMode']
