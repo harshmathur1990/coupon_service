@@ -2,7 +2,7 @@ import binascii
 import logging
 import uuid
 import copy
-
+import datetime
 import sqlalchemy
 from data import OrderData
 from rule import Rule
@@ -63,8 +63,14 @@ class Vouchers(object):
         db = CouponsAlchemyDB()
         db.begin()
         try:
-            db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
-            db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
+            now = datetime.datetime.utcnow()
+            if self.to_date > now:
+                db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
+                db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
+            else:
+                # expire request
+                db.update_row("all_vouchers", "id", expired_at=now, id=self.id_bin)
+                db.delete_row("vouchers", **{'id': self.id_bin})
         except Exception as e:
             logger.exception(e)
             db.rollback()

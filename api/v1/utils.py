@@ -70,9 +70,11 @@ def create_freebie_coupon(args):
     if existing_voucher:
         voucher = Vouchers.find_one_by_id(existing_voucher[0]['voucher_id'])
         if voucher.code != code:
-            return False, None, u'Existing voucher exists for the given criteria with code {}'.format(voucher.code)
-        db.delete_row("auto_freebie_search", **{'voucher_id': binascii.a2b_hex(voucher.id)})
-        db.delete_row("vouchers", **{'id': binascii.a2b_hex(voucher.id)})
+            return True, list(), [
+                {'code': code,
+                 'error':u'Voucher exists for the given criteria with code {}'.format(voucher.code)}]
+        return True, list(), [{'code': voucher.code,
+                               'error': u'Expire the voucher {} and recreate'.format(voucher.code)}]
 
     rule_obj = create_rule_object(data, args.get('user_id'))
     rule_obj.save()

@@ -1,4 +1,5 @@
 import datetime
+from datetime import timedelta
 import json
 import logging
 import uuid
@@ -28,10 +29,9 @@ def get_voucher(voucher_code):
     if voucher and voucher.from_date <= now <= voucher.to_date:
         return voucher, None
     elif voucher and now > voucher.to_date:
-        db = CouponsAlchemyDB()
-        db.delete_row("vouchers", **{'code': voucher.code})
-        if voucher.type is not VoucherType.regular_coupon:
-            db.delete_row("auto_freebie_search", **{'voucher_id': voucher.id_bin})
+        now = datetime.datetime.utcnow()-timedelta(seconds=10)
+        voucher.to_date = now
+        voucher.update_to_date()
         return None, u'The voucher {} has expired'.format(voucher.code)
     else:
         return None, u'The voucher {} does not exist'.format(voucher_code)

@@ -97,6 +97,7 @@ class CouponsAlchemyDB:
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
                 Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False),
+                Column('expired_at', DATETIME, nullable=True),
                 Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 
