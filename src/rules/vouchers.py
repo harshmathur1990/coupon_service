@@ -70,7 +70,9 @@ class Vouchers(object):
             else:
                 # expire request
                 db.update_row("all_vouchers", "id", expired_at=now, id=self.id_bin)
-                db.delete_row("vouchers", **{'id': self.id_bin})
+                db.delete_row_in_transaction("vouchers", **{'id': self.id_bin})
+                if self.type is not VoucherType.regular_coupon.value:
+                    db.delete_row_in_transaction("auto_freebie_search", **{'voucher_id': self.id_bin})
         except Exception as e:
             logger.exception(e)
             db.rollback()
