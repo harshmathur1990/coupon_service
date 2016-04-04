@@ -194,6 +194,7 @@ class VoucherTransactionLog(object):
         self.status = kwargs.get('status')
         if self.status in [l.value for l in list(VoucherTransactionStatus)]:
             self.status_enum = VoucherTransactionStatus(self.status)
+        self.response = kwargs.get('response')
 
     def save(self, db=None):
         values = self.get_value_dict_for_log()
@@ -221,6 +222,7 @@ class VoucherTransactionLog(object):
         values['voucher_id'] = self.voucher_id_bin
         values['order_id'] = self.order_id
         values['status'] = self.status
+        values['response'] = self.response
         return values
 
     def make_in_progress_entry(self, db, values):
