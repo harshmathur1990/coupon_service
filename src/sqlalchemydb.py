@@ -65,7 +65,7 @@ class CouponsAlchemyDB:
             CouponsAlchemyDB.vouchers_table = Table(
                 'vouchers', CouponsAlchemyDB.metadata,
                 Column('id', BINARY(16), unique=True, nullable=False),
-                Column('code', VARCHAR(20), primary_key=True),
+                Column('code', VARCHAR(200), primary_key=True),
                 Column('rules', VARCHAR(150), nullable=False),
                 Column('custom', VARCHAR(1000)),
                 Column('description', VARCHAR(255)),
@@ -85,7 +85,7 @@ class CouponsAlchemyDB:
             CouponsAlchemyDB.all_vouchers = Table(
                 'all_vouchers', CouponsAlchemyDB.metadata,
                 Column('id', BINARY(16), primary_key=True),
-                Column('code', VARCHAR(20), nullable=False),
+                Column('code', VARCHAR(200), nullable=False),
                 Column('rules', VARCHAR(150), nullable=False),
                 Column('custom', VARCHAR(1000)),
                 Column('description', VARCHAR(255)),
