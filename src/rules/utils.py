@@ -149,7 +149,7 @@ def get_item_details(response, total_length, item_to_quantity):
             item_dict = dict()
             item_dict['brand'] = data.get('brandid')
             item_dict['category'] = [data.get('categoryid')]
-            item_dict['product'] = data.get('productid')
+            item_dict['product'] = [data.get('productid')]
             item_dict['seller'] = data.get('sellerid')
             item_dict['storefront'] = data.get('storefront')
             item_dict['variant'] = data.get('variantid')
