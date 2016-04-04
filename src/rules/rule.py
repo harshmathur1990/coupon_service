@@ -283,9 +283,11 @@ class RuleCriteria(object):
         if (self.categories['in'] and not get_intersection_of_lists(self.categories['in'], item.category)) or \
                 (self.categories['not_in'] and get_intersection_of_lists(self.categories['not_in'], item.category)):
             return False
+
         if (self.products['in'] and not get_intersection_of_lists(self.products['in'], item.product)) or \
                 (self.products['not_in'] and get_intersection_of_lists(self.products['not_in'], item.product)):
             return False
+
         if self.sellers and item.seller not in self.sellers:
             return False
         if self.storefronts and item.storefront not in self.storefronts:
