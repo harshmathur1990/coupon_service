@@ -15,10 +15,12 @@ def create_freebie_coupon(args):
     rule = args.get('rules')[0]
     criteria = rule.get('criteria')
     existing_voucher_dict = {
-        'type': VoucherType.auto_freebie.value,
+        'type': args.get('type'),
         'zone': criteria.get('location').get('zone')[0],
         'range_min': criteria.get('range_min'),
-        'range_max': criteria.get('range_max')
+        'range_max': criteria.get('range_max'),
+        'cart_range_min': criteria.get('cart_range_min'),
+        'cart_range_max': criteria.get('cart_range_max')
     }
     data = {
         'criteria': {
@@ -38,8 +40,8 @@ def create_freebie_coupon(args):
             },
             'range_min': criteria.get('range_min'),
             'range_max': criteria.get('range_max'),
-            'cart_range_min': None,
-            'cart_range_max': None,
+            'cart_range_min': criteria.get('cart_range_min'),
+            'cart_range_max': criteria.get('cart_range_max'),
             'channels': [],
             'brands': [],
             'products': {
@@ -66,7 +68,15 @@ def create_freebie_coupon(args):
         existing_voucher_dict['variants'] = None
         data['criteria']['variants'] = []
 
-    existing_voucher = db.find("auto_freebie_search", **existing_voucher_dict)
+    sql = 'select * from `auto_freebie_search` where type=:type and ( (:cart_range_min >= cart_range_min'+\
+          ' && :cart_range_min < cart_range_max) or (:cart_range_max > cart_range_min && '+\
+          ':cart_range_max < cart_range_max) or (:cart_range_min <= cart_range_min && '+\
+          ':cart_range_max >= cart_range_max) ) and zone=:zone'
+    if args.get('type') is VoucherType.auto_freebie.value:
+        sql += ' and ( (:range_min >= range_min && :range_min < range_max) or '+\
+               '(:range_max > range_min && :range_max < range_max) or '+\
+               '(:range_min <= range_min && :range_max >= range_max) ) and variants is null'
+    existing_voucher = db.execute_raw_sql(sql, existing_voucher_dict)
     if existing_voucher:
         voucher = Vouchers.find_one_by_id(existing_voucher[0]['voucher_id'])
         if voucher.code != code:

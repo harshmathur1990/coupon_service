@@ -45,13 +45,11 @@ def validate_for_create_api_v1(data):
             success = False
             error.append(u'Only 1 zone can be present in regular or auto freebie coupon')
 
-        if voucher_type is VoucherType.regular_freebie.value:
-            if criteria.get('cart_range_min') is None or criteria.get('cart_range_max') is None:
-                success = False
-                error.append(u'Cart Range min and Cart Range max is mandatory for regular freebie')
+        if criteria.get('cart_range_min') is None or criteria.get('cart_range_max') is None:
+            success = False
+            error.append(u'Cart Range min and Cart Range max is mandatory for regular freebie')
 
-        else:
-
+        if voucher_type is not VoucherType.regular_freebie.value:
             if len(benefits.get('freebies')) != 1 or len(benefits.get('freebies')[0]) != 1:
                 success = False
                 error.append(u'Only 1 freebie is allowed per auto freebie voucher')
