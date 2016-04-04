@@ -2,7 +2,7 @@ import binascii
 import logging
 import uuid
 import copy
-
+import datetime
 import sqlalchemy
 from data import OrderData
 from rule import Rule
@@ -63,8 +63,16 @@ class Vouchers(object):
         db = CouponsAlchemyDB()
         db.begin()
         try:
-            db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
-            db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
+            now = datetime.datetime.utcnow()
+            if self.to_date > now:
+                db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
+                db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
+            else:
+                # expire request
+                db.update_row("all_vouchers", "id", expired_at=now, id=self.id_bin)
+                db.delete_row_in_transaction("vouchers", **{'id': self.id_bin})
+                if self.type is not VoucherType.regular_coupon.value:
+                    db.delete_row_in_transaction("auto_freebie_search", **{'voucher_id': self.id_bin})
         except Exception as e:
             logger.exception(e)
             db.rollback()
@@ -186,6 +194,7 @@ class VoucherTransactionLog(object):
         self.status = kwargs.get('status')
         if self.status in [l.value for l in list(VoucherTransactionStatus)]:
             self.status_enum = VoucherTransactionStatus(self.status)
+        self.response = kwargs.get('response')
 
     def save(self, db=None):
         values = self.get_value_dict_for_log()
@@ -213,6 +222,7 @@ class VoucherTransactionLog(object):
         values['voucher_id'] = self.voucher_id_bin
         values['order_id'] = self.order_id
         values['status'] = self.status
+        values['response'] = self.response
         return values
 
     def make_in_progress_entry(self, db, values):

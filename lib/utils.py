@@ -20,9 +20,9 @@ def make_api_call(urls, headers=dict()):
     return grequests.map(rs)
 
 
-def create_success_response(success_list, error_list=list()):
+def create_success_response(success_list, error_list=list(), success=True):
     rv = {
-        'success': True,
+        'success': success,
         'data': {
             'success_list': success_list,
             'error_list': error_list

@@ -4,7 +4,8 @@ from lib.decorator import jsonify, check_login
 from lib.utils import is_timezone_aware, create_error_response, create_success_response
 from src.enums import *
 from src.rules.vouchers import VoucherTransactionLog, Vouchers
-from src.rules.utils import get_benefits, apply_benefits, create_and_save_rule_list, save_vouchers, fetch_auto_benefits
+from src.rules.utils import get_benefits, apply_benefits, create_and_save_rule_list,\
+    save_vouchers, fetch_auto_benefits, fetch_order_response
 from src.rules.validate import validate_coupon, validate_for_create_coupon,\
     validate_for_create_voucher
 from webargs import fields, validate
@@ -60,12 +61,19 @@ def apply_coupon():
         )
     }
     args = parser.parse(apply_coupon_args, request)
+    order_exists, benefits_given = fetch_order_response(args)
+    if order_exists:
+        return benefits_given
     success, order, error = validate_coupon(args, validate_for_apply=True)
     if success:
         # coupon is valid, try applying it
         benefits = get_benefits(order)
-        benefits_applied = apply_benefits(args, order)
+        benefits['success'] = True
+        benefits['errors'] = error
+        benefits_applied = apply_benefits(args, order, benefits)
         if not benefits_applied:
+            # hopefully it will never happen,
+            # if it happens then only I will know what went wrong
             err = {
                 'success': False,
                 'error': {
@@ -74,8 +82,6 @@ def apply_coupon():
                 }
             }
             return err
-        benefits['success'] = True
-        benefits['errors'] = error
         return benefits
     else:
         return {

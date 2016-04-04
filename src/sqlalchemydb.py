@@ -97,6 +97,7 @@ class CouponsAlchemyDB:
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME, default=datetime.utcnow, nullable=False),
                 Column('updated_at', DATETIME, default=datetime.utcnow, nullable=False),
+                Column('expired_at', DATETIME, nullable=True),
                 Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 
@@ -109,6 +110,7 @@ class CouponsAlchemyDB:
                 Column('applied_on', DATETIME, default=datetime.utcnow, nullable=False),
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
                 Column('order_id', VARCHAR(32), nullable=False),
+                Column('response', VARCHAR(8000)),
                 Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 
@@ -122,6 +124,7 @@ class CouponsAlchemyDB:
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
                 Column('order_id', VARCHAR(32), nullable=False),
                 Column('status', TINYINT(unsigned=True), nullable=False),
+                Column('response', VARCHAR(8000)),
                 Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 

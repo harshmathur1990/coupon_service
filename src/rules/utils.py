@@ -1,4 +1,5 @@
 import datetime
+from datetime import timedelta
 import json
 import logging
 import uuid
@@ -28,10 +29,9 @@ def get_voucher(voucher_code):
     if voucher and voucher.from_date <= now <= voucher.to_date:
         return voucher, None
     elif voucher and now > voucher.to_date:
-        db = CouponsAlchemyDB()
-        db.delete_row("vouchers", **{'code': voucher.code})
-        if voucher.type is not VoucherType.regular_coupon:
-            db.delete_row("auto_freebie_search", **{'voucher_id': voucher.id_bin})
+        now = datetime.datetime.utcnow()-timedelta(seconds=10)
+        voucher.to_date = now
+        voucher.update_to_date()
         return None, u'The voucher {} has expired'.format(voucher.code)
     else:
         return None, u'The voucher {} does not exist'.format(voucher_code)
@@ -113,7 +113,7 @@ def get_benefits(order):
     return response_dict
 
 
-def apply_benefits(args, order):
+def apply_benefits(args, order, benefits):
     order_id = args.get('order_id')
     user_id = args.get('customer_id')
     db = CouponsAlchemyDB()
@@ -126,7 +126,8 @@ def apply_benefits(args, order):
                 'user_id': user_id,
                 'voucher_id': voucher_id,
                 'order_id': order_id,
-                'status': VoucherTransactionStatus.in_progress.value
+                'status': VoucherTransactionStatus.in_progress.value,
+                'response': json.dumps(benefits)
             })
             transaction_log.save(db)
     except Exception as e:
@@ -420,3 +421,16 @@ def fetch_auto_benefits(order, freebie_type=VoucherType.regular_freebie):
             success_dict['total'] = order.total_price
             success_dict['subscription_id_list'] = item_list
         order.existing_vouchers.append(success_dict)
+
+
+def fetch_order_response(args):
+    order_id = args.get('order_id')
+    user_id = args.get('customer_id')
+    db = CouponsAlchemyDB()
+    result = db.find("voucher_use_tracker", **{'order_id': order_id, 'user_id': user_id})
+    if result:
+        # result may have one entry per voucher,
+        # but all entries will have same json for an order id,
+        # Hence its safe accessing the list's 0th element
+        return True, json.loads(result[0]['response'])
+    return False, None
