@@ -131,3 +131,29 @@ def create_freebie_coupon(args):
     for s in success_list:
         del s['id']
     return True, success_list, error_list
+
+
+def generate_auto_freebie():
+    db = CouponsAlchemyDB()
+    db.delete_row("auto_freebie_search")
+    voucher_list = db.find("vouchers")
+    for voucher in voucher_list:
+        voucher['id'] = binascii.b2a_hex(voucher['id'])
+        vouchers = Vouchers(**voucher)
+        vouchers.get_rule()
+        if vouchers.type is not VoucherType.regular_coupon.value:
+            auto_freebie_values = dict()
+            auto_freebie_values['type'] = vouchers.type
+            auto_freebie_values['zone'] = vouchers.rules_list[0].criteria_obj.zone[0],
+            auto_freebie_values['range_min'] = vouchers.rules_list[0].criteria_obj.range_min
+            auto_freebie_values['range_max'] = vouchers.rules_list[0].criteria_obj.range_max
+            auto_freebie_values['cart_range_min'] = vouchers.rules_list[0].criteria_obj.cart_range_min
+            auto_freebie_values['cart_range_max'] = vouchers.rules_list[0].criteria_obj.cart_range_max
+            auto_freebie_values['voucher_id'] = binascii.a2b_hex(vouchers.id)
+            if vouchers.type is VoucherType.auto_freebie.value:
+                auto_freebie_values['variants'] = vouchers.rules_list[0].criteria_obj.variants[0]
+            else:
+                auto_freebie_values['variants'] = None
+            auto_freebie_values['from'] = vouchers.from_date
+            auto_freebie_values['to'] = vouchers.to_date
+            db.insert_row("auto_freebie_search", **auto_freebie_values)
