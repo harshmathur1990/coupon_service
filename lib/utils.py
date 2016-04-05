@@ -1,6 +1,9 @@
 import grequests
-from flask import request
-from src.sqlalchemydb import CouponsAlchemyDB
+import logging
+import time
+
+logger = logging.getLogger(__name__)
+
 
 def is_timezone_aware(datetime_obj):
     if datetime_obj.tzinfo is not None and datetime_obj.tzinfo.utcoffset(datetime_obj) is not None:
@@ -17,7 +20,12 @@ def get_intersection_of_lists(list1, list2, key=None):
 
 def make_api_call(urls, headers=dict()):
     rs = (grequests.get(u, headers=headers) for u in urls)
-    return grequests.map(rs)
+    start = time.time()
+    response_list = grequests.map(rs)
+    for response, url in zip(response_list, urls):
+        logger.info(u'Url: {}, headers: {}, Status Code: {} Response Body: {} Total Time Taken: {}'.format(
+            url, headers, response.status_code, response.text, time.time() - start))
+    return response_list
 
 
 def create_success_response(success_list, error_list=list(), success=True):

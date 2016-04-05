@@ -13,6 +13,7 @@ from webargs.flaskparser import parser
 from api import voucher_api
 from validate import validate_for_create_api_v1, validate_for_update
 from utils import create_freebie_coupon
+from src.rules.rule import RuleCriteria, Benefits
 
 
 @voucher_api.route('/apply', methods=['POST'])
@@ -502,3 +503,82 @@ def update_coupon():
             'error_list': error_list
         }
     }
+
+
+@voucher_api.route('/fetchDetail', methods=['POST'])
+@jsonify
+@check_login
+def get_coupon():
+    get_coupon_args = {
+        'coupon_codes': fields.List(fields.Str(), required=True, location='json')
+    }
+    args = parser.parse(get_coupon_args, request)
+    success_list = list()
+    error_list = list()
+    coupon_codes = args.get('coupon_codes')
+    for coupon_code in coupon_codes:
+        voucher_dict = dict()
+        rules = list()
+        voucher = Vouchers.find_one(coupon_code)
+        if not voucher:
+            error_dict = {
+                'code': coupon_code,
+                'error': u'Voucher code {} not found'.format(coupon_code)
+            }
+            error_list.append(error_dict)
+            continue
+        voucher.get_rule()
+        for rule in voucher.rules_list:
+            criteria_obj = rule.criteria_obj
+            assert isinstance(criteria_obj, RuleCriteria)
+            rule_dict = dict()
+            criteria = dict()
+            benefits = dict()
+            location_dict = dict()
+            rule_dict['description'] = rule.description
+            criteria['no_of_uses_allowed_per_user'] = criteria_obj.usage['no_of_uses_allowed_per_user']
+            criteria['no_of_total_uses_allowed'] = criteria_obj.usage['no_of_total_uses_allowed']
+            criteria['range_min'] = criteria_obj.range_min
+            criteria['range_max'] = criteria_obj.range_max
+            criteria['cart_range_min'] = criteria_obj.cart_range_min
+            criteria['cart_range_max'] = criteria_obj.cart_range_max
+            criteria['channels'] = criteria_obj.channels
+            criteria['brands'] = criteria_obj.brands
+            criteria['products'] = criteria_obj.products
+            criteria['categories'] = criteria_obj.categories
+            criteria['storefronts'] = criteria_obj.storefronts
+            criteria['variants'] = criteria_obj.variants
+            criteria['sellers'] = criteria_obj.sellers
+            location_dict['country'] = criteria_obj.country
+            location_dict['state'] = criteria_obj.state
+            location_dict['city'] = criteria_obj.city
+            location_dict['area'] = criteria_obj.area
+            location_dict['zone'] = criteria_obj.zone
+            criteria['location'] = location_dict
+            criteria['valid_on_order_no'] = criteria_obj.valid_on_order_no
+            criteria['payment_modes'] = criteria_obj.payment_modes
+            benefits_obj = rule.benefits_obj
+            assert isinstance(benefits_obj, Benefits)
+            benefits['max_discount'] = benefits_obj.max_discount
+            for data in benefits_obj.data:
+                type = BenefitType(data.get('type'))
+                if type is BenefitType.amount:
+                    benefits['amount'] = data.get('value')
+                elif type is BenefitType.percentage:
+                    benefits['percentage'] = data.get('value')
+                else:
+                    benefits['freebies'] = [data.get('value')]
+            if not benefits.get('freebies'):
+                benefits['freebies'] = [[]]
+            rule_dict['criteria'] = criteria
+            rule_dict['benefits'] = benefits
+            rules.append(rule_dict)
+        voucher_dict['rules'] = rules
+        voucher_dict['description'] = voucher.description
+        voucher_dict['from'] = voucher.from_date.isoformat()
+        voucher_dict['to'] = voucher.to_date.isoformat()
+        voucher_dict['code'] = voucher.code
+        voucher_dict['user_id'] = voucher.created_by
+        voucher_dict['type'] = voucher.type
+        success_list.append(voucher_dict)
+    return create_success_response(success_list, error_list)
