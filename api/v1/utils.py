@@ -20,7 +20,9 @@ def create_freebie_coupon(args):
         'range_min': criteria.get('range_min'),
         'range_max': criteria.get('range_max'),
         'cart_range_min': criteria.get('cart_range_min'),
-        'cart_range_max': criteria.get('cart_range_max')
+        'cart_range_max': criteria.get('cart_range_max'),
+        'from': args.get('from'),
+        'to': args.get('to')
     }
     data = {
         'criteria': {
@@ -71,13 +73,15 @@ def create_freebie_coupon(args):
     sql = 'select * from `auto_freebie_search` where type=:type and zone=:zone and ('
 
     if criteria.get('cart_range_min'):
-        where_clause1 = '( ((cart_range_min is null or (:cart_range_min >= cart_range_min)) && (cart_range_max is null or (:cart_range_min <= cart_range_max))) or ( (:cart_range_min is null or (cart_range_min >= :cart_range_min)) && (:cart_range_max is null or (cart_range_min <= :cart_range_max))) )'
+        where_clause1 = '( ((cart_range_min is null or (:cart_range_min >= cart_range_min)) && (cart_range_max is null or (:cart_range_min <= cart_range_max))) or ( (:cart_range_min is null or (cart_range_min >= :cart_range_min)) && (:cart_range_max is null or (cart_range_min <= :cart_range_max))) ) '
     else:
         where_clause1 = '(cart_range_min is null)'
     if criteria.get('cart_range_max'):
         where_clause2 = '( ((cart_range_min is null or (:cart_range_max >= cart_range_min)) && (cart_range_max is null or (:cart_range_max <= cart_range_max)) ) or ( (:cart_range_min is null or (cart_range_max >= :cart_range_min)) && (:cart_range_max is null or (cart_range_max <= :cart_range_max))) )'
     else:
         where_clause2 = '(cart_range_max is null)'
+
+    date_overlapping_caluse = '(((:from >= `from` && :from <= `to`) or (:to >= `from` && :to <= `to`)) or ((`from` >= :from && `from` <= :to) or (`to` >= :from && `to` <= :to) ))'
 
     if args.get('type') is VoucherType.auto_freebie.value:
         if criteria.get('range_min'):
@@ -89,10 +93,10 @@ def create_freebie_coupon(args):
         else:
             where_clause4 = '(range_max is null)'
 
-        sql += where_clause1 + ' or ' + where_clause2 + ' or ' + where_clause3 +\
-               ' or ' + where_clause4 + ') and variants=:variants'
+        sql += '(' + where_clause1 + ' or ' + where_clause2 + ' or ' + where_clause3 +\
+               ' or ' + where_clause4 + ') && ('+date_overlapping_caluse+')' + ') and variants=:variants'
     else:
-        sql += where_clause1 + ' or ' + where_clause2 + ')'
+        sql += '(' + where_clause1 + ' or ' + where_clause2 + ') && ('+date_overlapping_caluse+')' + ')'
 
     existing_voucher_list = db.execute_raw_sql(sql, existing_voucher_dict)
     if existing_voucher_list:

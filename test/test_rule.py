@@ -1127,6 +1127,241 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(data.get('data', dict()).get('success_list'), response.data)
 
+    def test_overlapping_intervals_regular_freebie_with_different_dates(self):
+        today = datetime.datetime.utcnow()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_regular_freebie_1",
+            "description": "test_regular_freebie_description_1",
+            "type": 1,
+            "user_id": "1000",
+            "code": ["TEST1CODE259"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "cart_range_min": 200,
+                        "cart_range_max": 500,
+                        "location": {
+                            "zone": [34]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[1, 2]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        day_after_tomorrow = tomorrow+timedelta(days=1)
+        day_after_day_after_tomorrow = day_after_tomorrow+timedelta(days=1)
+        rule_create_data = {
+            "name": "test_regular_freebie_1",
+            "description": "test_regular_freebie_description_1",
+            "type": 1,
+            "user_id": "1000",
+            "code": ["TEST1CODE260"],
+            "from": day_after_tomorrow.isoformat(),
+            "to": day_after_day_after_tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "cart_range_min": 300,
+                        "cart_range_max": 700,
+                        "location": {
+                            "zone": [34]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[3, 4]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+        data = json.loads(response.data)
+        self.assertTrue(data.get('data', dict()).get('success_list'), response.data)
+        day_after_tomorrow = day_after_day_after_tomorrow+timedelta(days=1)
+        day_after_day_after_tomorrow = day_after_tomorrow+timedelta(days=1)
+        rule_create_data = {
+            "name": "test_regular_freebie_1",
+            "description": "test_regular_freebie_description_1",
+            "type": 1,
+            "user_id": "1000",
+            "code": ["TEST1CODE261"],
+            "from": day_after_tomorrow.isoformat(),
+            "to": day_after_day_after_tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "cart_range_min": 100,
+                        "cart_range_max": 700,
+                        "location": {
+                            "zone": [34]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[3, 4]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+        data = json.loads(response.data)
+        self.assertTrue(data.get('data', dict()).get('success_list'), response.data)
+        day_after_tomorrow = day_after_day_after_tomorrow+timedelta(days=1)
+        day_after_day_after_tomorrow = day_after_tomorrow+timedelta(days=1)
+        rule_create_data = {
+            "name": "test_regular_freebie_1",
+            "description": "test_regular_freebie_description_1",
+            "type": 1,
+            "user_id": "1000",
+            "code": ["TEST1CODE262"],
+            "from": day_after_tomorrow.isoformat(),
+            "to": day_after_day_after_tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "cart_range_min": 200,
+                        "cart_range_max": 400,
+                        "location": {
+                            "zone": [34]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[3, 4]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+        data = json.loads(response.data)
+        self.assertTrue(data.get('data', dict()).get('success_list'), response.data)
+        day_after_tomorrow = day_after_day_after_tomorrow+timedelta(days=1)
+        day_after_day_after_tomorrow = day_after_tomorrow+timedelta(days=1)
+        rule_create_data = {
+            "name": "test_regular_freebie_1",
+            "description": "test_regular_freebie_description_1",
+            "type": 1,
+            "user_id": "1000",
+            "code": ["TEST1CODE263"],
+            "from": day_after_tomorrow.isoformat(),
+            "to": day_after_day_after_tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "cart_range_min": 100,
+                        "location": {
+                            "zone": [34]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[3, 4]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+        data = json.loads(response.data)
+        self.assertTrue(data.get('data', dict()).get('success_list'), response.data)
+        day_after_tomorrow = day_after_day_after_tomorrow+timedelta(days=1)
+        day_after_day_after_tomorrow = day_after_tomorrow+timedelta(days=1)
+        rule_create_data = {
+            "name": "test_regular_freebie_1",
+            "description": "test_regular_freebie_description_1",
+            "type": 1,
+            "user_id": "1000",
+            "code": ["TEST1CODE264"],
+            "from": day_after_tomorrow.isoformat(),
+            "to": day_after_day_after_tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "cart_range_max": 400,
+                        "location": {
+                            "zone": [34]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[3, 4]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+        data = json.loads(response.data)
+        self.assertTrue(data.get('data', dict()).get('success_list'), response.data)
+        day_after_tomorrow = day_after_day_after_tomorrow+timedelta(days=1)
+        day_after_day_after_tomorrow = day_after_tomorrow+timedelta(days=1)
+        rule_create_data = {
+            "name": "test_regular_freebie_1",
+            "description": "test_regular_freebie_description_1",
+            "type": 1,
+            "user_id": "1000",
+            "code": ["TEST1CODE265"],
+            "from": day_after_tomorrow.isoformat(),
+            "to": day_after_day_after_tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "cart_range_min": 501,
+                        "cart_range_max": 800,
+                        "location": {
+                            "zone": [34]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[3, 4]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+        data = json.loads(response.data)
+        self.assertTrue(data.get('data', dict()).get('success_list'), response.data)
+
     # def test_overlapping_intervals_auto_freebie(self):
     #     # TODO
     #     pass
