@@ -243,7 +243,7 @@ def fetch_order_detail(args):
                 break
 
     if not success:
-        return success, None, error
+        return False, None, error
 
     order_no += 1
     order_data_dict = dict()

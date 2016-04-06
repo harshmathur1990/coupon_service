@@ -72,7 +72,7 @@ def validate_for_create_voucher(data_dict):
 def validate_coupon(args, validate_for_apply=False):
     success, order, error = fetch_order_detail(args)
     if not success:
-        return success, None, [error]
+        return False, None, [error]
     assert isinstance(order, OrderData)
 
     for a_coupon in args.get('coupon_codes', list()):
@@ -94,8 +94,8 @@ def validate_coupon(args, validate_for_apply=False):
         #     break
 
     error_list = [failed_vouchers['error'] for failed_vouchers in order.failed_vouchers]
-    if not order.existing_vouchers and len(args.get('coupon_codes', list())) > 0:
-        # error_list.append(u'No matching items found for these coupons')
-        return False, order, error_list
-    else:
-        return True, order, error_list
+    # if not order.existing_vouchers and len(args.get('coupon_codes', list())) > 0:
+    #     # error_list.append(u'No matching items found for these coupons')
+    #     return False, order, error_list
+    # else:
+    return True, order, error_list

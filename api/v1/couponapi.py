@@ -164,14 +164,12 @@ def check_coupon():
     }
     args = parser.parse(check_coupon_args, request)
     success, order, error = validate_coupon(args)
-    if success and not order.existing_vouchers:
-        fetch_auto_benefits(order, VoucherType.regular_freebie)
-    if order:
-        fetch_auto_benefits(order, VoucherType.auto_freebie)
-    benefits = get_benefits(order)
 
     if success:
         # coupon is valid, try applying it
+        fetch_auto_benefits(order, VoucherType.regular_freebie)
+        fetch_auto_benefits(order, VoucherType.auto_freebie)
+        benefits = get_benefits(order)
         benefits['success'] = True
         benefits['errors'] = error
         return benefits
