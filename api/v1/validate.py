@@ -9,6 +9,7 @@ def validate_for_create_api_v1(data):
 
     rules = data.get('rules')
 
+
     if voucher_type is VoucherType.regular_coupon.value:
         if len(rules) > 2 or len(rules) <= 0:
             success = False
@@ -20,6 +21,18 @@ def validate_for_create_api_v1(data):
             if benefits.get('freebies'):
                 success = False
                 error.append(u'Regular coupon should not have freebies')
+
+        if len(rules) == 2:
+            if not rules[0].get(
+                    'criteria', dict()).get(
+                'no_of_uses_allowed_per_user') == rules[1].get(
+                'criteria', dict()).get('no_of_uses_allowed_per_user') or \
+                    not rules[0].get('criteria', dict()).get(
+                        'no_of_total_uses_allowed') == rules[1].get(
+                        'criteria', dict()).get('no_of_total_uses_allowed'):
+                success = False
+                error.append(
+                    u'Both the rules must same values for no_of_uses_allowed_per_user and no_of_total_uses_allowed')
 
     else:
         if len(rules) != 1:
