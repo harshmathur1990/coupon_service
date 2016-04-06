@@ -174,7 +174,7 @@ class Rule(object):
             if (exact_order_no_list and order.order_no not in exact_order_no_list) or \
                     (min_order_no and order.order_no < min_order_no):
                 return False, None, u'This coupon is not applicable on this order {}'.format(order.order_no)
-        if self.criteria_obj.channels and order.channel in self.criteria_obj.channels:
+        if self.criteria_obj.channels and order.channel not in self.criteria_obj.channels:
             return False, None, u'This coupon is only valid on orders from {}'.format(
                 ','.join([Channels(c).name for c in self.criteria_obj.channels]))
         if self.criteria_obj.country and not get_intersection_of_lists(self.criteria_obj.country, order.country):
