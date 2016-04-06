@@ -154,12 +154,12 @@ class Rule(object):
             return True
         return False
 
-    def match(self, order):
+    def match(self, order, code):
         assert isinstance(order, OrderData)
         if self.criteria_obj.cart_range_min and order.total_price < self.criteria_obj.cart_range_min:
-            return False, None, u'Total Order price is less than minimum {}'.format(self.criteria_obj.cart_range_min)
+            return False, None, u'Coupon code {} is valid for minimum order value of {}'.format(code, self.criteria_obj.cart_range_min)
         if self.criteria_obj.cart_range_max and order.total_price > self.criteria_obj.cart_range_max:
-            return False, None, u'Coupon is valid only till max amount {}'.format(self.criteria_obj.cart_range_max)
+            return False, None, u'Coupon {} is valid only till max amount {}'.format(code, self.criteria_obj.cart_range_max)
         if self.criteria_obj.valid_on_order_no:
             exact_order_no_list = list()
             min_order_no = None
@@ -173,20 +173,20 @@ class Rule(object):
                         min_order_no = int(an_order_no[:-1])
             if (exact_order_no_list and order.order_no not in exact_order_no_list) or \
                     (min_order_no and order.order_no < min_order_no):
-                return False, None, u'This coupon is not applicable on this order {}'.format(order.order_no)
+                return False, None, u'This coupon {} is not applicable on this order {}'.format(code, order.order_no)
         if self.criteria_obj.channels and order.channel not in self.criteria_obj.channels:
-            return False, None, u'This coupon is only valid on orders from {}'.format(
+            return False, None, u'This coupon {} is only valid on orders from {}'.format(code,
                 ','.join([Channels(c).name for c in self.criteria_obj.channels]))
         if self.criteria_obj.country and not get_intersection_of_lists(self.criteria_obj.country, order.country):
-            return False, None, u'This coupon is not valid in your country {}'.format(order.country)
+            return False, None, u'This coupon {} is not valid in your country {}'.format(code, order.country)
         if self.criteria_obj.state and not get_intersection_of_lists(self.criteria_obj.state, order.state):
-            return False, None, u'This coupon is not valid in your state {}'.format(order.state)
+            return False, None, u'This coupon {} is not valid in your state {}'.format(code, order.state)
         if self.criteria_obj.city and not get_intersection_of_lists(self.criteria_obj.city, order.city):
-            return False, None, u'This coupon is not valid in your city {}'.format(order.city)
+            return False, None, u'This coupon {} is not valid in your city {}'.format(code, order.city)
         if self.criteria_obj.zone and not get_intersection_of_lists(self.criteria_obj.zone, order.zone):
-            return False, None, u'This coupon is not valid in your zone {}'.format(order.zone)
+            return False, None, u'This coupon {} is not valid in your zone {}'.format(code, order.zone)
         if self.criteria_obj.area and order.area not in self.criteria_obj.area:
-            return False, None, u'This coupon is not valid in your area {}'.format(order.area)
+            return False, None, u'This coupon {} is not valid in your area {}'.format(code, order.area)
         subscription_id_list = list()
         total = 0.0
         for item in order.items:
@@ -196,12 +196,12 @@ class Rule(object):
                 subscription_id_list.append(item.subscription_id)
 
         if not subscription_id_list:
-            return False, None, u'No matching items found for this coupon'
+            return False, None, u'No matching items found for this coupon {}'.format(code)
 
         if self.criteria_obj.range_min and total < self.criteria_obj.range_min:
-            return False, None, u'Total Order price for eligible items is less than minimum {}'.format(self.criteria_obj.range_min)
+            return False, None, u'Total Order price for eligible items is less than minimum {} for coupon code {}'.format(self.criteria_obj.range_min, code)
         if self.criteria_obj.range_max and total > self.criteria_obj.range_max:
-            return False, None, u'Coupon is valid only till max amount {}'.format(self.criteria_obj.range_max)
+            return False, None, u'Coupon {} is valid only till max amount {}'.format(code, self.criteria_obj.range_max)
 
         return True, {'total': total, 'subscription_id_list': subscription_id_list}, None
 

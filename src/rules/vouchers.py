@@ -46,6 +46,11 @@ class Vouchers(object):
         db = CouponsAlchemyDB()
         db.begin()
         try:
+            voucher_list = Vouchers.find_all_by_code(self.code)
+            for voucher in voucher_list:
+                if not self.can_coexist(voucher):
+                    db.rollback()
+                    return False
             db.insert_row("vouchers", **values)
             db.insert_row("all_vouchers", **values)
         except sqlalchemy.exc.IntegrityError as e:
@@ -59,17 +64,26 @@ class Vouchers(object):
             db.commit()
         return {'id': self.id, 'code': self.code}
 
-    def update_to_date(self):
+    def update_to_date(self, to_date):
         db = CouponsAlchemyDB()
         db.begin()
         try:
             now = datetime.datetime.utcnow()
-            if self.to_date > now:
+            if self.to_date < now < to_date:
+                self.to_date = to_date
+                value_dict = self.get_value_dict()
+                db.insert_row("vouchers", **value_dict)
+                if self.type is not VoucherType.regular_coupon.value:
+                    # insert values in auto freebie table
+                    # first cyclic import of the code!!!
+                    from utils import save_auto_freebie_from_voucher
+                    save_auto_freebie_from_voucher(self, db)
+            elif self.to_date > now and to_date > now:
                 db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
                 db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
-            else:
+            elif to_date < now < self.to_date:
                 # expire request
-                db.update_row("all_vouchers", "id", expired_at=now, id=self.id_bin)
+                db.update_row("all_vouchers", "id", to=now, id=self.id_bin)
                 db.delete_row_in_transaction("vouchers", **{'id': self.id_bin})
                 if self.type is not VoucherType.regular_coupon.value:
                     db.delete_row_in_transaction("auto_freebie_search", **{'voucher_id': self.id_bin})
@@ -107,6 +121,28 @@ class Vouchers(object):
         return False
 
     @staticmethod
+    def find_one_all_vouchers(code):
+        db = CouponsAlchemyDB()
+        voucher_dict = db.find("all_vouchers", order_by="_to", _limit=1, **{'code': code})
+        if voucher_dict:
+            voucher_dict = voucher_dict[0]
+            voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
+            voucher = Vouchers(**voucher_dict)
+            return voucher
+        return False
+
+    @staticmethod
+    def find_all_by_code(code):
+        db = CouponsAlchemyDB()
+        voucher_list = list()
+        voucher_dict_list = db.find("all_vouchers", **{'code': code})
+        for voucher_dict in voucher_dict_list:
+            voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
+            voucher = Vouchers(**voucher_dict)
+            voucher_list.append(voucher)
+        return voucher_list
+
+    @staticmethod
     def find_one_by_id(id):
         db = CouponsAlchemyDB()
         voucher_dict = db.find_one("vouchers", **{'id': id})
@@ -122,7 +158,7 @@ class Vouchers(object):
         if not self.is_coupon_valid_with_existing_coupon(order):
             failed_dict = {
                 'voucher': self,
-                'error': u'This coupon is not valid with other coupons'
+                'error': u'This coupon {} is not valid with other coupons'.format(self.code)
             }
             order.failed_vouchers.append(failed_dict)
             return
@@ -139,8 +175,9 @@ class Vouchers(object):
                     'error': u'Voucher {} has been exhausted'.format(self.code)
                 }
                 failed_rule_list.append(failed_dict)
-                continue
-            success, data, error = rule.match(order)
+                # continue
+                break
+            success, data, error = rule.match(order, self.code)
             if not success:
                 failed_voucher = copy.deepcopy(self)
                 failed_voucher.rules_list = [rule]
@@ -160,7 +197,19 @@ class Vouchers(object):
             order.existing_vouchers.append(success_dict)
             voucher_match = True
         if not voucher_match:
-            order.failed_vouchers += failed_rule_list
+            error_msg = ''
+            for index, failed_rule in enumerate(failed_rule_list):
+                if index is 0:
+                    error_msg = failed_rule['error']
+                else:
+                    if not error_msg.startswith('No matching items'):
+                        error_msg += ' or ' + failed_rule['error']
+
+            failed_dict = {
+                'voucher': self,
+                'error': error_msg
+            }
+            order.failed_vouchers.append(failed_dict)
 # removed below check because we can have any number of auto-applied vouchers. TODO: it would be better if we can still have such preemptive check for regular vouchers beyond a threshold like 1 or 2
 #        if len(order.existing_vouchers) == 2:
 #            order.can_accommodate_new_vouchers = False
@@ -174,6 +223,15 @@ class Vouchers(object):
                     success = False
                     break
         return success
+
+    def can_coexist(self, voucher):
+        assert isinstance(voucher, Vouchers)
+        if self.type is VoucherType.regular_coupon.value or voucher.type is VoucherType.regular_coupon.value:
+            return False
+        now = datetime.datetime.utcnow()
+        if voucher.to_date > now:
+            return False
+        return True
 
     # def update_cache(self):
     #     voucher = Vouchers.find_one(self.id)

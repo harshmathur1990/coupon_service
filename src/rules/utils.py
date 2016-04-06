@@ -434,3 +434,31 @@ def fetch_order_response(args):
         # Hence its safe accessing the list's 0th element
         return True, json.loads(result[0]['response'])
     return False, None
+
+
+def save_auto_freebie_from_voucher(voucher, db=None):
+    voucher.get_rule()
+    if voucher.type is not VoucherType.regular_coupon.value:
+        auto_freebie_values = dict()
+        auto_freebie_values['type'] = voucher.type
+        auto_freebie_values['zone'] = voucher.rules_list[0].criteria_obj.zone[0],
+        auto_freebie_values['range_min'] = voucher.rules_list[0].criteria_obj.range_min
+        auto_freebie_values['range_max'] = voucher.rules_list[0].criteria_obj.range_max
+        auto_freebie_values['cart_range_min'] = voucher.rules_list[0].criteria_obj.cart_range_min
+        auto_freebie_values['cart_range_max'] = voucher.rules_list[0].criteria_obj.cart_range_max
+        auto_freebie_values['voucher_id'] = binascii.a2b_hex(voucher.id)
+        if voucher.type is VoucherType.auto_freebie.value:
+            auto_freebie_values['variants'] = voucher.rules_list[0].criteria_obj.variants[0]
+        else:
+            auto_freebie_values['variants'] = None
+        auto_freebie_values['from'] = voucher.from_date
+        auto_freebie_values['to'] = voucher.to_date
+        if not db:
+            db = CouponsAlchemyDB()
+        db.insert_row("auto_freebie_search", **auto_freebie_values)
+
+
+def save_auto_freebie_from_voucher_dict(voucher_dict):
+    voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
+    vouchers = Vouchers(**voucher_dict)
+    save_auto_freebie_from_voucher(vouchers)

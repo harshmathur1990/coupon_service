@@ -718,7 +718,7 @@ class CreateRule(unittest.TestCase):
                 test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
                     rule_create_data, test_rule.__dict__))
 
-    def test_auto_freebie(self):
+    def test_check_auto_freebie(self):
         today = datetime.datetime.utcnow()
         tomorrow = today+timedelta(days=2)
         rule_create_data = {
@@ -770,7 +770,7 @@ class CreateRule(unittest.TestCase):
         response_text = u'{"errors": [], "benefits": [{"couponCode": "TEST1CODE67", "items": [1], "paymentMode": [], "freebies": [[1]], "discount": 0.0, "type": 0, "channel": []}], "success": true, "paymentMode": [], "totalDiscount": 0.0, "products": [{"itemid": 1, "discount": 0.0, "quantity": 1}], "channel": [], "couponCodes": ["TEST1CODE67"]}'
         self.assertTrue(response.data == response_text, response.data)
 
-    def test_apply_coupon(self):
+    def test_apply_auto_freebie_coupon(self):
         today = datetime.datetime.utcnow()
         tomorrow = today+timedelta(days=2)
         rule_create_data = {
@@ -859,6 +859,8 @@ class CreateRule(unittest.TestCase):
         }
         response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
                                     content_type='application/json')
+        db = CouponsAlchemyDB()
+        all_vouchers_code_dict = db.find_one("all_vouchers", **{'code': 'TEST1CODE69'})
         expire_args = [
             {
                 'coupons': ['TEST1CODE69'],
@@ -869,6 +871,14 @@ class CreateRule(unittest.TestCase):
         ]
         response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(expire_args),
                                     content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(response.status_code == 200, response.data)
+        self.assertTrue(data.get('success'), response.data)
+        db = CouponsAlchemyDB()
+        all_vouchers_code_dict = db.find_one("all_vouchers", **{'code': 'TEST1CODE69'})
+        vouchers_code_dict = db.find_one("vouchers", **{'code': 'TEST1CODE69'})
+        self.assertTrue(all_vouchers_code_dict)
+        self.assertTrue(not vouchers_code_dict, vouchers_code_dict)
         rule_create_data = {
             "name": "test_auto_freebie_1",
             "description": "test_auto_freebie_description_1",
@@ -1361,6 +1371,165 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(response.status_code == 200, response.data)
         data = json.loads(response.data)
         self.assertTrue(data.get('data', dict()).get('success_list'), response.data)
+
+    def test_check_and_apply_coupon_false_partial_success_iff_all_validate(self):
+        today = datetime.datetime.utcnow()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_auto_freebie_1",
+            "description": "test_auto_freebie_description_1",
+            "type": 0,
+            "user_id": "1000",
+            "code": ["TEST1CODE67"],
+            "from": today.date().isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": 300,
+                        "range_max": 500,
+                        "cart_range_min": 300,
+                        "cart_range_max": 500,
+                        "variants": [11678],
+                        "location": {
+                            "zone": [2]
+                        }
+                    },
+                    "benefits": {
+                        "freebies": [[1]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        today = datetime.datetime.utcnow()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": None,
+                        "range_max": None,
+                        "cart_range_min": 100,
+                        "cart_range_max": None,
+                        "channels": [],
+                        "brands": [],
+                        "products": {
+                            'in':[],
+                            'not_in': []
+                        },
+                        "categories": {
+                            "in": [],
+                            "not_in": []
+                        },
+                        "storefronts": [],
+                        "variants": [],
+                        "sellers": [],
+                        "location": {
+                            "country":[],
+                            "state": [],
+                            "city": [],
+                            "area": [],
+                            "zone": []
+                        },
+                        "payment_modes": [],
+                        "valid_on_order_no": []
+                    },
+                    "benefits": {
+                        "percentage": 10,
+                        "max_discount": 250
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(not data.get('data',dict()).get('error_list') and
+                        len(data.get('data', dict()).get('success_list', list())) is 1, response.data)
+        test1code1_voucher = Vouchers.find_one('TEST1CODE1')
+        voucher_rule_list = test1code1_voucher.get_rule()
+        rule_list = create_rule_list(rule_create_data)
+        for test_rule, created_rule in zip(voucher_rule_list, rule_list):
+            self.assertTrue(
+                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
+                    rule_create_data, test_rule.__dict__))
+        order_data = {
+            "area_id": 29557,
+            "customer_id": "1234",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": 1,
+                    "quantity": 1
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('voucher_api/v1.check_coupon'), data=json.dumps(order_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, u'{}'.format(response.data))
+        data = json.loads(response.data)
+        self.assertTrue(data.get('success'), response.data)
+        self.assertTrue(len(data.get('benefits')) == 2, response.data)
+        order_data = {
+            "area_id": 29557,
+            "customer_id": "1234",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": 1,
+                    "quantity": 1
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1", "INVALIDCOUPON"],
+            "order_id": "1234"
+        }
+        response = self.client.post(url_for('voucher_api/v1.check_coupon'), data=json.dumps(order_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 400, u'{}'.format(response.data))
+        data = json.loads(response.data)
+        self.assertTrue(not data.get('success'), response.data)
+        self.assertTrue(len(data.get('benefits')) == 2, response.data)
+        self.assertTrue(data.get('error', dict()).get('error') == u'The voucher INVALIDCOUPON does not exist', response.data)
+        order_data = {
+            "area_id": 29557,
+            "customer_id": "1234",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": 1,
+                    "quantity": 1
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1", "INVALIDCOUPON", "TEST1CODE67"],
+            "order_id": "1234"
+        }
+        response = self.client.post(url_for('voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 400, u'{}'.format(response.data))
+        data = json.loads(response.data)
+        self.assertTrue(not data.get('success'), response.data)
+        self.assertTrue(len(data.get('benefits')) == 2, response.data)
+        self.assertTrue(data.get('error', dict()).get('error') == u'The voucher INVALIDCOUPON does not exist', response.data)
+
+    # def test_apply_coupon_false_partial_success_iff_all_validate(self):
+    #     pass
 
     # def test_overlapping_intervals_auto_freebie(self):
     #     # TODO

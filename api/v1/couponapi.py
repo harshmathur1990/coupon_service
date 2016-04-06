@@ -70,23 +70,37 @@ def apply_coupon():
         return benefits_given
     success, order, error = validate_coupon(args, validate_for_apply=True)
     if success:
+        if order.failed_vouchers:
+            voucher_success = False
+        else:
+            voucher_success = True
         # coupon is valid, try applying it
         benefits = get_benefits(order)
-        benefits['success'] = True
+        benefits['success'] = voucher_success
         benefits['errors'] = error
-        benefits_applied = apply_benefits(args, order, benefits)
-        if not benefits_applied:
-            # hopefully it will never happen,
-            # if it happens then only I will know what went wrong
-            err = {
-                'success': False,
-                'error': {
-                    'code': 500,
-                    'error': 'Internal Server error'
-                }
+        if not voucher_success:
+            benefits['error'] = {
+                'code': 400,
+                'error': ','.join(error)
             }
-            return err
+        else:
+            benefits_applied = apply_benefits(args, order, benefits)
+            if not benefits_applied:
+                # hopefully it will never happen,
+                # if it happens then only I will know what went wrong
+                benefits['error'] = {
+                    'code': 500,
+                    'error': u'Unknown Error. Please try after some time'
+                }
+                benefits['success'] = False
         return benefits
+    products = list()
+    for product in args.get('products'):
+        product_dict = dict()
+        product_dict['itemid'] = product.get('item_id')
+        product_dict['quantity'] = product.get('quantity')
+        product_dict['discount'] = 0.0
+        products.append(product_dict)
     else:
         return {
             'success': False,
@@ -94,7 +108,7 @@ def apply_coupon():
                 'code': 400,
                 'error': ','.join(error)
             },
-            'products': [],
+            'products': products,
             'freebies': [],
             'totalDiscount': 0.0,
             'channel': [],
@@ -170,20 +184,36 @@ def check_coupon():
     success, order, error = validate_coupon(args)
 
     if success:
+        if order.failed_vouchers:
+            voucher_success = False
+        else:
+            voucher_success = True
         # coupon is valid, try applying it
         fetch_auto_benefits(order, VoucherType.regular_freebie)
         fetch_auto_benefits(order, VoucherType.auto_freebie)
         benefits = get_benefits(order)
-        benefits['success'] = True
+        benefits['success'] = voucher_success
         benefits['errors'] = error
+        if not voucher_success:
+            benefits['error'] = {
+                'code': 400,
+                'error': ','.join(error)
+            }
         return benefits
+    products = list()
+    for product in args.get('products'):
+        product_dict = dict()
+        product_dict['itemid'] = product.get('item_id')
+        product_dict['quantity'] = product.get('quantity')
+        product_dict['discount'] = 0.0
+        products.append(product_dict)
     return {
         'success': False,
         'error': {
             'code': 400,
             'error': ','.join(error)
         },
-        'products': [],
+        'products': products,
         'freebies': [],
         'totalDiscount': 0.0,
         'channel': [],
@@ -467,7 +497,6 @@ def confirm_order():
 def update_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     data_list = json.loads(request.get_data())
-
     success, error = validate_for_update(data_list)
     if not success:
         return create_error_response(400, error)
@@ -480,7 +509,7 @@ def update_coupon():
         if is_timezone_aware(to_date):
             to_date = to_date.replace(tzinfo=None)
         for coupon in coupon_list:
-            voucher = Vouchers.find_one(coupon)
+            voucher = Vouchers.find_one_all_vouchers(coupon)
             if not voucher:
                 error_dict = {
                     'code': coupon,
@@ -488,8 +517,7 @@ def update_coupon():
                 }
                 error_list.append(error_dict)
                 continue
-            voucher.to_date = to_date
-            success = voucher.update_to_date()
+            success = voucher.update_to_date(to_date)
             if not success:
                 error_dict = {
                     'code': coupon,
