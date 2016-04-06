@@ -168,7 +168,7 @@ def check_coupon():
         fetch_auto_benefits(order, VoucherType.regular_freebie)
     if order:
         fetch_auto_benefits(order, VoucherType.auto_freebie)
-    benefits = get_benefits(order)
+        benefits = get_benefits(order)
 
     if success:
         # coupon is valid, try applying it
