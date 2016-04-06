@@ -1,4 +1,5 @@
 import json
+import logging
 from flask import request
 from lib.decorator import jsonify, check_login
 from lib.utils import is_timezone_aware, create_error_response, create_success_response
@@ -15,11 +16,13 @@ from validate import validate_for_create_api_v1, validate_for_update
 from utils import create_freebie_coupon
 from src.rules.rule import RuleCriteria, Benefits
 
+logger = logging.getLogger(__name__)
 
 @voucher_api.route('/apply', methods=['POST'])
 @jsonify
 @check_login
 def apply_coupon():
+    logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     apply_coupon_args = {
         'order_id': fields.Str(required=True, location='json'),
 
@@ -43,7 +46,7 @@ def apply_coupon():
         ),
 
         'coupon_codes': fields.List(
-            fields.Str(),
+            fields.Str(required=True, validate=validate.Length(min=1)),
             location='json',
             required=True
         ),
@@ -104,6 +107,7 @@ def apply_coupon():
 @jsonify
 @check_login
 def check_coupon():
+    logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     check_coupon_args = {
 
         'customer_id': fields.Str(required=True, location='json'),
@@ -192,6 +196,7 @@ def check_coupon():
 @jsonify
 @check_login
 def create_voucher():
+    logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     coupon_create_args = {
         'name': fields.Str(required=False, missing=None, location='json'),
 
@@ -442,6 +447,7 @@ def create_voucher():
 @jsonify
 @check_login
 def confirm_order():
+    logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     confirm_order_args = {
         'order_id': fields.Str(required=True, location='json'),
         'payment_status': fields.Bool(required=True, location='json')
@@ -459,6 +465,7 @@ def confirm_order():
 @jsonify
 @check_login
 def update_coupon():
+    logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     data_list = json.loads(request.get_data())
 
     success, error = validate_for_update(data_list)
@@ -507,6 +514,7 @@ def update_coupon():
 @jsonify
 @check_login
 def get_coupon():
+    logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     get_coupon_args = {
         'coupon_codes': fields.List(fields.Str(), required=True, location='json')
     }
