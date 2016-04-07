@@ -30,8 +30,7 @@ def get_voucher(voucher_code):
         return voucher, None
     elif voucher and now > voucher.to_date:
         now = datetime.datetime.utcnow()-timedelta(seconds=10)
-        voucher.to_date = now
-        voucher.update_to_date()
+        voucher.update_to_date(now)
         return None, u'The voucher {} has expired'.format(voucher.code)
     else:
         return None, u'The voucher {} does not exist'.format(voucher_code)
