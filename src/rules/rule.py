@@ -121,21 +121,21 @@ class Rule(object):
                     user_id, voucher_id)
                 if is_voucher_exhausted_for_this_user:
                     rv['success'] = False
-                    rv['msg'] = 'Voucher Invalid for this user'
+                    rv['msg'] = 'This voucher has expired'
             else:
                 rv['success'] = False
-                rv['msg'] = 'This voucher has exhausted'
+                rv['msg'] = 'This voucher has expired'
         elif use_type is UseType.per_user.value:
             is_voucher_exhausted_for_this_user = self.is_voucher_exhausted_for_this_user(
                 user_id, voucher_id)
             if is_voucher_exhausted_for_this_user:
                 rv['success'] = False
-                rv['msg'] = 'Voucher Invalid for this user'
+                rv['msg'] = 'This voucher has expired'
         elif use_type is UseType.global_use.value:
             is_voucher_exhausted = self.is_voucher_exhausted(voucher_id)
             if is_voucher_exhausted:
                 rv['success'] = False
-                rv['msg'] = 'This voucher has exhausted'
+                rv['msg'] = 'This voucher has expired'
         return rv
 
     def is_voucher_exhausted(self, voucher_id):
@@ -173,20 +173,20 @@ class Rule(object):
                         min_order_no = int(an_order_no[:-1])
             if (exact_order_no_list and order.order_no not in exact_order_no_list) or \
                     (min_order_no and order.order_no < min_order_no):
-                return False, None, u'This coupon {} is not applicable on this order {}'.format(code, order.order_no)
+                return False, None, u'This coupon {} is not applicable on this order'.format(code)
         if self.criteria_obj.channels and order.channel not in self.criteria_obj.channels:
             return False, None, u'This coupon {} is only valid on orders from {}'.format(code,
                 ','.join([Channels(c).name for c in self.criteria_obj.channels]))
         if self.criteria_obj.country and not get_intersection_of_lists(self.criteria_obj.country, order.country):
-            return False, None, u'This coupon {} is not valid in your country {}'.format(code, order.country)
+            return False, None, u'This coupon {} is not valid in your country'.format(code)
         if self.criteria_obj.state and not get_intersection_of_lists(self.criteria_obj.state, order.state):
-            return False, None, u'This coupon {} is not valid in your state {}'.format(code, order.state)
+            return False, None, u'This coupon {} is not valid in your state'.format(code)
         if self.criteria_obj.city and not get_intersection_of_lists(self.criteria_obj.city, order.city):
-            return False, None, u'This coupon {} is not valid in your city {}'.format(code, order.city)
+            return False, None, u'This coupon {} is not valid in your city'.format(code)
         if self.criteria_obj.zone and not get_intersection_of_lists(self.criteria_obj.zone, order.zone):
-            return False, None, u'This coupon {} is not valid in your zone {}'.format(code, order.zone)
+            return False, None, u'This coupon {} is not valid in your zone'.format(code)
         if self.criteria_obj.area and order.area not in self.criteria_obj.area:
-            return False, None, u'This coupon {} is not valid in your area {}'.format(code, order.area)
+            return False, None, u'This coupon {} is not valid in your area'.format(code)
         subscription_id_list = list()
         total = 0.0
         for item in order.items:

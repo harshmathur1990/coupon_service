@@ -172,7 +172,7 @@ class Vouchers(object):
                 failed_voucher.rules_list = [rule]
                 failed_dict = {
                     'voucher': failed_voucher,
-                    'error': u'Voucher {} has been exhausted'.format(self.code)
+                    'error': u'Voucher {} has expired'.format(self.code)
                 }
                 failed_rule_list.append(failed_dict)
                 # continue
