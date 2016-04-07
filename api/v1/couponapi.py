@@ -51,18 +51,32 @@ def apply_coupon():
             required=True
         ),
 
-        'freebies': fields.List(
-            fields.Int(),
+        'benefits': fields.List(
+            fields.Nested(
+                {
+                    'items': fields.List(fields.Int, required=True),
+                    'couponCode': fields.Str(required=True),
+                    'freebies': fields.List(fields.Int, required=False),
+                    'discount': fields.Float(validate=validate.Range(min=0), required=False),
+                    'type': fields.Int(
+                        validate=validate.OneOf(
+                            [l.value for l in list(VoucherType)], [l.name for l in list(VoucherType)]),
+                        required=True),
+                    'paymentMode': fields.List(fields.Int, required=False),
+                    'channel': fields.Int(
+                        validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
+                        required=False)
+                }
+            ),
             required=False,
-            location='json',
-            missing=list()
+            location='json'
         ),
 
-        'channel': fields.List(
-            fields.Int(validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)])),
+        'channel': fields.Int(
+            validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
             required=True,
             location='json'
-        )
+            ),
     }
     args = parser.parse(apply_coupon_args, request)
     order_exists, benefits_given = fetch_order_response(args)
@@ -123,6 +137,7 @@ def apply_coupon():
 def check_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     check_coupon_args = {
+        'order_id': fields.Str(required=False, location='json'),
 
         'customer_id': fields.Str(required=True, location='json'),
 
@@ -175,9 +190,7 @@ def check_coupon():
             validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
             required=True,
             location='json'
-            ),
-
-        'order_id': fields.Str(required=False, location='json'),
+            )
 
     }
     args = parser.parse(check_coupon_args, request)
