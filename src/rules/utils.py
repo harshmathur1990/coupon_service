@@ -100,7 +100,9 @@ def get_benefits(order):
         product_dict = products_dict[item]
         products_list.append(product_dict)
         total_discount += product_dict['discount']
+        product_dict['discount'] = round(product_dict['discount'], 2)
 
+    total_discount = round(total_discount, 2)
     response_dict = dict()
 
     response_dict['products'] = products_list
