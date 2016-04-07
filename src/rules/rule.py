@@ -142,7 +142,7 @@ class Rule(object):
         db = CouponsAlchemyDB()
         total_allowed_uses = self.criteria_obj.usage['no_of_total_uses_allowed']
         count = db.count("voucher_use_tracker", **{'voucher_id': voucher_id})
-        if count > total_allowed_uses:
+        if count >= total_allowed_uses:
             return True
         return False
 
@@ -150,7 +150,7 @@ class Rule(object):
         db = CouponsAlchemyDB()
         total_per_user_allowed_uses = self.criteria_obj.usage['no_of_uses_allowed_per_user']
         count = db.count("voucher_use_tracker", **{'voucher_id': voucher_id, 'user_id': user_id})
-        if count > total_per_user_allowed_uses:
+        if count >= total_per_user_allowed_uses:
             return True
         return False
 
