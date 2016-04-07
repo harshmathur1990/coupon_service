@@ -119,7 +119,7 @@ def apply_coupon():
         return {
             'success': False,
             'error': {
-                'code': 400,
+                'code': 503,
                 'error': ','.join(error)
             },
             'products': products,
@@ -223,7 +223,7 @@ def check_coupon():
     return {
         'success': False,
         'error': {
-            'code': 400,
+            'code': 503,
             'error': ','.join(error)
         },
         'products': products,
