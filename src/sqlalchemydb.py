@@ -369,6 +369,7 @@ class CouponsAlchemyDB:
             sel = select([table.c.id]).where(CouponsAlchemyDB.args_to_where(table, where))
             row = self.conn.execute(sel)
             count = row.rowcount
+            return count
         except exc.SQLAlchemyError as err:
             logger.error(err, exc_info=True)
             return False
