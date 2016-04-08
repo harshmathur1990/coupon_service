@@ -29,8 +29,7 @@ def get_voucher(voucher_code):
     if voucher and voucher.from_date <= now <= voucher.to_date:
         return voucher, None
     elif voucher and now > voucher.to_date:
-        now = datetime.datetime.utcnow()-timedelta(seconds=10)
-        voucher.update_to_date(now)
+        voucher.delete()
         return None, u'The voucher {} has expired'.format(voucher.code)
     else:
         return None, u'The voucher {} does not exist'.format(voucher_code)
@@ -131,12 +130,13 @@ def apply_benefits(args, order, benefits):
                 'response': json.dumps(benefits)
             })
             transaction_log.save(db)
+        db.commit()
     except Exception as e:
         logger.exception(e)
         db.rollback()
         return False
-    else:
-        db.commit()
+    # else:
+    #     db.commit()
     return True
 
 
@@ -438,7 +438,7 @@ def fetch_order_response(args):
 
 
 def save_auto_freebie_from_voucher(voucher, db=None):
-    voucher.get_rule()
+    voucher.get_rule(db)
     if voucher.type is not VoucherType.regular_coupon.value:
         auto_freebie_values = dict()
         auto_freebie_values['type'] = voucher.type
@@ -463,3 +463,53 @@ def save_auto_freebie_from_voucher_dict(voucher_dict):
     voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
     vouchers = Vouchers(**voucher_dict)
     save_auto_freebie_from_voucher(vouchers)
+
+
+def find_overlapping_vouchers(existing_voucher_dict, db=None):
+    sql = 'select * from `auto_freebie_search` where type=:type and zone=:zone and ('
+
+    if existing_voucher_dict.get('cart_range_min'):
+        where_clause1 = '( ((cart_range_min is null or (:cart_range_min >= cart_range_min)) && (cart_range_max is null or (:cart_range_min <= cart_range_max))) or ( (:cart_range_min is null or (cart_range_min >= :cart_range_min)) && (:cart_range_max is null or (cart_range_min <= :cart_range_max))) ) '
+    else:
+        where_clause1 = '(cart_range_min is null)'
+    if existing_voucher_dict.get('cart_range_max'):
+        where_clause2 = '( ((cart_range_min is null or (:cart_range_max >= cart_range_min)) && (cart_range_max is null or (:cart_range_max <= cart_range_max)) ) or ( (:cart_range_min is null or (cart_range_max >= :cart_range_min)) && (:cart_range_max is null or (cart_range_max <= :cart_range_max))) )'
+    else:
+        where_clause2 = '(cart_range_max is null)'
+
+    date_overlapping_caluse = '(((:from >= `from` && :from <= `to`) or (:to >= `from` && :to <= `to`)) or ((`from` >= :from && `from` <= :to) or (`to` >= :from && `to` <= :to) ))'
+
+    if existing_voucher_dict.get('type') is VoucherType.auto_freebie.value:
+        if existing_voucher_dict.get('range_min'):
+            where_clause3 = '( ((range_min is null or (:range_min >= range_min)) && (range_max is null or (:range_min <= range_max))) or ( (:range_min is null or (range_min >= :range_min)) && (:range_max is null or (range_min <= :range_max))) )'
+        else:
+            where_clause3 = '(range_min is null)'
+        if existing_voucher_dict.get('range_max'):
+            where_clause4 = '( ((range_min is null or (:range_max >= range_min)) && (range_max is null or (:range_max <= range_max)) ) or ( (:range_min is null or (range_max >= :range_min)) && (:range_max is null or (range_max <= :range_max))) )'
+        else:
+            where_clause4 = '(range_max is null)'
+
+        sql += '(' + where_clause1 + ' or ' + where_clause2 + ' or ' + where_clause3 +\
+               ' or ' + where_clause4 + ') && ('+date_overlapping_caluse+')' + ') and variants=:variants'
+    else:
+        sql += '(' + where_clause1 + ' or ' + where_clause2 + ') && ('+date_overlapping_caluse+')' + ')'
+
+    if not db:
+        db = CouponsAlchemyDB()
+    existing_voucher_list = db.execute_raw_sql(sql, existing_voucher_dict)
+    if existing_voucher_list:
+        error_list = list()
+        for existing_voucher in existing_voucher_list:
+            voucher = Vouchers.find_one_by_id(existing_voucher['voucher_id'])
+            if voucher.code != existing_voucher_dict.get('code'):
+                msg = u'Voucher {} overlaps ranges with this voucher with values cart_range_min: {}, cart_range_max: {}'.format(
+                    voucher.code, existing_voucher['cart_range_min'], existing_voucher['cart_range_max'])
+                if existing_voucher_dict.get('type'):
+                    msg += u', range_min: {}, range_max: {}'.format(existing_voucher['range_min'], existing_voucher['range_max'])
+                error_list.append(msg)
+                continue
+            error_list.append(u'Expire the voucher {} and recreate'.format(voucher.code))
+        if error_list:
+            return False, error_list
+
+    return True, None
