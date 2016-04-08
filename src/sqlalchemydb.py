@@ -28,7 +28,7 @@ class CouponsAlchemyDB:
                 DATABASE_URL,
                 paramstyle='format',
                 pool_recycle=3600,
-                isolation_level='REPEATABLE_READ',
+                isolation_level='READ_COMMITTED',
                 convert_unicode=True
             )
 
