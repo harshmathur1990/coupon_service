@@ -63,12 +63,13 @@ class Rule(object):
             else:
                 # update_cache = True
                 db.insert_row("rule", **values)
+            db.commit()
         except Exception as e:
             logger.exception(e)
             db.rollback()
             return False
-        else:
-            db.commit()
+        # else:
+        #     db.commit()
         # if update_cache:
         #     self.update_cache()
         return self.id
@@ -99,9 +100,10 @@ class Rule(object):
         return False
 
     @staticmethod
-    def find_one(id):
+    def find_one(id, db=None):
         id = binascii.a2b_hex(id)
-        db = CouponsAlchemyDB()
+        if not db:
+            db = CouponsAlchemyDB()
         rule_dict = db.find_one("rule", **{'id': id})
         if rule_dict:
             rule_dict['id'] = binascii.b2a_hex(rule_dict['id'])

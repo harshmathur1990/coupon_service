@@ -530,11 +530,11 @@ def update_coupon():
                 }
                 error_list.append(error_dict)
                 continue
-            success = voucher.update_to_date(to_date)
+            success, error = voucher.update_to_date(to_date)
             if not success:
                 error_dict = {
                     'code': coupon,
-                    'error': u'Voucher with code {} cannot be updated due to unknown error. Contact Support'.format(coupon)
+                    'error': ','.join(error)
                 }
                 error_list.append(error_dict)
                 continue

@@ -27,8 +27,8 @@ class CouponsAlchemyDB:
             CouponsAlchemyDB.engine = create_engine(
                 DATABASE_URL,
                 paramstyle='format',
-                isolation_level="REPEATABLE_READ",
                 pool_recycle=3600,
+                isolation_level='READ_COMMITTED',
                 convert_unicode=True
             )
 
@@ -57,7 +57,7 @@ class CouponsAlchemyDB:
                 Column('created_by', VARCHAR(32), nullable=False, default=''),
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
-                Column('updated_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
+                Column('updated_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, onupdate=datetime.utcnow),
                 Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 
@@ -77,7 +77,7 @@ class CouponsAlchemyDB:
                 Column('created_by', VARCHAR(32), nullable=False, default=''),
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
-                Column('updated_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
+                Column('updated_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, onupdate=datetime.utcnow),
                 Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 
@@ -97,7 +97,7 @@ class CouponsAlchemyDB:
                 Column('created_by', VARCHAR(32), nullable=False, default=''),
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
-                Column('updated_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
+                Column('updated_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, onupdate=datetime.utcnow),
                 Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
             )
 

@@ -1528,6 +1528,127 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(len(data.get('benefits')) == 2, response.data)
         self.assertTrue(data.get('error', dict()).get('error') == u'The voucher INVALIDCOUPON does not exist', response.data)
 
+    def test_update_to_date_auto_freebie_fail_because_it_overlaps_with_existing_freebie(self):
+        # All the freebies created are of overlapping ranges, but at a time only one will be active
+        # Create a freebie and Expire it.
+        # Set the to_date to some future date.
+        # Set the date as some date in the past or expire it
+        # Create the freebie with some other code and same criteria
+        # Then try to change to_date to future of the recent expired freebie and verify that
+        # it gives an error of a freebie existing with the range clash with code
+        today = datetime.datetime.utcnow()
+        tomorrow = today+timedelta(days=2)
+        day_before = today-timedelta(days=2)
+        rule_create_data = {
+            "name": "test_regular_freebie_1",
+            "description": "test_regular_freebie_description_1",
+            "type": 1,
+            "user_id": "1000",
+            "code": ["TEST1CODE259"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "cart_range_min": 200,
+                        "cart_range_max": 500,
+                        "location": {
+                            "zone": [34]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[1, 2]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        expire_args = [
+            {
+                'coupons': ['TEST1CODE259'],
+                'update': {
+                    'to': day_before.isoformat()
+                }
+            }
+        ]
+        response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(expire_args),
+                                    content_type='application/json')
+        db = CouponsAlchemyDB()
+        voucher_dict = db.find_one("vouchers", **{'code': 'TEST1CODE259'})
+        self.assertTrue(not voucher_dict)
+        future_args = [
+            {
+                'coupons': ['TEST1CODE259'],
+                'update': {
+                    'to': tomorrow.isoformat()
+                }
+            }
+        ]
+        response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(future_args),
+                                    content_type='application/json')
+        voucher_dict = db.find_one("vouchers", **{'code': 'TEST1CODE259'})
+        self.assertTrue(voucher_dict)
+        expire_args = [
+            {
+                'coupons': ['TEST1CODE259'],
+                'update': {
+                    'to': day_before.isoformat()
+                }
+            }
+        ]
+        response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(expire_args),
+                                    content_type='application/json')
+        voucher_dict = db.find_one("vouchers", **{'code': 'TEST1CODE259'})
+        self.assertTrue(not voucher_dict)
+        rule_create_data = {
+            "name": "test_regular_freebie_1",
+            "description": "test_regular_freebie_description_1",
+            "type": 1,
+            "user_id": "1000",
+            "code": ["TEST1CODE271"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "cart_range_min": 200,
+                        "cart_range_max": 500,
+                        "location": {
+                            "zone": [34]
+                        },
+                        "valid_on_order_no": ["1+"]
+                    },
+                    "benefits": {
+                        "freebies": [[1, 2]]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        voucher_dict = db.find_one("vouchers", **{'code': 'TEST1CODE271'})
+        self.assertTrue(voucher_dict)
+        future_args = [
+            {
+                'coupons': ['TEST1CODE259'],
+                'update': {
+                    'to': tomorrow.isoformat()
+                }
+            }
+        ]
+        response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(future_args),
+                                    content_type='application/json')
+        voucher_dict = db.find_one("vouchers", **{'code': 'TEST1CODE259'})
+        self.assertTrue(not voucher_dict)
+
     # def test_apply_coupon_false_partial_success_iff_all_validate(self):
     #     pass
 
