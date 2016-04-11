@@ -11,7 +11,7 @@ logfile:
 debug: True
 
 ruleredis:
-    host: localhost
+    host: grocery.6h3jqd.0001.apse1.cache.amazonaws.com
     port: 6379
     db: 0
 
