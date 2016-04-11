@@ -1,7 +1,7 @@
 from datetime import datetime
 import logging
 from sqlalchemy import Table, MetaData, create_engine, exc, BINARY, ForeignKey,\
-    VARCHAR, BOOLEAN, Column, and_, or_, BIGINT
+    VARCHAR, BOOLEAN, Column, and_, or_, BIGINT, Index
 from sqlalchemy.dialects.mysql import TINYINT, INTEGER, BIGINT, DATETIME
 from sqlalchemy import asc, desc, select, exists
 from config import DATABASE_URL
@@ -28,7 +28,7 @@ class CouponsAlchemyDB:
                 DATABASE_URL,
                 paramstyle='format',
                 pool_recycle=3600,
-                isolation_level='READ_COMMITTED',
+                isolation_level='REPEATABLE_READ',
                 convert_unicode=True
             )
 
@@ -111,7 +111,10 @@ class CouponsAlchemyDB:
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
                 Column('order_id', VARCHAR(32), nullable=False),
                 Column('response', VARCHAR(8000)),
-                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True),
+                Index("voucher_use_tracker_user_id", "user_id"),
+                Index("voucher_use_tracker_voucher_id", "voucher_id"),
+                Index("voucher_use_tracker_user_id_voucher_id", "user_id", "voucher_id")
             )
 
             CouponsAlchemyDB._table["voucher_use_tracker"] = CouponsAlchemyDB.voucher_use_tracker
@@ -125,7 +128,10 @@ class CouponsAlchemyDB:
                 Column('order_id', VARCHAR(32), nullable=False),
                 Column('status', TINYINT(unsigned=True), nullable=False),
                 Column('response', VARCHAR(8000)),
-                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True),
+                Index("user_voucher_transaction_log_user_id", "user_id"),
+                Index("user_voucher_transaction_log_voucher_id", "voucher_id"),
+                Index("user_voucher_transaction_log_user_id_voucher_id", "user_id", "voucher_id")
             )
 
             CouponsAlchemyDB._table["user_voucher_transaction_log"] = CouponsAlchemyDB.user_voucher_transaction_log
