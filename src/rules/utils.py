@@ -116,11 +116,20 @@ def get_benefits(order):
 def apply_benefits(args, order, benefits):
     order_id = args.get('order_id')
     user_id = args.get('customer_id')
+    voucher_id_list = list()
     db = CouponsAlchemyDB()
     db.begin()
     try:
         for existing_voucher in order.existing_vouchers:
             voucher_id = existing_voucher['voucher'].id
+            if voucher_id in voucher_id_list:
+                continue
+            voucher_id_list.append(voucher_id)
+            rule = existing_voucher['voucher'].rules_list[0]
+            status = rule.check_usage(order.customer_id, existing_voucher['voucher'].id_bin, db)
+            if not status.get('success', False):
+                db.rollback()
+                return False, 400, u'Voucher {} has expired'.format(existing_voucher['voucher'].code)
             transaction_log = VoucherTransactionLog(**{
                 'id': uuid.uuid1().hex,
                 'user_id': user_id,
@@ -134,10 +143,10 @@ def apply_benefits(args, order, benefits):
     except Exception as e:
         logger.exception(e)
         db.rollback()
-        return False
+        return False, 500, u'Unknown Error. Please try after some time'
     # else:
     #     db.commit()
-    return True
+    return True, 200, None
 
 
 def get_item_details(response, total_length, item_to_quantity):

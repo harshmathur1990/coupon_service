@@ -98,14 +98,15 @@ def apply_coupon():
                 'error': ','.join(error)
             }
         else:
-            benefits_applied = apply_benefits(args, order, benefits)
+            benefits_applied, http_code, error = apply_benefits(args, order, benefits)
             if not benefits_applied:
                 # hopefully it will never happen,
                 # if it happens then only I will know what went wrong
                 benefits['error'] = {
-                    'code': 500,
-                    'error': u'Unknown Error. Please try after some time'
+                    'code': http_code,
+                    'error': error
                 }
+                benefits['errors'] = [error]
                 benefits['success'] = False
         return benefits
     products = list()
@@ -241,6 +242,8 @@ def check_coupon():
 def create_voucher():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     coupon_create_args = {
+        'force': fields.Bool(location='query', missing=False),
+
         'name': fields.Str(required=False, missing=None, location='json'),
 
         'description': fields.Str(required=False, missing=None, location='json'),

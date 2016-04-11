@@ -823,6 +823,8 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
                                     content_type='application/json')
         self.assertTrue(response.status_code == 200, u'{}'.format(response.data))
+        data = json.loads(response.data)
+        self.assertTrue(len(data.get('benefits')) == 1, response.data)
 
     def test_delete_and_update_auto_freebie(self):
         today = datetime.datetime.utcnow()
@@ -1591,6 +1593,7 @@ class CreateRule(unittest.TestCase):
         ]
         response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(future_args),
                                     content_type='application/json')
+        db = CouponsAlchemyDB()
         voucher_dict = db.find_one("vouchers", **{'code': 'TEST1CODE259'})
         self.assertTrue(voucher_dict)
         expire_args = [
@@ -1603,6 +1606,7 @@ class CreateRule(unittest.TestCase):
         ]
         response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(expire_args),
                                     content_type='application/json')
+        db = CouponsAlchemyDB()
         voucher_dict = db.find_one("vouchers", **{'code': 'TEST1CODE259'})
         self.assertTrue(not voucher_dict)
         rule_create_data = {
@@ -1634,6 +1638,7 @@ class CreateRule(unittest.TestCase):
         }
         response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
                                     content_type='application/json')
+        db = CouponsAlchemyDB()
         voucher_dict = db.find_one("vouchers", **{'code': 'TEST1CODE271'})
         self.assertTrue(voucher_dict)
         future_args = [
@@ -1646,6 +1651,7 @@ class CreateRule(unittest.TestCase):
         ]
         response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(future_args),
                                     content_type='application/json')
+        db = CouponsAlchemyDB()
         voucher_dict = db.find_one("vouchers", **{'code': 'TEST1CODE259'})
         self.assertTrue(not voucher_dict)
 
