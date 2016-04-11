@@ -1,0 +1,26 @@
+port: 8000
+
+mysql:
+    connection: mysql+pymysql://grocery:grocery1234@grocery.c0wj8qdslqom.ap-southeast-1.rds.amazonaws.com:3306/grocery
+
+logfile:
+    foldername: couponlogs
+    logfilename: CouponService.out
+    errorlogfilename: CouponServiceError.log
+
+debug: True
+
+ruleredis:
+    host: localhost
+    port: 6379
+    db: 0
+
+informationhosturl: http://admin.api.askmegrocery.com
+
+subscriptionendpoint: /item/
+
+locationendpoint: /area/
+
+userendpoint: /user/id/
+
+token: Z3IwY2VyeTpncjBjZXJ5QDIx
