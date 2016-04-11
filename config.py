@@ -4,7 +4,7 @@ import yaml
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 env = os.getenv('HOSTENV') or 'development'
-if env not in ['development', 'staging', 'test']:
+if env not in ['development', 'staging', 'test', 'production']:
     assert False, 'Only development, staging and test environments are supported. Found HOSTENV = '.format(env)
 
 config_file = basedir + '/config/' + env + '.yml'
