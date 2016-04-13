@@ -161,7 +161,7 @@ class Rule(object):
     def match(self, order, code):
         assert isinstance(order, OrderData)
         if self.criteria_obj.cart_range_min and order.total_price < self.criteria_obj.cart_range_min:
-            return False, None, u'Coupon code {} is valid for minimum order value of {}'.format(code, self.criteria_obj.cart_range_min)
+            return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.criteria_obj.cart_range_min, code)
         if self.criteria_obj.cart_range_max and order.total_price > self.criteria_obj.cart_range_max:
             return False, None, u'Coupon {} is valid only till max amount {}'.format(code, self.criteria_obj.cart_range_max)
         if self.criteria_obj.valid_on_order_no:
@@ -203,7 +203,7 @@ class Rule(object):
             return False, None, u'No matching items found for this coupon {}'.format(code)
 
         if self.criteria_obj.range_min and total < self.criteria_obj.range_min:
-            return False, None, u'Total Order price for eligible items is less than minimum {} for coupon code {}'.format(self.criteria_obj.range_min, code)
+            return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.criteria_obj.range_min, code)
         if self.criteria_obj.range_max and total > self.criteria_obj.range_max:
             return False, None, u'Coupon {} is valid only till max amount {}'.format(code, self.criteria_obj.range_max)
 
