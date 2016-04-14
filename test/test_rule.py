@@ -767,8 +767,9 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json')
         self.assertTrue(response.status_code == 200, u'{}'.format(response.data))
-        response_text = u'{"errors": [], "benefits": [{"couponCode": "TEST1CODE67", "items": [1], "paymentMode": [], "freebies": [[1]], "discount": 0.0, "type": 0, "channel": []}], "success": true, "paymentMode": [], "totalDiscount": 0.0, "products": [{"itemid": 1, "discount": 0.0, "quantity": 1}], "channel": [], "couponCodes": ["TEST1CODE67"]}'
-        self.assertTrue(response.data == response_text, response.data)
+        data = json.loads(response.data)
+        self.assertTrue(data.get('couponCodes')[0] == 'TEST1CODE67', response.data)
+        self.assertTrue(data.get('benefits')[0]['freebies'] == [[1]], response.data)
 
     def test_apply_auto_freebie_coupon(self):
         today = datetime.datetime.utcnow()
@@ -1654,6 +1655,170 @@ class CreateRule(unittest.TestCase):
         db = CouponsAlchemyDB()
         voucher_dict = db.find_one("vouchers", **{'code': 'TEST1CODE259'})
         self.assertTrue(not voucher_dict)
+
+    def test_output_for_prorated_percentage(self):
+        today = datetime.datetime.utcnow().date()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": None,
+                        "range_max": None,
+                        "cart_range_min": 100,
+                        "cart_range_max": None,
+                        "channels": [],
+                        "brands": [],
+                        "products": {
+                            'in':[],
+                            'not_in': []
+                        },
+                        "categories": {
+                            "in": [],
+                            "not_in": []
+                        },
+                        "storefronts": [],
+                        "variants": [],
+                        "sellers": [],
+                        "location": {
+                            "country":[],
+                            "state": [],
+                            "city": [],
+                            "area": [],
+                            "zone": []
+                        },
+                        "payment_modes": [],
+                        "valid_on_order_no": []
+                    },
+                    "benefits": {
+                        "percentage": 10,
+                        "max_discount": 250
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        order_data = {
+            "area_id": 29557,
+            "customer_id": "1234",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": 1,
+                    "quantity": 3
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('voucher_api/v1.check_coupon_v2'), data=json.dumps(order_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(data.get('benefits')[0]['max_discount'] == 250, response.data)
+        self.assertTrue(data.get('benefits')[0]['prorated_discount'] < data.get('benefits')[0]['max_discount'], response.data)
+        self.assertTrue(data.get('products')[0]['discount'] == data.get('benefits')[0]['prorated_discount'], response.data)
+        order_data = {
+            "area_id": 29557,
+            "customer_id": "1234",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": 1,
+                    "quantity": 10
+                },
+                 {
+                    "item_id": 2,
+                    "quantity": 10
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('voucher_api/v1.check_coupon_v2'), data=json.dumps(order_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(data.get('benefits')[0]['max_discount'] == 250, response.data)
+        self.assertTrue(data.get('benefits')[0]['prorated_discount'] > data.get('benefits')[0]['max_discount'], response.data)
+        self.assertTrue(data.get('products')[0]['discount'] < data.get('benefits')[0]['prorated_discount'], response.data)
+        rule_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE78"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": None,
+                        "range_max": None,
+                        "cart_range_min": 100,
+                        "cart_range_max": None,
+                        "channels": [],
+                        "brands": [],
+                        "products": {
+                            'in':[],
+                            'not_in': []
+                        },
+                        "categories": {
+                            "in": [],
+                            "not_in": []
+                        },
+                        "storefronts": [],
+                        "variants": [],
+                        "sellers": [],
+                        "location": {
+                            "country":[],
+                            "state": [],
+                            "city": [],
+                            "area": [],
+                            "zone": []
+                        },
+                        "payment_modes": [],
+                        "valid_on_order_no": []
+                    },
+                    "benefits": {
+                        "amount": 300
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        order_data = {
+            "area_id": 29557,
+            "customer_id": "1234",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": 1,
+                    "quantity": 10
+                },
+                 {
+                    "item_id": 2,
+                    "quantity": 10
+                },
+            ],
+            "coupon_codes": ["TEST1CODE78"]
+        }
+        response = self.client.post(url_for('voucher_api/v1.check_coupon_v2'), data=json.dumps(order_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(not data.get('benefits')[0]['max_discount'], response.data)
+        self.assertTrue(data.get('benefits')[0]['flat_discount'] == 300, response.data)
 
     # def test_apply_coupon_false_partial_success_iff_all_validate(self):
     #     pass

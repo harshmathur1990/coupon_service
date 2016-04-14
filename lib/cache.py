@@ -1,4 +1,3 @@
-"""
 import redis
 import pickle
 import logging
@@ -13,10 +12,10 @@ cache_type = {
 logger = logging.getLogger()
 
 
-def set(key, value, ctype='rules'):
+def set(key, value, ctype='rules', ex=None, px=None, nx=False, xx=False):
     pool = cache_type.get(ctype)
     r = redis.StrictRedis(connection_pool=pool)
-    return r.set(key, pickle.dumps(value))
+    return r.set(key, pickle.dumps(value), ex=None, px=None, nx=False, xx=False)
 
 
 def get(key, ctype='rules'):
@@ -39,6 +38,3 @@ def delete(key, ctype='rules'):
     pool = cache_type.get(ctype)
     r = redis.StrictRedis(connection_pool=pool)
     return r.delete(key)
-
-
-"""

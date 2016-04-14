@@ -12,6 +12,8 @@ from src.sqlalchemydb import CouponsAlchemyDB
 from vouchers import Vouchers, VoucherTransactionLog
 from rule import Rule, RuleCriteria, Benefits
 from src.enums import *
+from lib import cache
+from src.rules.constants import GROCERY_ITEM_KEY, GROCERY_LOCATION_KEY, GROCERY_CACHE_TTL
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +115,104 @@ def get_benefits(order):
     return response_dict
 
 
+def get_benefits_new(order):
+    assert isinstance(order, OrderData)
+    products_dict = dict()
+    benefits_list = list()
+    payment_modes_list = list()
+    channels_list = list()
+    for item in order.items:
+        product_dict = dict()
+        product_dict['itemid'] = item.subscription_id
+        product_dict['quantity'] = item.quantity
+        product_dict['discount'] = 0.0
+        products_dict[item.subscription_id] = product_dict
+    for existing_voucher in order.existing_vouchers:
+        rules = existing_voucher['voucher'].rules_list
+        for rule in rules:
+            benefits = rule.benefits_obj
+            benefit_list = benefits.data
+            total = existing_voucher['total']
+            subscription_id_list = existing_voucher['subscription_id_list']
+            max_discount = benefits.max_discount
+            benefit_dict = dict()
+            for benefit in benefit_list:
+                if not benefit['value']:
+                    continue
+                flat_discount = 0.0
+                percentage_discount = 0.0
+                percentage_discount_actual = 0.0
+                freebie_list = list()
+                benefit_type = BenefitType(benefit['type'])
+                if benefit_type is BenefitType.freebie:
+                    freebie_list.append(benefit['value'])
+                else:
+                    if benefit_type is BenefitType.amount and benefit['value']:
+                        flat_discount = benefit['value']
+                    elif benefit_type is BenefitType.percentage and benefit['value']:
+                        percentage = benefit['value']
+                        percentage_discount = percentage * total / 100
+                        percentage_discount_actual = percentage_discount
+                    if max_discount and flat_discount > max_discount:
+                        flat_discount = max_discount
+                    if max_discount and percentage_discount > max_discount:
+                        percentage_discount = max_discount
+                    for item in order.items:
+                        if item.subscription_id in subscription_id_list:
+                            if flat_discount:
+                                item_flat_discount = (item.quantity * item.price * flat_discount)/total
+                                products_dict[item.subscription_id]['discount'] = max(
+                                    products_dict[item.subscription_id]['discount'], item_flat_discount)
+                            if percentage_discount:
+                                item_percentage_discount = (item.quantity * item.price * percentage_discount)/total
+                                products_dict[item.subscription_id]['discount'] = max(
+                                    products_dict[item.subscription_id]['discount'], item_percentage_discount)
+                benefit_dict['couponCode'] = existing_voucher['voucher'].code
+                benefit_dict['flat_discount'] = flat_discount
+                benefit_dict['prorated_discount'] = percentage_discount
+                benefit_dict['prorated_discount_actual'] = percentage_discount_actual
+                benefit_dict['freebies'] = freebie_list
+                benefit_dict['items'] = subscription_id_list
+                benefit_dict['type'] = existing_voucher['voucher'].type
+                benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
+                benefit_dict['channel'] = [Channels(c).value for c in rule.criteria_obj.channels]
+                if max_discount:
+                    benefit_dict['max_discount'] = max_discount
+                else:
+                    benefit_dict['max_discount'] = None
+                benefits_list.append(benefit_dict)
+                if not payment_modes_list:
+                    payment_modes_list = benefit_dict['paymentMode']
+                else:
+                    payment_modes_list = get_intersection_of_lists(payment_modes_list, benefit_dict['paymentMode'])
+                if not channels_list:
+                    channels_list = benefit_dict['channel']
+                else:
+                    channels_list = get_intersection_of_lists(channels_list, benefit_dict['channel'])
+    total_discount = 0.0
+    products_list = list()
+    for item in products_dict:
+        product_dict = products_dict[item]
+        products_list.append(product_dict)
+        total_discount += product_dict['discount']
+        product_dict['discount'] = round(product_dict['discount'], 2)
+
+    for a_benefit in benefits_list:
+        a_benefit['prorated_discount'] = a_benefit['prorated_discount_actual']
+        del a_benefit['prorated_discount_actual']
+
+    total_discount = round(total_discount, 2)
+    response_dict = dict()
+
+    response_dict['products'] = products_list
+    response_dict['benefits'] = benefits_list
+    response_dict['totalDiscount'] = total_discount
+    response_dict['paymentMode'] = payment_modes_list
+    response_dict['channel'] = channels_list
+    response_dict['couponCodes'] = [existing_voucher['voucher'].code for existing_voucher in order.existing_vouchers]
+    return response_dict
+
+
 def apply_benefits(args, order, benefits):
     order_id = args.get('order_id')
     user_id = args.get('customer_id')
@@ -149,31 +249,6 @@ def apply_benefits(args, order, benefits):
     return True, 200, None
 
 
-def get_item_details(response, total_length, item_to_quantity):
-    # returns the list of instances of VerificationItemData
-    try:
-        items_list = list()
-        data_list  = json.loads(response.text)
-        if not data_list and len(data_list) != total_length:
-            return False, None, 'Invalid Item ids provided'
-        for data in data_list:
-            item_dict = dict()
-            item_dict['brand'] = data.get('brandid')
-            item_dict['category'] = [data.get('categoryid')]
-            item_dict['product'] = [data.get('productid')]
-            item_dict['seller'] = data.get('sellerid')
-            item_dict['storefront'] = data.get('storefront')
-            item_dict['variant'] = data.get('variantid')
-            item_dict['price'] = data.get('offerprice')
-            item_dict['quantity'] = item_to_quantity[data.get('itemid')]
-            item_dict['subscription_id'] = data.get('itemid')
-            items_list.append(VerificationItemData(**item_dict))
-        return True, items_list, None
-    except Exception as e:
-        logger.exception(e)
-        return False, None, 'Unable to fetch Items'
-
-
 def get_user_details(response):
     # returns the order no of the user
     try:
@@ -186,12 +261,79 @@ def get_user_details(response):
         return False, None, 'Unable to fetch Items'
 
 
-def get_location_details(response):
-    # returns a dict containing location information
-    try:
-        data_list  = json.loads(response.text)
+def fetch_items(item_id_list, item_to_quantity):
+    cached_item_list = list()
+    to_fetch_item_list = list()
+    for item_id in item_id_list:
+        key = GROCERY_ITEM_KEY + u'{}'.format(item_id)
+        obj = cache.get(key)
+        if obj:
+            cached_item_list.append(obj)
+        else:
+            to_fetch_item_list.append(item_id)
+
+    for item in cached_item_list:
+        item.quantity = item_to_quantity[item.subscription_id]
+    if to_fetch_item_list:
+        item_id_list_str = ','.join(u'{}'.format(v) for v in to_fetch_item_list)
+
+        item_url = SUBSCRIPTIONURL + item_id_list_str + '/'
+
+        headers = {
+            'Authorization': TOKEN
+        }
+
+        list_of_responses = make_api_call([item_url], headers=headers)
+
+        response = list_of_responses[0]
+
+        try:
+            data_list = json.loads(response.text)
+        except Exception as e:
+            logger.exception(e)
+            return False, None, u'Unable to fetch Items'
+
+        if not isinstance(data_list, list) or len(data_list) != len(to_fetch_item_list):
+            return False, None, u'Invalid Item ids provided'
+
+        for data in data_list:
+            item_dict = dict()
+            item_dict['brand'] = data.get('brandid')
+            item_dict['category'] = [data.get('categoryid')]
+            item_dict['product'] = [data.get('productid')]
+            item_dict['seller'] = data.get('sellerid')
+            item_dict['storefront'] = data.get('storefront')
+            item_dict['variant'] = data.get('variantid')
+            item_dict['price'] = data.get('offerprice')
+            item_dict['quantity'] = item_to_quantity[data.get('itemid')]
+            item_dict['subscription_id'] = data.get('itemid')
+            item_obj = VerificationItemData(**item_dict)
+            key = GROCERY_ITEM_KEY + u'{}'.format(data.get('itemid'))
+            cache.set(key, item_obj, ex=GROCERY_CACHE_TTL)
+            cached_item_list.append(item_obj)
+
+    return True, cached_item_list, None
+
+
+def fetch_location_dict(area_id):
+    key = GROCERY_LOCATION_KEY+u'{}'.format(area_id)
+    location_dict = cache.get(key)
+    if not location_dict:
+        location_url = LOCATIONURL + str(area_id) + '/'
+        headers = {
+            'Authorization': TOKEN
+        }
+        response_list = make_api_call([location_url], headers=headers)
+        response = response_list[0]
+        try:
+            data_list = json.loads(response.text)
+        except Exception as e:
+            logger.exception(e)
+            return False, None, u'Unable to fetch area details'
+
         if not data_list:
             return False, None, u'Area Does not exist'
+
         data = data_list[0]
         location_dict = dict()
         location_dict['area'] = data.get('areaid')
@@ -199,10 +341,20 @@ def get_location_details(response):
         location_dict['state'] = [data.get('stateid')]
         location_dict['city'] = [data.get('cityid')]
         location_dict['zone'] = [data.get('zoneid')]
-        return True, location_dict, None
-    except Exception as e:
-        logger.exception(e)
-        return False, None, u'Unable to fetch area details'
+
+        cache.set(key, location_dict, ex=GROCERY_CACHE_TTL)
+
+    return True, location_dict, None
+
+
+def fetch_user_details(customer_id):
+    user_info_url = USERINFOURL + str(customer_id) + '/'
+    headers = {
+        'Authorization': TOKEN
+    }
+    response_list = make_api_call([user_info_url], headers=headers)
+    response = response_list[0]
+    return get_user_details(response)
 
 
 def fetch_order_detail(args):
@@ -217,41 +369,15 @@ def fetch_order_detail(args):
         item_id_list.append(item.get('item_id'))
         item_to_quantity[item.get('item_id')] = item.get('quantity')
 
-    item_id_list_str = ','.join(str(v) for v in item_id_list)
+    success, items, error = fetch_items(item_id_list, item_to_quantity)
+    if not success:
+        return False, None, error
 
-    item_url = SUBSCRIPTIONURL + item_id_list_str + '/'
-    location_url = LOCATIONURL + str(area_id) + '/'
-    user_info_url = USERINFOURL + str(customer_id) + '/'
+    success, location_dict, error = fetch_location_dict(area_id)
+    if not success:
+        return False, None, error
 
-    urls = [item_url, location_url, user_info_url]
-
-    headers = {
-        'Authorization': TOKEN
-    }
-
-    list_of_responses = make_api_call(urls, headers=headers)
-
-    items = list()
-    order_no = 0
-    location_dict = dict()
-    success = True
-    error = ''
-
-    for index, response in enumerate(list_of_responses):
-        if index is 0:
-            success, items, error = get_item_details(
-                response, len(item_id_list), item_to_quantity)
-            if not success:
-                break
-        if index is 1:
-            success, location_dict, error = get_location_details(response)
-            if not success:
-                break
-        if index is 2:
-            success, order_no, error = get_user_details(response)
-            if not success:
-                break
-
+    success, order_no, error = fetch_user_details(customer_id)
     if not success:
         return False, None, error
 
