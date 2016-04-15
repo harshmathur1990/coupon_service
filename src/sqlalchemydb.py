@@ -7,7 +7,7 @@ from sqlalchemy import asc, desc, select, exists
 from config import DATABASE_URL
 from sqlalchemy.sql import text
 logger = logging.getLogger()
-from flask import request
+
 
 
 class CouponsAlchemyDB:
@@ -24,6 +24,7 @@ class CouponsAlchemyDB:
     @staticmethod
     def init():
         try:
+            from lib.utils import get_agent_id
             CouponsAlchemyDB.engine = create_engine(
                 DATABASE_URL,
                 paramstyle='format',
@@ -38,7 +39,7 @@ class CouponsAlchemyDB:
                 'tokens', CouponsAlchemyDB.metadata,
                 Column('token', VARCHAR(250), primary_key=True),
                 Column('agent_id', INTEGER, index=True, unique=True, nullable=False),
-                Column('agent_name', VARCHAR(250), nullable=False),
+                Column('agent_name', VARCHAR(250), unique=True, index=True, nullable=False),
                 Column('created_at', DATETIME(fsp=6)),
                 Column('last_accessed_at', DATETIME(fsp=6)),
             )
@@ -58,7 +59,7 @@ class CouponsAlchemyDB:
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
                 Column('updated_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, onupdate=datetime.utcnow),
-                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=get_agent_id, nullable=True)
             )
 
             CouponsAlchemyDB._table["rule"] = CouponsAlchemyDB.rule_table
@@ -78,7 +79,7 @@ class CouponsAlchemyDB:
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
                 Column('updated_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, onupdate=datetime.utcnow),
-                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=get_agent_id, nullable=True)
             )
 
             CouponsAlchemyDB._table["vouchers"] = CouponsAlchemyDB.vouchers_table
@@ -98,7 +99,7 @@ class CouponsAlchemyDB:
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
                 Column('updated_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, onupdate=datetime.utcnow),
-                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=get_agent_id, nullable=True)
             )
 
             CouponsAlchemyDB._table["all_vouchers"] = CouponsAlchemyDB.all_vouchers
@@ -111,7 +112,7 @@ class CouponsAlchemyDB:
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
                 Column('order_id', VARCHAR(32), nullable=False),
                 Column('response', VARCHAR(8000)),
-                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True),
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=get_agent_id, nullable=True),
                 Index("voucher_use_tracker_user_id", "user_id"),
                 Index("voucher_use_tracker_voucher_id", "voucher_id"),
                 Index("voucher_use_tracker_user_id_voucher_id", "user_id", "voucher_id")
@@ -128,7 +129,7 @@ class CouponsAlchemyDB:
                 Column('order_id', VARCHAR(32), nullable=False),
                 Column('status', TINYINT(unsigned=True), nullable=False),
                 Column('response', VARCHAR(8000)),
-                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True),
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=get_agent_id, nullable=True),
                 Index("user_voucher_transaction_log_user_id", "user_id"),
                 Index("user_voucher_transaction_log_voucher_id", "voucher_id"),
                 Index("user_voucher_transaction_log_user_id_voucher_id", "user_id", "voucher_id")
@@ -149,7 +150,7 @@ class CouponsAlchemyDB:
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False, index=True),
                 Column('from', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, index=True),
                 Column('to', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, index=True),
-                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=None, nullable=True)
+                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=get_agent_id, nullable=True)
             )
 
             CouponsAlchemyDB._table["auto_freebie_search"] = CouponsAlchemyDB.auto_freebie_search
