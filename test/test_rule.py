@@ -1657,6 +1657,10 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(not voucher_dict)
 
     def test_output_for_prorated_percentage(self):
+        headers= {
+            'X-API-USER': 'askmegrocery',
+            'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
+        }
         today = datetime.datetime.utcnow().date()
         tomorrow = today+timedelta(days=2)
         rule_create_data = {
@@ -1722,7 +1726,7 @@ class CreateRule(unittest.TestCase):
             "coupon_codes": ["TEST1CODE1"]
         }
         response = self.client.post(url_for('voucher_api/v1.check_coupon_v2'), data=json.dumps(order_data),
-                                    content_type='application/json')
+                                    content_type='application/json', headers=headers)
         data = json.loads(response.data)
         self.assertTrue(data.get('benefits')[0]['max_discount'] == 250, response.data)
         self.assertTrue(data.get('benefits')[0]['prorated_discount'] < data.get('benefits')[0]['max_discount'], response.data)
@@ -1744,7 +1748,7 @@ class CreateRule(unittest.TestCase):
             "coupon_codes": ["TEST1CODE1"]
         }
         response = self.client.post(url_for('voucher_api/v1.check_coupon_v2'), data=json.dumps(order_data),
-                                    content_type='application/json')
+                                    content_type='application/json', headers=headers)
         data = json.loads(response.data)
         self.assertTrue(data.get('benefits')[0]['max_discount'] == 250, response.data)
         self.assertTrue(data.get('benefits')[0]['prorated_discount'] > data.get('benefits')[0]['max_discount'], response.data)
@@ -1815,7 +1819,7 @@ class CreateRule(unittest.TestCase):
             "coupon_codes": ["TEST1CODE78"]
         }
         response = self.client.post(url_for('voucher_api/v1.check_coupon_v2'), data=json.dumps(order_data),
-                                    content_type='application/json')
+                                    content_type='application/json', headers=headers)
         data = json.loads(response.data)
         self.assertTrue(not data.get('benefits')[0]['max_discount'], response.data)
         self.assertTrue(data.get('benefits')[0]['flat_discount'] == 300, response.data)

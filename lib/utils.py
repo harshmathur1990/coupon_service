@@ -1,6 +1,9 @@
 import grequests
 import logging
 import time
+from src.rules.user import User
+from src.sqlalchemydb import CouponsAlchemyDB
+from flask import request
 
 logger = logging.getLogger(__name__)
 
@@ -59,14 +62,25 @@ def unauthenticated():
     return create_error_response(401, u'Unauthenticated Client')
 
 
-def is_logged_in(agent_id, authorization):
-    return True
-    # authenticated = False
-    # db = CouponsAlchemyDB()
-    # token = db.find_one("tokens", **{'token': authorization, 'agent_id': agent_id})
-    # if token:
-    #     user = dict()
-    #     user['agent_id'] = token['agent_id']
-    #     setattr(request, 'user', user)
-    #     authenticated = True
-    # return authenticated
+def is_logged_in(agent_name, authorization):
+    # return True
+    authenticated = False
+    db = CouponsAlchemyDB()
+    token = db.find_one("tokens", **{'token': authorization, 'agent_name': agent_name})
+    if token:
+        user_dict = dict()
+        user_dict['agent_id'] = token['agent_id']
+        user_dict['agent_name'] = token['agent_name']
+        user = User(**user_dict)
+        setattr(request, 'user', user)
+        authenticated = True
+    return authenticated
+
+
+def get_agent_id():
+    agent_id = None
+    try:
+        agent_id = request.user.agent_id
+    except AttributeError:
+        pass
+    return agent_id

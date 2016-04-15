@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 @voucher_api.route('/apply', methods=['POST'])
 @jsonify
-@check_login
+# @check_login
 def apply_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     apply_coupon_args = {
@@ -134,7 +134,7 @@ def apply_coupon():
 
 @voucher_api.route('/check', methods=['POST'])
 @jsonify
-@check_login
+# @check_login
 def check_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     check_coupon_args = {
@@ -238,7 +238,7 @@ def check_coupon():
 
 @voucher_api.route('/create', methods=['POST'])
 @jsonify
-@check_login
+# @check_login
 def create_voucher():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     coupon_create_args = {
@@ -491,7 +491,7 @@ def create_voucher():
 
 @voucher_api.route('/confirm', methods=['POST'])
 @jsonify
-@check_login
+# @check_login
 def confirm_order():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     confirm_order_args = {
@@ -509,7 +509,7 @@ def confirm_order():
 
 @voucher_api.route('/update', methods=['PUT', 'POST'])
 @jsonify
-@check_login
+# @check_login
 def update_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     data_list = json.loads(request.get_data())
@@ -556,7 +556,7 @@ def update_coupon():
 
 @voucher_api.route('/fetchDetail', methods=['POST'])
 @jsonify
-@check_login
+# @check_login
 def get_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     get_coupon_args = {

@@ -55,9 +55,9 @@ def logrequest(f):
 def check_login(method):
     @functools.wraps(method)
     def wrapper(*args, **kwargs):
-        agent_id = request.headers.get('X-API-USER', None)
+        agent_name = request.headers.get('X-API-USER', None)
         authorization = request.headers.get('X-API-TOKEN', 'Acdlsdksl')
-        if authorization and is_logged_in(agent_id, authorization):
+        if authorization and is_logged_in(agent_name, authorization):
             return method(*args, **kwargs)
         else:
             return unauthenticated()
