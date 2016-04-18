@@ -26,6 +26,7 @@ class CreateRule(unittest.TestCase):
         db.delete_row("all_vouchers")
         db.delete_row("vouchers")
         db.delete_row("rule")
+        db.delete_row("tokens")
         self.app_context.pop()
 
     def test_create_voucher(self):
@@ -1657,6 +1658,15 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(not voucher_dict)
 
     def test_output_for_prorated_percentage(self):
+        values = {
+            'token': u'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy',
+            'agent_id': 1,
+            'agent_name': u'askmegrocery',
+            'created_at': datetime.datetime.utcnow(),
+            'last_accessed_at': datetime.datetime.utcnow()
+        }
+        db = CouponsAlchemyDB()
+        db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
