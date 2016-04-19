@@ -15,7 +15,7 @@ logger = logging.getLogger()
 def set(key, value, ctype='rules', ex=None, px=None, nx=False, xx=False):
     pool = cache_type.get(ctype)
     r = redis.StrictRedis(connection_pool=pool)
-    return r.set(key, pickle.dumps(value), ex=None, px=None, nx=False, xx=False)
+    return r.set(key, pickle.dumps(value), ex, px, nx, xx)
 
 
 def get(key, ctype='rules'):
