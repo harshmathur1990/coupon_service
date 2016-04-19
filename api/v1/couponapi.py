@@ -644,219 +644,219 @@ def get_coupon():
     return create_success_response(success_list, error_list)
 
 
-# @voucher_api.route('/applyv2', methods=['POST'])
-# @jsonify
-# @check_login
-# def apply_coupon_v2():
-#     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
-#     apply_coupon_args = {
-#         'order_id': fields.Str(required=True, location='json'),
-#
-#         'customer_id': fields.Str(required=True, location='json'),
-#
-#         'area_id': fields.Int(required=True, location='json'),
-#
-#         'products': fields.List(
-#             fields.Nested(
-#                 {
-#                     'item_id': fields.Int(validate=validate.Range(min=0), required=True),
-#                     'quantity': fields.Int(validate=validate.Range(min=1), required=True),
-#                     'coupon_codes': fields.List(
-#                         fields.Str(),
-#                         required=False
-#                     )
-#                 }
-#             ),
-#             required=True,
-#             location='json'
-#         ),
-#
-#         'coupon_codes': fields.List(
-#             fields.Str(required=True, validate=validate.Length(min=1)),
-#             location='json',
-#             required=True
-#         ),
-#
-#         'benefits': fields.List(
-#             fields.Nested(
-#                 {
-#                     'items': fields.List(fields.Int, required=True),
-#                     'couponCode': fields.Str(required=True),
-#                     'freebies': fields.List(fields.Int, required=False),
-#                     'discount': fields.Float(validate=validate.Range(min=0), required=False),
-#                     'type': fields.Int(
-#                         validate=validate.OneOf(
-#                             [l.value for l in list(VoucherType)], [l.name for l in list(VoucherType)]),
-#                         required=True),
-#                     'paymentMode': fields.List(fields.Int, required=False),
-#                     'channel': fields.Int(
-#                         validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
-#                         required=False)
-#                 }
-#             ),
-#             required=False,
-#             location='json'
-#         ),
-#
-#         'channel': fields.Int(
-#             validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
-#             required=True,
-#             location='json'
-#             ),
-#     }
-#     args = parser.parse(apply_coupon_args, request)
-#     order_exists, benefits_given = fetch_order_response(args)
-#     if order_exists:
-#         return benefits_given
-#     success, order, error = validate_coupon(args, validate_for_apply=True)
-#     if success:
-#         if order.failed_vouchers:
-#             voucher_success = False
-#         else:
-#             voucher_success = True
-#         # coupon is valid, try applying it
-#         benefits = get_benefits_new(order)
-#         benefits['success'] = voucher_success
-#         benefits['errors'] = error
-#         if not voucher_success:
-#             benefits['error'] = {
-#                 'code': 400,
-#                 'error': ','.join(error)
-#             }
-#         else:
-#             benefits_applied, http_code, error = apply_benefits(args, order, benefits)
-#             if not benefits_applied:
-#                 # hopefully it will never happen,
-#                 # if it happens then only I will know what went wrong
-#                 benefits['error'] = {
-#                     'code': http_code,
-#                     'error': error
-#                 }
-#                 benefits['errors'] = [error]
-#                 benefits['success'] = False
-#         return benefits
-#     products = list()
-#     for product in args.get('products'):
-#         product_dict = dict()
-#         product_dict['itemid'] = product.get('item_id')
-#         product_dict['quantity'] = product.get('quantity')
-#         product_dict['discount'] = 0.0
-#         products.append(product_dict)
-#     else:
-#         return {
-#             'success': False,
-#             'error': {
-#                 'code': 503,
-#                 'error': ','.join(error)
-#             },
-#             'products': products,
-#             'freebies': [],
-#             'totalDiscount': 0.0,
-#             'channel': [],
-#             'paymentModes': [],
-#             'errors': error
-#         }
+@voucher_api.route('/applyv2', methods=['POST'])
+@jsonify
+@check_login
+def apply_coupon_v2():
+    logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
+    apply_coupon_args = {
+        'order_id': fields.Str(required=True, location='json'),
+
+        'customer_id': fields.Str(required=True, location='json'),
+
+        'area_id': fields.Int(required=True, location='json'),
+
+        'products': fields.List(
+            fields.Nested(
+                {
+                    'item_id': fields.Int(validate=validate.Range(min=0), required=True),
+                    'quantity': fields.Int(validate=validate.Range(min=1), required=True),
+                    'coupon_codes': fields.List(
+                        fields.Str(),
+                        required=False
+                    )
+                }
+            ),
+            required=True,
+            location='json'
+        ),
+
+        'coupon_codes': fields.List(
+            fields.Str(required=True, validate=validate.Length(min=1)),
+            location='json',
+            required=True
+        ),
+
+        'benefits': fields.List(
+            fields.Nested(
+                {
+                    'items': fields.List(fields.Int, required=True),
+                    'couponCode': fields.Str(required=True),
+                    'freebies': fields.List(fields.Int, required=False),
+                    'discount': fields.Float(validate=validate.Range(min=0), required=False),
+                    'type': fields.Int(
+                        validate=validate.OneOf(
+                            [l.value for l in list(VoucherType)], [l.name for l in list(VoucherType)]),
+                        required=True),
+                    'paymentMode': fields.List(fields.Int, required=False),
+                    'channel': fields.Int(
+                        validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
+                        required=False)
+                }
+            ),
+            required=False,
+            location='json'
+        ),
+
+        'channel': fields.Int(
+            validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
+            required=True,
+            location='json'
+            ),
+    }
+    args = parser.parse(apply_coupon_args, request)
+    order_exists, benefits_given = fetch_order_response(args)
+    if order_exists:
+        return benefits_given
+    success, order, error = validate_coupon(args, validate_for_apply=True)
+    if success:
+        if order.failed_vouchers:
+            voucher_success = False
+        else:
+            voucher_success = True
+        # coupon is valid, try applying it
+        benefits = get_benefits_new(order)
+        benefits['success'] = voucher_success
+        benefits['errors'] = error
+        if not voucher_success:
+            benefits['error'] = {
+                'code': 400,
+                'error': ','.join(error)
+            }
+        else:
+            benefits_applied, http_code, error = apply_benefits(args, order, benefits)
+            if not benefits_applied:
+                # hopefully it will never happen,
+                # if it happens then only I will know what went wrong
+                benefits['error'] = {
+                    'code': http_code,
+                    'error': error
+                }
+                benefits['errors'] = [error]
+                benefits['success'] = False
+        return benefits
+    products = list()
+    for product in args.get('products'):
+        product_dict = dict()
+        product_dict['itemid'] = product.get('item_id')
+        product_dict['quantity'] = product.get('quantity')
+        product_dict['discount'] = 0.0
+        products.append(product_dict)
+    else:
+        return {
+            'success': False,
+            'error': {
+                'code': 503,
+                'error': ','.join(error)
+            },
+            'products': products,
+            'freebies': [],
+            'totalDiscount': 0.0,
+            'channel': [],
+            'paymentModes': [],
+            'errors': error
+        }
 
 
-# @voucher_api.route('/checkv2', methods=['POST'])
-# @jsonify
-# @check_login
-# def check_coupon_v2():
-#     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
-#     check_coupon_args = {
-#         'order_id': fields.Str(required=False, location='json'),
-#
-#         'customer_id': fields.Str(required=True, location='json'),
-#
-#         'area_id': fields.Int(required=True, location='json'),
-#
-#         'products': fields.List(
-#             fields.Nested(
-#                 {
-#                     'item_id': fields.Int(validate=validate.Range(min=0), required=True),
-#                     'quantity': fields.Int(validate=validate.Range(min=1), required=True),
-#                     'coupon_codes': fields.List(
-#                         fields.Str(),
-#                         required=False
-#                     )
-#                 }
-#             ),
-#             required=True,
-#             location='json'
-#         ),
-#
-#         'coupon_codes': fields.List(
-#             fields.Str(),
-#             location='json',
-#             required=False,
-#             missing=list()
-#         ),
-#
-#         'benefits': fields.List(
-#             fields.Nested(
-#                 {
-#                     'items': fields.List(fields.Int, required=True),
-#                     'couponCode': fields.Str(required=True),
-#                     'freebies': fields.List(fields.Int, required=False),
-#                     'discount': fields.Float(validate=validate.Range(min=0), required=False),
-#                     'type': fields.Int(
-#                         validate=validate.OneOf(
-#                             [l.value for l in list(VoucherType)], [l.name for l in list(VoucherType)]),
-#                         required=True),
-#                     'paymentMode': fields.List(fields.Int, required=False),
-#                     'channel': fields.Int(
-#                         validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
-#                         required=False)
-#                 }
-#             ),
-#             required=False,
-#             location='json'
-#         ),
-#
-#         'channel': fields.Int(
-#             validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
-#             required=True,
-#             location='json'
-#             )
-#
-#     }
-#     args = parser.parse(check_coupon_args, request)
-#     success, order, error = validate_coupon(args)
-#
-#     if success:
-#         if order.failed_vouchers:
-#             voucher_success = False
-#         else:
-#             voucher_success = True
-#         # coupon is valid, try applying it
-#         fetch_auto_benefits(order, VoucherType.regular_freebie)
-#         fetch_auto_benefits(order, VoucherType.auto_freebie)
-#         benefits = get_benefits_new(order)
-#         benefits['success'] = voucher_success
-#         benefits['errors'] = error
-#         if not voucher_success:
-#             benefits['error'] = {
-#                 'code': 400,
-#                 'error': ','.join(error)
-#             }
-#         return benefits
-#     products = list()
-#     for product in args.get('products'):
-#         product_dict = dict()
-#         product_dict['itemid'] = product.get('item_id')
-#         product_dict['quantity'] = product.get('quantity')
-#         product_dict['discount'] = 0.0
-#         products.append(product_dict)
-#     return {
-#         'success': False,
-#         'error': {
-#             'code': 503,
-#             'error': ','.join(error)
-#         },
-#         'products': products,
-#         'freebies': [],
-#         'totalDiscount': 0.0,
-#         'channel': [],
-#         'paymentModes': [],
-#         'errors': error
-#     }
+@voucher_api.route('/checkv2', methods=['POST'])
+@jsonify
+@check_login
+def check_coupon_v2():
+    logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
+    check_coupon_args = {
+        'order_id': fields.Str(required=False, location='json'),
+
+        'customer_id': fields.Str(required=True, location='json'),
+
+        'area_id': fields.Int(required=True, location='json'),
+
+        'products': fields.List(
+            fields.Nested(
+                {
+                    'item_id': fields.Int(validate=validate.Range(min=0), required=True),
+                    'quantity': fields.Int(validate=validate.Range(min=1), required=True),
+                    'coupon_codes': fields.List(
+                        fields.Str(),
+                        required=False
+                    )
+                }
+            ),
+            required=True,
+            location='json'
+        ),
+
+        'coupon_codes': fields.List(
+            fields.Str(),
+            location='json',
+            required=False,
+            missing=list()
+        ),
+
+        'benefits': fields.List(
+            fields.Nested(
+                {
+                    'items': fields.List(fields.Int, required=True),
+                    'couponCode': fields.Str(required=True),
+                    'freebies': fields.List(fields.Int, required=False),
+                    'discount': fields.Float(validate=validate.Range(min=0), required=False),
+                    'type': fields.Int(
+                        validate=validate.OneOf(
+                            [l.value for l in list(VoucherType)], [l.name for l in list(VoucherType)]),
+                        required=True),
+                    'paymentMode': fields.List(fields.Int, required=False),
+                    'channel': fields.Int(
+                        validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
+                        required=False)
+                }
+            ),
+            required=False,
+            location='json'
+        ),
+
+        'channel': fields.Int(
+            validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
+            required=True,
+            location='json'
+            )
+
+    }
+    args = parser.parse(check_coupon_args, request)
+    success, order, error = validate_coupon(args)
+
+    if success:
+        if order.failed_vouchers:
+            voucher_success = False
+        else:
+            voucher_success = True
+        # coupon is valid, try applying it
+        fetch_auto_benefits(order, VoucherType.regular_freebie)
+        fetch_auto_benefits(order, VoucherType.auto_freebie)
+        benefits = get_benefits_new(order)
+        benefits['success'] = voucher_success
+        benefits['errors'] = error
+        if not voucher_success:
+            benefits['error'] = {
+                'code': 400,
+                'error': ','.join(error)
+            }
+        return benefits
+    products = list()
+    for product in args.get('products'):
+        product_dict = dict()
+        product_dict['itemid'] = product.get('item_id')
+        product_dict['quantity'] = product.get('quantity')
+        product_dict['discount'] = 0.0
+        products.append(product_dict)
+    return {
+        'success': False,
+        'error': {
+            'code': 503,
+            'error': ','.join(error)
+        },
+        'products': products,
+        'freebies': [],
+        'totalDiscount': 0.0,
+        'channel': [],
+        'paymentModes': [],
+        'errors': error
+    }
