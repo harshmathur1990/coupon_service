@@ -18,6 +18,7 @@ from src.rules.rule import RuleCriteria, Benefits
 
 logger = logging.getLogger(__name__)
 
+
 @voucher_api.route('/apply', methods=['POST'])
 @jsonify
 # @check_login

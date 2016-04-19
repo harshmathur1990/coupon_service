@@ -12,7 +12,8 @@ def handle_error(error):
         'error': {
             'code': 422,
             'error': u'Invalid value for the following keys {}'.format(key_list)
-        }
+        },
+        'errors': [u'Invalid value for the following keys {}'.format(key_list)]
     }
     res = jsonify(rv)
     res.status_code = 422
