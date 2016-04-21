@@ -2,7 +2,8 @@ import json
 import logging
 from flask import request
 from lib.decorator import jsonify, check_login
-from lib.utils import is_timezone_aware, create_error_response, create_success_response
+from lib.utils import is_timezone_aware, create_error_response,\
+    create_success_response, is_valid_curl_string, is_valid_duration_string
 from src.enums import *
 from src.rules.vouchers import VoucherTransactionLog, Vouchers
 from src.rules.utils import get_benefits, apply_benefits, create_and_save_rule_list,\
@@ -264,6 +265,21 @@ def create_voucher():
         'from': fields.DateTime(required=True, location='json'),
 
         'to': fields.DateTime(required=True, location='json'),
+
+        'schedule': fields.List(
+            fields.Nested(
+                {
+                    'type': fields.Int(required=True,
+                                       validate=validate.OneOf(
+                        [l.value for l in list(SchedulerType)], [l.name for l in list(SchedulerType)])),
+                    'value': fields.Str(required=True,
+                                        validate=is_valid_curl_string),
+                    'duration': fields.Str(required=True, validate=is_valid_duration_string)
+                }
+            ),
+            required=False,
+            missing=list()
+        ),
 
         'rules': fields.List(
             fields.Nested(

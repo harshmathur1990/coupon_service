@@ -1,6 +1,7 @@
 import grequests
 import logging
 import time
+import croniter
 from src.rules.user import User
 from src.sqlalchemydb import CouponsAlchemyDB
 from flask import request
@@ -84,3 +85,43 @@ def get_agent_id():
     except AttributeError:
         pass
     return agent_id
+
+
+def is_valid_curl_string(value):
+    import ipdb;ipdb.set_trace()
+    success = False
+    try:
+        cron = croniter.croniter(value)
+        success = True
+    except:
+        pass
+    return success
+
+
+def is_valid_duration_string(value):
+    import ipdb;ipdb.set_trace()
+    success = False
+    try:
+        duration_list = value.split(':')
+        if 5 == len(duration_list):
+            error = False
+            week = duration_list[0]
+            days = duration_list[1]
+            hours = duration_list[2]
+            minutes = duration_list[3]
+            seconds = duration_list[4]
+            if week and week < 0:
+                error = True
+            if days and days < 0:
+                error = True
+            if hours and (hours >= 24 or hours < 0):
+                error = True
+            if seconds and (seconds >= 60 or seconds < 0):
+                error = True
+            if minutes and (minutes >= 60 or minutes < 0):
+                error = True
+            if not error:
+                success = True
+    except Exception:
+        pass
+    return success

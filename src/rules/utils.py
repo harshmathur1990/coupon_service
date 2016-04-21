@@ -1,5 +1,6 @@
 import datetime
 from datetime import timedelta
+import croniter
 import json
 import logging
 import uuid
@@ -26,10 +27,31 @@ def get_rule(rule_id):
     return None
 
 
+def is_between(now, date1, date2):
+    if now > date2 or now < date1:
+        return False
+    return True
+
 def get_voucher(voucher_code):
     voucher = Vouchers.find_one(voucher_code)
     now = datetime.datetime.utcnow()
     if voucher and voucher.from_date <= now <= voucher.to_date:
+        if voucher.schedule:
+            for schedule in voucher.schedule:
+                if schedule['type'] is SchedulerType.value:
+                    cron = croniter.croniter(schedule['value'], now)
+                    cron_prev = cron.get_prev(datetime.datetime)
+                    cron_current = cron.get_current(datetime.datetime)
+                    cron_next = cron.get_next(datetime.datetime)
+                    weeks, days, hours, minutes, seconds = tuple(schedule['duration'].split(':'))
+                    duration_prev = cron_prev + timedelta(days=days, weeks=weeks, hours=hours, minutes=minutes, seconds=seconds)
+                    duration_current = cron_current + timedelta(days=days, weeks=weeks, hours=hours, minutes=minutes, seconds=seconds)
+                    duration_next = cron_next + timedelta(days=days, weeks=weeks, hours=hours, minutes=minutes, seconds=seconds)
+                    if is_between(now, cron_prev, duration_prev) or \
+                            is_between(now, cron_current, duration_current) or \
+                            is_between(now, cron_next, duration_next):
+                        return voucher, None
+            return None, u'The voucher {} is not valid'.format(voucher.code)
         return voucher, None
     elif voucher and now > voucher.to_date:
         voucher.delete()
@@ -417,6 +439,7 @@ def create_voucher_object(data, rule_id_list, code):
     kwargs['from'] = data.get('from')
     kwargs['to'] = data.get('to')
     kwargs['type'] = data.get('type')
+    kwargs['schedule'] = data.get('schedule')
     kwargs['updated_by'] = data.get('user_id')
     kwargs['custom'] = data.get('custom')
     voucher = Vouchers(**kwargs)
