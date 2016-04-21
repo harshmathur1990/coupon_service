@@ -644,7 +644,7 @@ def get_coupon():
     return create_success_response(success_list, error_list)
 
 
-@voucher_api.route('/applyv2', methods=['POST'])
+@voucher_api.route('/applyCoupon', methods=['POST'])
 @jsonify
 @check_login
 def apply_coupon_v2():
@@ -758,7 +758,7 @@ def apply_coupon_v2():
         }
 
 
-@voucher_api.route('/checkv2', methods=['POST'])
+@voucher_api.route('/checkCoupon', methods=['POST'])
 @jsonify
 @check_login
 def check_coupon_v2():

@@ -279,8 +279,8 @@ class Vouchers(object):
 
     def can_coexist(self, voucher):
         assert isinstance(voucher, Vouchers)
-        if self.type is VoucherType.regular_coupon.value or voucher.type is VoucherType.regular_coupon.value:
-            return False
+        # if self.type is VoucherType.regular_coupon.value or voucher.type is VoucherType.regular_coupon.value:
+        #     return False
         now = datetime.datetime.utcnow()
         if voucher.to_date > now:
             return False
