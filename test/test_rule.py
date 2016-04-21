@@ -1452,7 +1452,8 @@ class CreateRule(unittest.TestCase):
                             "zone": []
                         },
                         "payment_modes": [],
-                        "valid_on_order_no": []
+                        "valid_on_order_no": [],
+                        "source": ["affiliate", "organic"]
                     },
                     "benefits": {
                         "percentage": 10,
@@ -1483,7 +1484,8 @@ class CreateRule(unittest.TestCase):
                     "quantity": 1
                 },
             ],
-            "coupon_codes": ["TEST1CODE1"]
+            "coupon_codes": ["TEST1CODE1"],
+            "source": "organic"
         }
         response = self.client.post(url_for('voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json')
@@ -1502,7 +1504,8 @@ class CreateRule(unittest.TestCase):
                 },
             ],
             "coupon_codes": ["TEST1CODE1", "INVALIDCOUPON"],
-            "order_id": "1234"
+            "order_id": "1234",
+            "source": "organic"
         }
         response = self.client.post(url_for('voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json')
@@ -1522,7 +1525,8 @@ class CreateRule(unittest.TestCase):
                 },
             ],
             "coupon_codes": ["TEST1CODE1", "INVALIDCOUPON", "TEST1CODE67"],
-            "order_id": "1234"
+            "order_id": "1234",
+            "source": "organic"
         }
         response = self.client.post(url_for('voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
                                     content_type='application/json')

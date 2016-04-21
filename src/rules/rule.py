@@ -191,6 +191,8 @@ class Rule(object):
             return False, None, u'This coupon {} is not valid in your zone'.format(code)
         if self.criteria_obj.area and order.area not in self.criteria_obj.area:
             return False, None, u'This coupon {} is not valid in your area'.format(code)
+        if self.criteria_obj.source and order.source not in self.criteria_obj.source:
+            return False, None, u'This coupon {} is not valid on this order'.format(code)
         subscription_id_list = list()
         total = 0.0
         for item in order.items:
@@ -233,6 +235,8 @@ class RuleCriteria(object):
         self.country.sort()
         self.payment_modes = kwargs.get('payment_modes', list())
         self.payment_modes.sort()
+        self.source = kwargs.get('source', list())
+        self.source.sort()
         product = kwargs.get('products', default_in_not_in)
         self.products = {
             'in': product.get('in', list()),

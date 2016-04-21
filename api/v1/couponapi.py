@@ -78,6 +78,8 @@ def apply_coupon():
             required=True,
             location='json'
             ),
+
+        'source': fields.Str(required=False, missing=None, location='json')
     }
     args = parser.parse(apply_coupon_args, request)
     order_exists, benefits_given = fetch_order_response(args)
@@ -192,7 +194,9 @@ def check_coupon():
             validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
             required=True,
             location='json'
-            )
+            ),
+
+        'source': fields.Str(required=False, missing=None, location='json')
 
     }
     args = parser.parse(check_coupon_args, request)
@@ -291,6 +295,13 @@ def create_voucher():
                                     [l.value for l in list(Channels)], [l.name for l in list(Channels)])),
                             required=False,
                             missing=list()
+                        ),
+
+                        'source': fields.List(
+                            fields.Str(),
+                            required=False,
+                            missing=list(),
+                            location='json'
                         ),
 
                         'brands': fields.List(
@@ -703,6 +714,8 @@ def apply_coupon_v2():
             required=True,
             location='json'
             ),
+
+        'source': fields.Str(required=False, missing=None, location='json')
     }
     args = parser.parse(apply_coupon_args, request)
     order_exists, benefits_given = fetch_order_response(args)
@@ -817,7 +830,9 @@ def check_coupon_v2():
             validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
             required=True,
             location='json'
-            )
+            ),
+
+        'source': fields.Str(required=False, missing=None, location='json')
 
     }
     args = parser.parse(check_coupon_args, request)

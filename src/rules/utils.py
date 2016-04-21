@@ -391,6 +391,7 @@ def fetch_order_detail(args):
     order_data_dict['order_no'] = order_no
     order_data_dict.update(location_dict)
     order_data_dict['channel'] = args.get('channel')
+    order_data_dict['source'] = args.get('source')
     order_data_dict['items'] = items
     order_data_dict['customer_id'] = args.get('customer_id')
     order_data = OrderData(**order_data_dict)
@@ -452,7 +453,7 @@ def create_rule_object(data, user_id=None):
         'range_min', 'sellers', 'storefronts', 'cart_range_max',
         'no_of_uses_allowed_per_user', 'no_of_total_uses_allowed',
         'variants', 'location.country', 'location.state',
-        'location.city', 'location.area', 'location.zone'
+        'location.city', 'location.area', 'location.zone', 'source'
     ]
 
     for a_key in rule_criteria_keys:
