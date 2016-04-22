@@ -11,7 +11,7 @@ from src.rules.validate import validate_coupon, validate_for_create_coupon,\
     validate_for_create_voucher
 from webargs import fields, validate
 from webargs.flaskparser import parser
-from api import voucher_api
+from api import voucher_api, voucher_api_v_1_1
 from validate import validate_for_create_api_v1, validate_for_update
 from utils import create_freebie_coupon
 from src.rules.rule import RuleCriteria, Benefits
@@ -644,7 +644,7 @@ def get_coupon():
     return create_success_response(success_list, error_list)
 
 
-@voucher_api.route('/applyCoupon', methods=['POST'])
+@voucher_api_v_1_1.route('/apply', methods=['POST'])
 @jsonify
 @check_login
 def apply_coupon_v2():
@@ -758,7 +758,7 @@ def apply_coupon_v2():
         }
 
 
-@voucher_api.route('/checkCoupon', methods=['POST'])
+@voucher_api_v_1_1.route('/check', methods=['POST'])
 @jsonify
 @check_login
 def check_coupon_v2():
