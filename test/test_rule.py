@@ -1833,7 +1833,40 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(not data.get('benefits')[0]['max_discount'], response.data)
         self.assertTrue(data.get('benefits')[0]['flat_discount'] == 300, response.data)
-
+        order_data = {
+            "order_id": "AGTEST",
+            "area_id": 29557,
+            "customer_id": "9831314343",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": 1,
+                    "quantity": 10
+                },
+                 {
+                    "item_id": 2,
+                    "quantity": 10
+                },
+            ],
+            "coupon_codes": ["TEST1CODE78"]
+        }
+        response = self.client.post(url_for('voucher_api/v1.1.apply_coupon_v2'), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 200, response.data)
+        confirm_data = {
+            "order_id": "AGTEST",
+            "payment_status": True
+        }
+        response = self.client.post(url_for('voucher_api/v1.confirm_order'), data=json.dumps(confirm_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 200, response.data)
+        confirm_data = {
+            "order_id": "AGTEST",
+            "payment_status": False
+        }
+        response = self.client.post(url_for('voucher_api/v1.confirm_order'), data=json.dumps(confirm_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 200, response.data)
     # def test_apply_coupon_false_partial_success_iff_all_validate(self):
     #     pass
 
