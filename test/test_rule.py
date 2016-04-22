@@ -1735,7 +1735,7 @@ class CreateRule(unittest.TestCase):
             ],
             "coupon_codes": ["TEST1CODE1"]
         }
-        response = self.client.post(url_for('voucher_api/v1.check_coupon_v2'), data=json.dumps(order_data),
+        response = self.client.post(url_for('voucher_api/v1.1.check_coupon_v2'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         data = json.loads(response.data)
         self.assertTrue(data.get('benefits')[0]['max_discount'] == 250, response.data)
@@ -1757,7 +1757,7 @@ class CreateRule(unittest.TestCase):
             ],
             "coupon_codes": ["TEST1CODE1"]
         }
-        response = self.client.post(url_for('voucher_api/v1.check_coupon_v2'), data=json.dumps(order_data),
+        response = self.client.post(url_for('voucher_api/v1.1.check_coupon_v2'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         data = json.loads(response.data)
         self.assertTrue(data.get('benefits')[0]['max_discount'] == 250, response.data)
@@ -1828,7 +1828,7 @@ class CreateRule(unittest.TestCase):
             ],
             "coupon_codes": ["TEST1CODE78"]
         }
-        response = self.client.post(url_for('voucher_api/v1.check_coupon_v2'), data=json.dumps(order_data),
+        response = self.client.post(url_for('voucher_api/v1.1.check_coupon_v2'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         data = json.loads(response.data)
         self.assertTrue(not data.get('benefits')[0]['max_discount'], response.data)
