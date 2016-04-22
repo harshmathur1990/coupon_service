@@ -4,7 +4,8 @@ import json
 import logging
 import uuid
 import binascii
-from config import LOCATIONURL, SUBSCRIPTIONURL, USERINFOURL, TOKEN
+from flask import request
+from config import LOCATIONURL, SUBSCRIPTIONURL, USERINFOURL, TOKEN, USERFROMMOBILEURL
 from data import OrderData
 from data import VerificationItemData
 from lib.utils import make_api_call, get_intersection_of_lists
@@ -252,13 +253,13 @@ def apply_benefits(args, order, benefits):
 def get_user_details(response):
     # returns the order no of the user
     try:
-        data_list  = json.loads(response.text)
+        data_list = json.loads(response.text)
         if not data_list:
             return False, None, u'User Does not exist'
         return True, data_list[0]['ordercount'], None
     except Exception as e:
         logger.exception(e)
-        return False, None, 'Unable to fetch Items'
+        return False, None, u'Unable to fetch User details'
 
 
 def fetch_items(item_id_list, item_to_quantity):
@@ -348,7 +349,11 @@ def fetch_location_dict(area_id):
 
 
 def fetch_user_details(customer_id):
-    user_info_url = USERINFOURL + str(customer_id) + '/'
+    if u'{}'.format(request.url_rule) == u'/vouchers/v1/check' or \
+                    u'{}'.format(request.url_rule) == u'/vouchers/v1/apply':
+        user_info_url = USERINFOURL + str(customer_id) + '/'
+    else:
+        user_info_url = USERFROMMOBILEURL + str(customer_id) + '/'
     headers = {
         'Authorization': TOKEN
     }
