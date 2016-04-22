@@ -1725,7 +1725,7 @@ class CreateRule(unittest.TestCase):
                                     content_type='application/json')
         order_data = {
             "area_id": 29557,
-            "customer_id": "1234",
+            "customer_id": "9831314343",
             "channel": 0,
             "products": [
                 {
@@ -1743,7 +1743,7 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(data.get('products')[0]['discount'] == data.get('benefits')[0]['prorated_discount'], response.data)
         order_data = {
             "area_id": 29557,
-            "customer_id": "1234",
+            "customer_id": "9831314343",
             "channel": 0,
             "products": [
                 {
@@ -1814,7 +1814,7 @@ class CreateRule(unittest.TestCase):
                                     content_type='application/json')
         order_data = {
             "area_id": 29557,
-            "customer_id": "1234",
+            "customer_id": "9831314343",
             "channel": 0,
             "products": [
                 {
