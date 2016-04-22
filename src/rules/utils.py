@@ -32,6 +32,7 @@ def is_between(now, date1, date2):
         return False
     return True
 
+
 def get_voucher(voucher_code):
     voucher = Vouchers.find_one(voucher_code)
     now = datetime.datetime.utcnow()
@@ -282,6 +283,7 @@ def get_user_details(response):
     except Exception as e:
         logger.exception(e)
         return False, None, u'Unable to fetch User details'
+
 
 
 def fetch_items(item_id_list, item_to_quantity):

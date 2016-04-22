@@ -3,7 +3,7 @@ import logging
 from flask import request
 from lib.decorator import jsonify, check_login
 from lib.utils import is_timezone_aware, create_error_response,\
-    create_success_response, is_valid_curl_string, is_valid_duration_string
+    create_success_response, is_valid_schedule_object, is_valid_duration_string
 from src.enums import *
 from src.rules.vouchers import VoucherTransactionLog, Vouchers
 from src.rules.utils import get_benefits, apply_benefits, create_and_save_rule_list,\
@@ -272,8 +272,7 @@ def create_voucher():
                     'type': fields.Int(required=True,
                                        validate=validate.OneOf(
                         [l.value for l in list(SchedulerType)], [l.name for l in list(SchedulerType)])),
-                    'value': fields.Str(required=True,
-                                        validate=is_valid_curl_string),
+                    'value': fields.Str(required=True),
                     'duration': fields.Str(required=True, validate=is_valid_duration_string)
                 }
             ),
@@ -476,7 +475,7 @@ def create_voucher():
         )
 
     }
-    args = parser.parse(coupon_create_args, request)
+    args = parser.parse(coupon_create_args, req=request, validate=is_valid_schedule_object)
 
     # api specific validation
     success, error = validate_for_create_api_v1(args)

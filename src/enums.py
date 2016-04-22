@@ -58,4 +58,6 @@ class VoucherType(Enum):
 
 
 class SchedulerType(Enum):
-    cron = 0
+    daily = 0
+    exact = 1
+    cron = 2
