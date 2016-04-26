@@ -1867,8 +1867,8 @@ class CreateRule(unittest.TestCase):
             "to": tomorrow.isoformat(),
             "schedule": [
                 {
-                    "type": 0,
-                    "value": "0 0 "+str(hour)+" 1/1 * ? *",
+                    "type": 0, # 2
+                    "value": "13:00:00", # "0 0 "+str(hour)+" 1/1 * ? *",
                     "duration": "::2::"
                 }
             ],
@@ -1927,7 +1927,7 @@ class CreateRule(unittest.TestCase):
             ],
             "coupon_codes": ["TEST1CODE1"]
         }
-        response = self.client.post(url_for('voucher_api/v1.check_coupon_v2'), data=json.dumps(order_data),
+        response = self.client.post(url_for('voucher_api/v1.1.check_coupon_v2'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         # print response.data
     # def test_apply_coupon_false_partial_success_iff_all_validate(self):

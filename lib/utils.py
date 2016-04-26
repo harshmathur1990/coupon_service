@@ -105,11 +105,11 @@ def is_valid_duration_string(value):
         duration_list = value.split(':')
         if 5 == len(duration_list):
             error = False
-            week = int(duration_list[0])
-            days = int(duration_list[1])
-            hours = int(duration_list[2])
-            minutes = int(duration_list[3])
-            seconds = int(duration_list[4])
+            week = int(duration_list[0]) if duration_list[0] != '' else 0
+            days = int(duration_list[1]) if duration_list[1] != '' else 0
+            hours = int(duration_list[2]) if duration_list[2] != '' else 0
+            minutes = int(duration_list[3]) if duration_list[3] != '' else 0
+            seconds = int(duration_list[4]) if duration_list[4] != '' else 0
             if week and week < 0:
                 error = True
             if days and days < 0:
@@ -142,7 +142,7 @@ def schedule_validate_method(type):
         SchedulerType.daily.value: date_validator,
         SchedulerType.exact.value: date_validator,
         SchedulerType.cron.value: is_valid_cron_string
-    }
+    }.get(type, SchedulerType.daily.value)
 
 
 def is_valid_schedule_object(args):

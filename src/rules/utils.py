@@ -39,7 +39,19 @@ def get_voucher(voucher_code):
     if voucher and voucher.from_date <= now <= voucher.to_date:
         if voucher.schedule:
             for schedule in voucher.schedule:
-                if schedule['type'] is SchedulerType.value:
+                if schedule['type'] is SchedulerType.exact.value:
+                    scheduled_time_start = datetime.datetime.strptime(schedule['value'],"%Y-%m-%d %H:%M:%S.%f")
+                    weeks, days, hours, minutes, seconds = tuple(schedule['duration'].split(':'))
+                    scheduled_time_end = scheduled_time_start + timedelta(days=int(days), weeks=weeks, hours=hours, minutes=minutes, seconds=seconds)
+                    if is_between(now, scheduled_time_start, scheduled_time_end):
+                        return voucher, None
+                elif schedule['type'] is SchedulerType.daily.value:
+                    scheduled_time_start = datetime.datetime.strptime(schedule['value'],"%H:%M:%S")
+                    weeks, days, hours, minutes, seconds = tuple(schedule['duration'].split(':'))
+                    scheduled_time_end = scheduled_time_start + timedelta(days=days, weeks=weeks, hours=hours, minutes=minutes, seconds=seconds)
+                    if is_between(now, scheduled_time_start, scheduled_time_end):
+                        return voucher, None
+                elif schedule['type'] is SchedulerType.cron.value:
                     cron = croniter.croniter(schedule['value'], now)
                     cron_prev = cron.get_prev(datetime.datetime)
                     cron_current = cron.get_current(datetime.datetime)
