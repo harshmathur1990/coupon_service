@@ -1894,6 +1894,10 @@ class CreateRule(unittest.TestCase):
         hour -= 1
         today = today.date()
         tomorrow = today+timedelta(days=2)
+        nowtime = datetime.datetime.utcnow()
+        oldtime = timedelta(minutes=10)
+        oldfromnowtime = (nowtime - oldtime).time().isoformat()
+
         rule_create_data = {
             "name": "test_rule_1",
             "description": "test_some_description_1",
@@ -1905,7 +1909,7 @@ class CreateRule(unittest.TestCase):
             "schedule": [
                 {
                     "type": 0, # 2
-                    "value": "13:00:00", # "0 0 "+str(hour)+" 1/1 * ? *",
+                    "value": oldfromnowtime, #"17:00:00", # "0 0 "+str(hour)+" 1/1 * ? *",
                     "duration": "::2::"
                 }
             ],
@@ -1951,7 +1955,7 @@ class CreateRule(unittest.TestCase):
         }
         response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
                                     content_type='application/json')
-        print response.data
+        #print response.data
         order_data = {
             "area_id": 29557,
             "customer_id": "1234",
@@ -1966,6 +1970,10 @@ class CreateRule(unittest.TestCase):
         }
         response = self.client.post(url_for('voucher_api/v1.1.check_coupon_v2'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
+        data = json.loads(response.data)
+        self.assertTrue(data.get('success'), response.data)
+        self.assertTrue(len(data.get('benefits')) == 1, response.data)
+
         # print response.data
     # def test_apply_coupon_false_partial_success_iff_all_validate(self):
     #     pass

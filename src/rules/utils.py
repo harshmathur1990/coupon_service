@@ -33,6 +33,16 @@ def is_between(now, date1, date2):
     return True
 
 
+def get_num_from_str(str):
+    try:
+        if len(str) is 0 or str is None:
+            return 0
+        else:
+            return int(str)
+    except Exception as exp:
+        return 0
+
+
 def get_voucher(voucher_code):
     voucher = Vouchers.find_one(voucher_code)
     now = datetime.datetime.utcnow()
@@ -42,13 +52,16 @@ def get_voucher(voucher_code):
                 if schedule['type'] is SchedulerType.exact.value:
                     scheduled_time_start = datetime.datetime.strptime(schedule['value'],"%Y-%m-%d %H:%M:%S.%f")
                     weeks, days, hours, minutes, seconds = tuple(schedule['duration'].split(':'))
-                    scheduled_time_end = scheduled_time_start + timedelta(days=int(days), weeks=weeks, hours=hours, minutes=minutes, seconds=seconds)
+                    scheduled_time_end = scheduled_time_start + timedelta(days=get_num_from_str(days), weeks=get_num_from_str(weeks), hours=get_num_from_str(hours), minutes=get_num_from_str(minutes), seconds=get_num_from_str(seconds))
                     if is_between(now, scheduled_time_start, scheduled_time_end):
                         return voucher, None
                 elif schedule['type'] is SchedulerType.daily.value:
-                    scheduled_time_start = datetime.datetime.strptime(schedule['value'],"%H:%M:%S")
+                    hours, minutes, seconds = tuple(schedule['value'].split(':'))
+                    today = datetime.datetime.utcnow().date()
+                    justtime = datetime.time(hour=get_num_from_str(hours), minute=get_num_from_str(minutes), second=get_num_from_str(seconds))
+                    scheduled_time_start = datetime.datetime.combine(today, justtime)
                     weeks, days, hours, minutes, seconds = tuple(schedule['duration'].split(':'))
-                    scheduled_time_end = scheduled_time_start + timedelta(days=days, weeks=weeks, hours=hours, minutes=minutes, seconds=seconds)
+                    scheduled_time_end = scheduled_time_start + timedelta(days=get_num_from_str(days), weeks=get_num_from_str(weeks), hours=get_num_from_str(hours), minutes=get_num_from_str(minutes), seconds=get_num_from_str(seconds))
                     if is_between(now, scheduled_time_start, scheduled_time_end):
                         return voucher, None
                 elif schedule['type'] is SchedulerType.cron.value:
@@ -57,9 +70,12 @@ def get_voucher(voucher_code):
                     cron_current = cron.get_current(datetime.datetime)
                     cron_next = cron.get_next(datetime.datetime)
                     weeks, days, hours, minutes, seconds = tuple(schedule['duration'].split(':'))
-                    duration_prev = cron_prev + timedelta(days=days, weeks=weeks, hours=hours, minutes=minutes, seconds=seconds)
-                    duration_current = cron_current + timedelta(days=days, weeks=weeks, hours=hours, minutes=minutes, seconds=seconds)
-                    duration_next = cron_next + timedelta(days=days, weeks=weeks, hours=hours, minutes=minutes, seconds=seconds)
+                    deltatime = timedelta(days=get_num_from_str(days), weeks=get_num_from_str(weeks),
+                                                          hours=get_num_from_str(hours), minutes=get_num_from_str(minutes),
+                                                          seconds=get_num_from_str(seconds))
+                    duration_prev = cron_prev + deltatime
+                    duration_current = cron_current + deltatime
+                    duration_next = cron_next + deltatime
                     if is_between(now, cron_prev, duration_prev) or \
                             is_between(now, cron_current, duration_current) or \
                             is_between(now, cron_next, duration_next):
