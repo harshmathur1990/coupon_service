@@ -300,8 +300,8 @@ class Vouchers(object):
         assert isinstance(voucher, Vouchers)
         # if self.type is VoucherType.regular_coupon.value or voucher.type is VoucherType.regular_coupon.value:
         #     return False
-        now = datetime.datetime.utcnow()
-        if voucher.to_date > now:
+        if (voucher.to_date > self.from_date and voucher.to_date < self.to_date) or \
+                (self.to_date > voucher.from_date and self.to_date < voucher.to_date):
             return False
         return True
 
@@ -403,25 +403,21 @@ class VoucherTransactionLog(object):
                 error = u'No Order found for the given order id'
             else:
                 last_log = VoucherTransactionLog.dict_to_obj(voucher_use_list_of_dict[0])
-                if last_log.status_enum is VoucherTransactionStatus.in_progress:
-                    if args.get('payment_status'):
-                        status = VoucherTransactionStatus.success.value
-                    else:
-                        status = VoucherTransactionStatus.failure.value
-                    id = uuid.uuid1().hex
-                    log = VoucherTransactionLog(**{
-                        'id': id,
-                        'user_id': last_log.user_id,
-                        'voucher_id': last_log.voucher_id,
-                        'order_id': last_log.order_id,
-                        'status': status
-                    })
-                    log.save(db)
-                    success = True
-                    error = None
+                if args.get('payment_status'):
+                    status = VoucherTransactionStatus.success.value
                 else:
-                    success = False
-                    error = u'No Order in progress for the the given order id'
+                    status = VoucherTransactionStatus.failure.value
+                id = uuid.uuid1().hex
+                log = VoucherTransactionLog(**{
+                    'id': id,
+                    'user_id': last_log.user_id,
+                    'voucher_id': last_log.voucher_id,
+                    'order_id': last_log.order_id,
+                    'status': status
+                })
+                log.save(db)
+                success = True
+                error = None
             db.commit()
         except Exception as e:
             logger.exception(e)
