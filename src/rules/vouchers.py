@@ -281,8 +281,8 @@ class Vouchers(object):
         assert isinstance(voucher, Vouchers)
         # if self.type is VoucherType.regular_coupon.value or voucher.type is VoucherType.regular_coupon.value:
         #     return False
-        now = datetime.datetime.utcnow()
-        if voucher.to_date > now:
+        if (voucher.to_date > self.from_date and voucher.to_date < self.to_date) or \
+                (self.to_date > voucher.from_date and self.to_date < voucher.to_date):
             return False
         return True
 
