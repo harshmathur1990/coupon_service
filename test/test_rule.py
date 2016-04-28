@@ -863,6 +863,9 @@ class CreateRule(unittest.TestCase):
         }
         response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
                                     content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(response.status_code == 200, response.data)
+        self.assertTrue(data.get('success'), response.data)
         db = CouponsAlchemyDB()
         all_vouchers_code_dict = db.find_one("all_vouchers", **{'code': 'TEST1CODE69'})
         expire_args = [
@@ -889,7 +892,7 @@ class CreateRule(unittest.TestCase):
             "type": 0,
             "user_id": "1000",
             "code": ["TEST1CODE69"],
-            "from": today.date().isoformat(),
+            "from": datetime.datetime.utcnow().isoformat(),
             "to": tomorrow.isoformat(),
             "rules": [
                 {
