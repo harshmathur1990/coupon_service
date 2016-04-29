@@ -80,9 +80,8 @@ def apply_coupon():
             location='json'
             ),
 
-        'source': fields.Str(required=False, missing=None, location='json'),
+        'source': fields.Str(required=False, missing=None, location='json')
 
-        'custom': fields.Str(required=False, missing=None, location='json')
     }
     args = parser.parse(apply_coupon_args, request)
     order_exists, benefits_given = fetch_order_response(args)
@@ -255,6 +254,8 @@ def create_voucher():
         'name': fields.Str(required=False, missing=None, location='json'),
 
         'description': fields.Str(required=False, missing=None, location='json'),
+
+        'custom': fields.Str(required=False, missing=None, location='json'),
 
         'type': fields.Int(required=False, missing=VoucherType.regular_coupon.value,
                            location='json', validate=validate.OneOf(
