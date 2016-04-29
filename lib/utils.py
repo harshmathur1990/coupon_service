@@ -1,9 +1,12 @@
 import grequests
 import logging
 import time
+import croniter
+from src.enums import SchedulerType
 from src.rules.user import User
 from src.sqlalchemydb import CouponsAlchemyDB
 from flask import request
+from dateutil import parser
 
 logger = logging.getLogger(__name__)
 
@@ -84,3 +87,74 @@ def get_agent_id():
     except AttributeError:
         pass
     return agent_id
+
+
+def is_valid_cron_string(value):
+    success = False
+    try:
+        cron = croniter.croniter(value)
+        success = True
+    except:
+        pass
+    return success
+
+
+def is_valid_duration_string(value):
+    success = False
+    try:
+        duration_list = value.split(':')
+        if 5 == len(duration_list):
+            error = False
+            week = int(duration_list[0]) if duration_list[0] != '' else 0
+            days = int(duration_list[1]) if duration_list[1] != '' else 0
+            hours = int(duration_list[2]) if duration_list[2] != '' else 0
+            minutes = int(duration_list[3]) if duration_list[3] != '' else 0
+            seconds = int(duration_list[4]) if duration_list[4] != '' else 0
+            if week and week < 0:
+                error = True
+            if days and days < 0:
+                error = True
+            if hours and (hours >= 24 or hours < 0):
+                error = True
+            if seconds and (seconds >= 60 or seconds < 0):
+                error = True
+            if minutes and (minutes >= 60 or minutes < 0):
+                error = True
+            if not error:
+                success = True
+    except Exception:
+        pass
+    return success
+
+
+def date_validator(value):
+    success = False
+    try:
+        parser.parse(value)
+        success = True
+    except:
+        pass
+    return success
+
+
+def schedule_validate_method(type):
+    return {
+        SchedulerType.daily.value: date_validator,
+        SchedulerType.exact.value: date_validator,
+        SchedulerType.cron.value: is_valid_cron_string
+    }.get(type, SchedulerType.daily.value)
+
+
+def is_valid_schedule_object(args):
+    success = True
+    if args.get('schedule'):
+        error = False
+        for schedule in args.get('schedule'):
+            type = schedule.get('type')
+            success = schedule_validate_method(type)(schedule.get('value'))
+            if not success:
+                error = True
+                break
+        if not error:
+            success = True
+    return success

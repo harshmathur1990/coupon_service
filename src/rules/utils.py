@@ -1,5 +1,6 @@
 import datetime
 from datetime import timedelta
+import croniter
 import json
 import logging
 import uuid
@@ -26,10 +27,60 @@ def get_rule(rule_id):
     return None
 
 
+def is_between(now, date1, date2):
+    if now > date2 or now < date1:
+        return False
+    return True
+
+
+def get_num_from_str(str):
+    try:
+        if len(str) is 0 or str is None:
+            return 0
+        else:
+            return int(str)
+    except Exception as exp:
+        return 0
+
+
 def get_voucher(voucher_code):
     voucher = Vouchers.find_one(voucher_code)
     now = datetime.datetime.utcnow()
     if voucher and voucher.from_date <= now <= voucher.to_date:
+        if voucher.schedule:
+            for schedule in voucher.schedule:
+                if schedule['type'] is SchedulerType.exact.value:
+                    scheduled_time_start = datetime.datetime.strptime(schedule['value'],"%Y-%m-%d %H:%M:%S.%f")
+                    weeks, days, hours, minutes, seconds = tuple(schedule['duration'].split(':'))
+                    scheduled_time_end = scheduled_time_start + timedelta(days=get_num_from_str(days), weeks=get_num_from_str(weeks), hours=get_num_from_str(hours), minutes=get_num_from_str(minutes), seconds=get_num_from_str(seconds))
+                    if is_between(now, scheduled_time_start, scheduled_time_end):
+                        return voucher, None
+                elif schedule['type'] is SchedulerType.daily.value:
+                    hours, minutes, seconds = tuple(schedule['value'].split(':'))
+                    today = datetime.datetime.utcnow().date()
+                    justtime = datetime.time(hour=get_num_from_str(hours), minute=get_num_from_str(minutes), second=get_num_from_str(seconds))
+                    scheduled_time_start = datetime.datetime.combine(today, justtime)
+                    weeks, days, hours, minutes, seconds = tuple(schedule['duration'].split(':'))
+                    scheduled_time_end = scheduled_time_start + timedelta(days=get_num_from_str(days), weeks=get_num_from_str(weeks), hours=get_num_from_str(hours), minutes=get_num_from_str(minutes), seconds=get_num_from_str(seconds))
+                    if is_between(now, scheduled_time_start, scheduled_time_end):
+                        return voucher, None
+                elif schedule['type'] is SchedulerType.cron.value:
+                    cron = croniter.croniter(schedule['value'], now)
+                    cron_prev = cron.get_prev(datetime.datetime)
+                    cron_current = cron.get_current(datetime.datetime)
+                    cron_next = cron.get_next(datetime.datetime)
+                    weeks, days, hours, minutes, seconds = tuple(schedule['duration'].split(':'))
+                    deltatime = timedelta(days=get_num_from_str(days), weeks=get_num_from_str(weeks),
+                                                          hours=get_num_from_str(hours), minutes=get_num_from_str(minutes),
+                                                          seconds=get_num_from_str(seconds))
+                    duration_prev = cron_prev + deltatime
+                    duration_current = cron_current + deltatime
+                    duration_next = cron_next + deltatime
+                    if is_between(now, cron_prev, duration_prev) or \
+                            is_between(now, cron_current, duration_current) or \
+                            is_between(now, cron_next, duration_next):
+                        return voucher, None
+            return None, u'The voucher {} is not valid'.format(voucher.code)
         return voucher, None
     elif voucher and now > voucher.to_date:
         voucher.delete()
@@ -262,6 +313,7 @@ def get_user_details(response):
         return False, None, u'Unable to fetch User details'
 
 
+
 def fetch_items(item_id_list, item_to_quantity):
     cached_item_list = list()
     to_fetch_item_list = list()
@@ -391,6 +443,7 @@ def fetch_order_detail(args):
     order_data_dict['order_no'] = order_no
     order_data_dict.update(location_dict)
     order_data_dict['channel'] = args.get('channel')
+    order_data_dict['source'] = args.get('source')
     order_data_dict['items'] = items
     order_data_dict['customer_id'] = args.get('customer_id')
     order_data = OrderData(**order_data_dict)
@@ -416,6 +469,7 @@ def create_voucher_object(data, rule_id_list, code):
     kwargs['from'] = data.get('from')
     kwargs['to'] = data.get('to')
     kwargs['type'] = data.get('type')
+    kwargs['schedule'] = data.get('schedule')
     kwargs['updated_by'] = data.get('user_id')
     kwargs['custom'] = data.get('custom')
     voucher = Vouchers(**kwargs)
@@ -452,7 +506,7 @@ def create_rule_object(data, user_id=None):
         'range_min', 'sellers', 'storefronts', 'cart_range_max',
         'no_of_uses_allowed_per_user', 'no_of_total_uses_allowed',
         'variants', 'location.country', 'location.state',
-        'location.city', 'location.area', 'location.zone'
+        'location.city', 'location.area', 'location.zone', 'source'
     ]
 
     for a_key in rule_criteria_keys:

@@ -2,7 +2,8 @@ import json
 import logging
 from flask import request
 from lib.decorator import jsonify, check_login
-from lib.utils import is_timezone_aware, create_error_response, create_success_response
+from lib.utils import is_timezone_aware, create_error_response,\
+    create_success_response, is_valid_schedule_object, is_valid_duration_string
 from src.enums import *
 from src.rules.vouchers import VoucherTransactionLog, Vouchers
 from src.rules.utils import get_benefits, apply_benefits, create_and_save_rule_list,\
@@ -78,6 +79,8 @@ def apply_coupon():
             required=True,
             location='json'
             ),
+
+        'source': fields.Str(required=False, missing=None, location='json')
     }
     args = parser.parse(apply_coupon_args, request)
     order_exists, benefits_given = fetch_order_response(args)
@@ -192,7 +195,9 @@ def check_coupon():
             validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
             required=True,
             location='json'
-            )
+            ),
+
+        'source': fields.Str(required=False, missing=None, location='json')
 
     }
     args = parser.parse(check_coupon_args, request)
@@ -261,6 +266,20 @@ def create_voucher():
 
         'to': fields.DateTime(required=True, location='json'),
 
+        'schedule': fields.List(
+            fields.Nested(
+                {
+                    'type': fields.Int(required=True,
+                                       validate=validate.OneOf(
+                        [l.value for l in list(SchedulerType)], [l.name for l in list(SchedulerType)])),
+                    'value': fields.Str(required=True),
+                    'duration': fields.Str(required=True, validate=is_valid_duration_string)
+                }
+            ),
+            required=False,
+            missing=list()
+        ),
+
         'rules': fields.List(
             fields.Nested(
                 {
@@ -291,6 +310,13 @@ def create_voucher():
                                     [l.value for l in list(Channels)], [l.name for l in list(Channels)])),
                             required=False,
                             missing=list()
+                        ),
+
+                        'source': fields.List(
+                            fields.Str(),
+                            required=False,
+                            missing=list(),
+                            location='json'
                         ),
 
                         'brands': fields.List(
@@ -449,7 +475,7 @@ def create_voucher():
         )
 
     }
-    args = parser.parse(coupon_create_args, request)
+    args = parser.parse(coupon_create_args, req=request, validate=is_valid_schedule_object)
 
     # api specific validation
     success, error = validate_for_create_api_v1(args)
@@ -703,6 +729,8 @@ def apply_coupon_v2():
             required=True,
             location='json'
             ),
+
+        'source': fields.Str(required=False, missing=None, location='json')
     }
     args = parser.parse(apply_coupon_args, request)
     order_exists, benefits_given = fetch_order_response(args)
@@ -817,7 +845,9 @@ def check_coupon_v2():
             validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
             required=True,
             location='json'
-            )
+            ),
+
+        'source': fields.Str(required=False, missing=None, location='json')
 
     }
     args = parser.parse(check_coupon_args, request)

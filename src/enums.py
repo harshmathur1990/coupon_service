@@ -55,3 +55,9 @@ class VoucherType(Enum):
     auto_freebie = 0
     regular_freebie = 1
     regular_coupon = 2
+
+
+class SchedulerType(Enum):
+    daily = 0
+    exact = 1
+    cron = 2

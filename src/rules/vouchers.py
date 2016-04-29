@@ -4,6 +4,7 @@ import uuid
 import copy
 import datetime
 import sqlalchemy
+import json
 from data import OrderData
 from rule import Rule
 from src.enums import VoucherTransactionStatus, VoucherType
@@ -26,6 +27,7 @@ class Vouchers(object):
         self.from_date = kwargs.get('from')
         self.to_date = kwargs.get('to')
         self.type = kwargs.get('type')
+        self.schedule = kwargs.get('schedule')
         self.created_by = kwargs.get('created_by')
         self.updated_by = kwargs.get('updated_by')
         self.created_at = kwargs.get('created_at')
@@ -161,6 +163,7 @@ class Vouchers(object):
             values['created_by'] = self.created_by
         values['updated_by'] = self.updated_by
         values['custom'] = self.custom
+        values['schedule'] = json.dumps(self.schedule)
         return values
 
     @staticmethod
@@ -169,6 +172,10 @@ class Vouchers(object):
         voucher_dict = db.find_one("vouchers", **{'code': code})
         if voucher_dict:
             voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
+            if voucher_dict.get('schedule'):
+                voucher_dict['schedule'] = json.loads(voucher_dict.get('schedule'))
+            else:
+                voucher_dict['schedule'] = list()
             voucher = Vouchers(**voucher_dict)
             return voucher
         return False
@@ -180,6 +187,10 @@ class Vouchers(object):
         if voucher_dict:
             voucher_dict = voucher_dict[0]
             voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
+            if voucher_dict.get('schedule'):
+                voucher_dict['schedule'] = json.loads(voucher_dict.get('schedule'))
+            else:
+                voucher_dict['schedule'] = list()
             voucher = Vouchers(**voucher_dict)
             return voucher
         return False
@@ -191,6 +202,10 @@ class Vouchers(object):
         voucher_dict_list = db.find("all_vouchers", **{'code': code})
         for voucher_dict in voucher_dict_list:
             voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
+            if voucher_dict.get('schedule'):
+                voucher_dict['schedule'] = json.loads(voucher_dict.get('schedule'))
+            else:
+                voucher_dict['schedule'] = list()
             voucher = Vouchers(**voucher_dict)
             voucher_list.append(voucher)
         return voucher_list
@@ -201,6 +216,10 @@ class Vouchers(object):
         voucher_dict = db.find_one("vouchers", **{'id': id})
         if voucher_dict:
             voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
+            if voucher_dict.get('schedule'):
+                voucher_dict['schedule'] = json.loads(voucher_dict.get('schedule'))
+            else:
+                voucher_dict['schedule'] = list()
             voucher = Vouchers(**voucher_dict)
             return voucher
         return False

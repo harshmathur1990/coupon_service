@@ -21,6 +21,7 @@ class OrderData(object):
         self.zone = kwargs.get('zone')  # list
         self.channel = kwargs.get('channel')
         self.items = kwargs.get('items')  # list of instances of VerificationItemData
+        self.source = kwargs.get('source')
         self.total_price = 0.0
         for item in self.items:
             self.total_price += item.price * item.quantity
