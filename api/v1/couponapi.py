@@ -80,7 +80,9 @@ def apply_coupon():
             location='json'
             ),
 
-        'source': fields.Str(required=False, missing=None, location='json')
+        'source': fields.Str(required=False, missing=None, location='json'),
+
+        'custom': fields.Str(required=False, missing=None, location='json')
     }
     args = parser.parse(apply_coupon_args, request)
     order_exists, benefits_given = fetch_order_response(args)
@@ -666,6 +668,7 @@ def get_coupon():
             voucher_dict['code'] = voucher.code
             voucher_dict['user_id'] = voucher.created_by
             voucher_dict['type'] = voucher.type
+            voucher_dict['custom'] = voucher.custom
             success_list.append(voucher_dict)
     return create_success_response(success_list, error_list)
 

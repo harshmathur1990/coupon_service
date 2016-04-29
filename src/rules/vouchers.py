@@ -83,6 +83,8 @@ class Vouchers(object):
                 self.to_date = to_date
                 if self.type is not VoucherType.regular_coupon.value:
                     self.get_rule(db)
+                    # TODO: no need to assume freebie/auto-apply coupons will have a single rule. \
+                    # so we should actually run a loop here to check for each rule in the voucher
                     existing_voucher_dict = {
                         'type': self.type,
                         'zone': self.rules_list[0].criteria_obj.zone[0],
