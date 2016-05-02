@@ -670,6 +670,7 @@ def get_coupon():
             voucher_dict['user_id'] = voucher.created_by
             voucher_dict['type'] = voucher.type
             voucher_dict['custom'] = voucher.custom
+            voucher_dict['schedule'] = voucher.schedule
             success_list.append(voucher_dict)
     return create_success_response(success_list, error_list)
 
