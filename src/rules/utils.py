@@ -190,7 +190,9 @@ def get_benefits_new(order):
             max_discount = benefits.max_discount
             benefit_dict = dict()
             for benefit in benefit_list:
-                if not benefit['value']:
+                if benefit['value'] is 0 and benefit['type'] == BenefitType.amount.value and existing_voucher['voucher'].custom:
+                    pass
+                elif not benefit['value']:
                     continue
                 flat_discount = 0.0
                 percentage_discount = 0.0
@@ -252,6 +254,7 @@ def get_benefits_new(order):
         product_dict['discount'] = round(product_dict['discount'], 2)
 
     for a_benefit in benefits_list:
+        # if a_benefit.get('prorated_discount_actual'):
         a_benefit['prorated_discount'] = a_benefit['prorated_discount_actual']
         del a_benefit['prorated_discount_actual']
 
