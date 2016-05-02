@@ -138,6 +138,7 @@ def get_benefits(order):
                 benefit_dict['type'] = existing_voucher['voucher'].type
                 benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
                 benefit_dict['channel'] = [Channels(c).value for c in rule.criteria_obj.channels]
+                benefit_dict['custom'] = existing_voucher['voucher'].custom
                 benefits_list.append(benefit_dict)
                 if not payment_modes_list:
                     payment_modes_list = benefit_dict['paymentMode']
@@ -228,6 +229,7 @@ def get_benefits_new(order):
                 benefit_dict['type'] = existing_voucher['voucher'].type
                 benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
                 benefit_dict['channel'] = [Channels(c).value for c in rule.criteria_obj.channels]
+                benefit_dict['custom'] = existing_voucher['voucher'].custom
                 if max_discount:
                     benefit_dict['max_discount'] = max_discount
                 else:
