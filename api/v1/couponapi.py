@@ -2,7 +2,7 @@ import json
 import logging
 from flask import request
 from lib.decorator import jsonify, check_login
-from lib.utils import is_timezone_aware, create_error_response,\
+from lib.utils import is_timezone_aware, create_error_response, length_validator,\
     create_success_response, is_valid_schedule_object, is_valid_duration_string
 from src.enums import *
 from src.rules.vouchers import VoucherTransactionLog, Vouchers
@@ -255,7 +255,7 @@ def create_voucher():
 
         'description': fields.Str(required=False, missing=None, location='json'),
 
-        'custom': fields.Str(required=False, missing=None, location='json'),
+        'custom': fields.Str(required=False, missing=None, location='json', validate=lambda val: length_validator(val, 1000, type='string')),
 
         'type': fields.Int(required=False, missing=VoucherType.regular_coupon.value,
                            location='json', validate=validate.OneOf(
@@ -263,7 +263,7 @@ def create_voucher():
 
         'user_id': fields.Str(required=False),
 
-        'code': fields.List(fields.Str(), required=True, location='json'),
+        'code': fields.List(fields.Str(validate=lambda val: length_validator(val, 200, type='string')), required=True, location='json'),
 
         'from': fields.DateTime(required=True, location='json'),
 
@@ -280,7 +280,8 @@ def create_voucher():
                 }
             ),
             required=False,
-            missing=list()
+            missing=list(),
+            validate=lambda val: length_validator(val, 250)
         ),
 
         'rules': fields.List(
@@ -288,156 +289,159 @@ def create_voucher():
                 {
                     'description': fields.Str(required=False),
 
-                    'criteria': fields.Nested({
-                        'no_of_uses_allowed_per_user': fields.Int(required=False, missing=None,
-                                                          validate=validate.Range(min=0)),
+                    'criteria': fields.Nested(
+                        {
+                            'no_of_uses_allowed_per_user': fields.Int(required=False, missing=None,
+                                                              validate=validate.Range(min=0)),
 
-                        'no_of_total_uses_allowed': fields.Int(required=False, missing=None,
-                                                               validate=validate.Range(min=0)),
+                            'no_of_total_uses_allowed': fields.Int(required=False, missing=None,
+                                                                   validate=validate.Range(min=0)),
 
-                        'range_min': fields.Int(required=False, missing=None,
-                                                validate=validate.Range(min=0)),
+                            'range_min': fields.Int(required=False, missing=None,
+                                                    validate=validate.Range(min=0)),
 
-                        'range_max': fields.Int(required=False, missing=None,
-                                                validate=validate.Range(min=0)),
+                            'range_max': fields.Int(required=False, missing=None,
+                                                    validate=validate.Range(min=0)),
 
-                        "cart_range_min": fields.Int(required=False, missing=None,
-                                                     validate=validate.Range(min=0)),
+                            "cart_range_min": fields.Int(required=False, missing=None,
+                                                         validate=validate.Range(min=0)),
 
-                        "cart_range_max": fields.Int(required=False, missing=None,
-                                                     validate=validate.Range(min=0)),
+                            "cart_range_max": fields.Int(required=False, missing=None,
+                                                         validate=validate.Range(min=0)),
 
-                        'channels': fields.List(
-                            fields.Int(
-                                validate=validate.OneOf(
-                                    [l.value for l in list(Channels)], [l.name for l in list(Channels)])),
-                            required=False,
-                            missing=list()
-                        ),
-
-                        'source': fields.List(
-                            fields.Str(),
-                            required=False,
-                            missing=list(),
-                            location='json'
-                        ),
-
-                        'brands': fields.List(
-                            fields.Int(
-                                validate=validate.Range(min=0)
+                            'channels': fields.List(
+                                fields.Int(
+                                    validate=validate.OneOf(
+                                        [l.value for l in list(Channels)], [l.name for l in list(Channels)])),
+                                required=False,
+                                missing=list()
                             ),
-                            required=False,
-                            missing=list()
-                        ),
 
-                        'products': fields.Nested(
-                            {
-                                'in': fields.List(
-                                    fields.Int(
-                                        validate=validate.Range(min=0)
-                                    ),
-                                    required=False,
-                                    missing=list(),
-                                ),
-                                'not_in': fields.List(
-                                    fields.Int(
-                                        validate=validate.Range(min=0)
-                                    ),
-                                    required=False,
-                                    missing=list(),
-                                )
-                            },
-                            required=False,
-                            missing={'in': [], 'not_in': []}
-                        ),
-
-                        'categories': fields.Nested(
-                            {
-                                'in': fields.List(
-                                    fields.Int(
-                                        validate=validate.Range(min=0)
-                                    ),
-                                    required=False,
-                                    missing=list(),
-                                ),
-                                'not_in': fields.List(
-                                    fields.Int(
-                                        validate=validate.Range(min=0)
-                                    ),
-                                    required=False,
-                                    missing=list(),
-                                )
-                            },
-                            required=False,
-                            missing={'in': [], 'not_in': []}
-                        ),
-
-                        'storefronts': fields.List(
-                            fields.Int(
-                                validate=validate.Range(min=0)
+                            'source': fields.List(
+                                fields.Str(),
+                                required=False,
+                                missing=list(),
+                                location='json'
                             ),
-                            required=False,
-                            missing=list()
-                        ),
 
-                        'variants': fields.List(
-                            fields.Int(
-                                validate=validate.Range(min=0)
+                            'brands': fields.List(
+                                fields.Int(
+                                    validate=validate.Range(min=0)
+                                ),
+                                required=False,
+                                missing=list()
                             ),
-                            required=False,
-                            missing=list()
-                        ),
 
-                        'sellers': fields.List(
-                            fields.Int(
-                                validate=validate.Range(min=0)
+                            'products': fields.Nested(
+                                {
+                                    'in': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ),
+                                        required=False,
+                                        missing=list(),
+                                    ),
+                                    'not_in': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ),
+                                        required=False,
+                                        missing=list(),
+                                    )
+                                },
+                                required=False,
+                                missing={'in': [], 'not_in': []}
                             ),
-                            required=False,
-                            missing=list()
-                        ),
 
-                        'location': fields.Nested(
-                            {
-                                'country': fields.List(
-                                    fields.Int(
-                                        validate=validate.Range(min=0)
-                                    ), required=False, missing=list()
-                                ),
-                                'state': fields.List(
-                                    fields.Int(
-                                        validate=validate.Range(min=0)
-                                    ), required=False, missing=list()
-                                ),
-                                'city': fields.List(
-                                    fields.Int(
-                                        validate=validate.Range(min=0)
-                                    ), required=False, missing=list()
-                                ),
-                                'area': fields.List(
-                                    fields.Int(
-                                        validate=validate.Range(min=0)
-                                    ), required=False, missing=list()
-                                ),
-                                'zone': fields.List(
-                                    fields.Int(), required=False, missing=list()
-                                ),
-                            },
-                            required=False,
-                            missing={'country': [], 'state': [], 'city': [], 'area': [], 'zone': []}
-                        ),
+                            'categories': fields.Nested(
+                                {
+                                    'in': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ),
+                                        required=False,
+                                        missing=list(),
+                                    ),
+                                    'not_in': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ),
+                                        required=False,
+                                        missing=list(),
+                                    )
+                                },
+                                required=False,
+                                missing={'in': [], 'not_in': []}
+                            ),
 
-                        'payment_modes': fields.List(
-                            fields.Str(),
-                            missing=list(),
-                            required=False
-                        ),
+                            'storefronts': fields.List(
+                                fields.Int(
+                                    validate=validate.Range(min=0)
+                                ),
+                                required=False,
+                                missing=list()
+                            ),
 
-                        'valid_on_order_no': fields.List(
-                            fields.Str(),
-                            required=False,
-                            missing=list()
-                        ),
-                    }),
+                            'variants': fields.List(
+                                fields.Int(
+                                    validate=validate.Range(min=0)
+                                ),
+                                required=False,
+                                missing=list()
+                            ),
+
+                            'sellers': fields.List(
+                                fields.Int(
+                                    validate=validate.Range(min=0)
+                                ),
+                                required=False,
+                                missing=list()
+                            ),
+
+                            'location': fields.Nested(
+                                {
+                                    'country': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ), required=False, missing=list()
+                                    ),
+                                    'state': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ), required=False, missing=list()
+                                    ),
+                                    'city': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ), required=False, missing=list()
+                                    ),
+                                    'area': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ), required=False, missing=list()
+                                    ),
+                                    'zone': fields.List(
+                                        fields.Int(), required=False, missing=list()
+                                    ),
+                                },
+                                required=False,
+                                missing={'country': [], 'state': [], 'city': [], 'area': [], 'zone': []}
+                            ),
+
+                            'payment_modes': fields.List(
+                                fields.Str(),
+                                missing=list(),
+                                required=False
+                            ),
+
+                            'valid_on_order_no': fields.List(
+                                fields.Str(),
+                                required=False,
+                                missing=list()
+                            ),
+                        },
+                        validate=lambda val: length_validator(val, 8000)
+                    ),
 
                     'benefits': fields.Nested(
                         {
@@ -469,7 +473,8 @@ def create_voucher():
                             'amount': None,
                             'percentage': None,
                             'max_discount': None
-                        }
+                        },
+                        validate=lambda val: length_validator(val, 2000)
                     )
                 }
             ),

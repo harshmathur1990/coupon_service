@@ -7,6 +7,7 @@ from src.rules.user import User
 from src.sqlalchemydb import CouponsAlchemyDB
 from flask import request
 from dateutil import parser
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -158,3 +159,13 @@ def is_valid_schedule_object(args):
         if not error:
             success = True
     return success
+
+
+def length_validator(value, length_limit, type='object'):
+    if type == 'object':
+        value_string = json.dumps(value)
+    else:
+        value_string = value
+    if len(value_string) >= length_limit:
+        return False
+    return True
