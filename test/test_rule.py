@@ -2065,10 +2065,4 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(data.get('success'), response.data)
         self.assertTrue(len(data.get('benefits')) == 1, response.data)
-        # print response.data
-    # def test_apply_coupon_false_partial_success_iff_all_validate(self):
-    #     pass
 
-    # def test_overlapping_intervals_auto_freebie(self):
-    #     # TODO
-    #     pass
