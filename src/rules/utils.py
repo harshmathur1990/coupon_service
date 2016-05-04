@@ -35,6 +35,7 @@ def is_between(now, date1, date2):
 
 
 def get_num_from_str(str):
+    str = str.strip()
     try:
         if len(str) is 0 or str is None:
             return 0
@@ -60,9 +61,11 @@ def get_voucher(voucher_code):
                     today_time = parser.parse(schedule['value'])
                     now = datetime.datetime.utcnow()
                     weeks, days, hours, minutes, seconds = tuple(schedule['duration'].split(':'))
-                    scheduled_time_start = now.replace(hour=today_time.hour, minute=today_time.minute, second=today_time.second)
-                    scheduled_time_end = scheduled_time_start + timedelta(days=get_num_from_str(days), weeks=get_num_from_str(weeks), hours=get_num_from_str(hours), minutes=get_num_from_str(minutes), seconds=get_num_from_str(seconds))
-                    if is_between(now, scheduled_time_start, scheduled_time_end):
+                    scheduled_time_start_curr = now.replace(hour=today_time.hour, minute=today_time.minute, second=today_time.second)
+                    scheduled_time_end_curr = scheduled_time_start_curr + timedelta(days=get_num_from_str(days), weeks=get_num_from_str(weeks), hours=get_num_from_str(hours), minutes=get_num_from_str(minutes), seconds=get_num_from_str(seconds))
+                    scheduled_time_start_prev = scheduled_time_start_curr - timedelta(days=1)
+                    scheduled_time_end_prev = scheduled_time_end_curr - timedelta(days=1)
+                    if is_between(now, scheduled_time_start_curr, scheduled_time_end_curr) or is_between(now, scheduled_time_start_prev, scheduled_time_end_prev):
                         return voucher, None
                 elif schedule['type'] is SchedulerType.cron.value:
                     cron = croniter.croniter(schedule['value'], now)

@@ -2065,4 +2065,3 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(data.get('success'), response.data)
         self.assertTrue(len(data.get('benefits')) == 1, response.data)
-
