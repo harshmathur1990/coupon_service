@@ -24,3 +24,20 @@ def handle_error(error):
     res = jsonify(rv)
     res.status_code = 422
     return res
+
+
+@voucher_api.app_errorhandler(500)
+def handle_error(error):
+    logger.exception(error)
+    logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
+    rv = {
+        'success': False,
+        'error': {
+            'code': 500,
+            'error': u'Unknown Error, Please contact tech support'
+        },
+        'errors': [u'Unknown Error, Please contact tech support']
+    }
+    res = jsonify(rv)
+    res.status_code = 500
+    return res
