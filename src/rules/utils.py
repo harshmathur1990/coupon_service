@@ -15,6 +15,7 @@ from vouchers import Vouchers, VoucherTransactionLog
 from rule import Rule, RuleCriteria, Benefits
 from src.enums import *
 from lib import cache
+from dateutil import parser
 from src.rules.constants import GROCERY_ITEM_KEY, GROCERY_LOCATION_KEY, GROCERY_CACHE_TTL
 
 logger = logging.getLogger(__name__)
@@ -50,17 +51,16 @@ def get_voucher(voucher_code):
         if voucher.schedule:
             for schedule in voucher.schedule:
                 if schedule['type'] is SchedulerType.exact.value:
-                    scheduled_time_start = datetime.datetime.strptime(schedule['value'],"%Y-%m-%d %H:%M:%S.%f")
+                    scheduled_time_start = parser.parse(schedule['value'])
                     weeks, days, hours, minutes, seconds = tuple(schedule['duration'].split(':'))
                     scheduled_time_end = scheduled_time_start + timedelta(days=get_num_from_str(days), weeks=get_num_from_str(weeks), hours=get_num_from_str(hours), minutes=get_num_from_str(minutes), seconds=get_num_from_str(seconds))
                     if is_between(now, scheduled_time_start, scheduled_time_end):
                         return voucher, None
                 elif schedule['type'] is SchedulerType.daily.value:
-                    hours, minutes, seconds = tuple(schedule['value'].split(':'))
-                    today = datetime.datetime.utcnow().date()
-                    justtime = datetime.time(hour=get_num_from_str(hours), minute=get_num_from_str(minutes), second=get_num_from_str(seconds))
-                    scheduled_time_start = datetime.datetime.combine(today, justtime)
+                    today_time = parser.parse(schedule['value'])
+                    now = datetime.datetime.utcnow()
                     weeks, days, hours, minutes, seconds = tuple(schedule['duration'].split(':'))
+                    scheduled_time_start = now.replace(hour=today_time.hour, minute=today_time.minute, second=today_time.second)
                     scheduled_time_end = scheduled_time_start + timedelta(days=get_num_from_str(days), weeks=get_num_from_str(weeks), hours=get_num_from_str(hours), minutes=get_num_from_str(minutes), seconds=get_num_from_str(seconds))
                     if is_between(now, scheduled_time_start, scheduled_time_end):
                         return voucher, None
