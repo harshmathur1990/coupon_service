@@ -169,3 +169,18 @@ def length_validator(value, length_limit, type='object'):
     if len(value_string) >= length_limit:
         return False
     return True
+
+
+def handle_unprocessable_entity(e):
+    key_list = list()
+    for key in e.data['messages'].keys():
+        key_list.append(key)
+    rv = {
+        'success': False,
+        'error': {
+            'code': 422,
+            'error': u'Invalid value for the following keys {}'.format(key_list)
+        },
+        'errors': [u'Invalid value for the following keys {}'.format(key_list)]
+    }
+    return rv
