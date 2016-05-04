@@ -49,28 +49,69 @@ class Vouchers(object):
         db = CouponsAlchemyDB()
         db.begin()
         try:
-            voucher_list = Vouchers.find_all_by_code(self.code)
-            for voucher in voucher_list:
-                if not self.can_coexist(voucher):
-                    db.rollback()
-                    return False
-            db.insert_row("vouchers", **values)
+            from src.rules.utils import find_overlapping_vouchers
+            success, error = find_overlapping_vouchers(self, db)
+            if not success:
+                db.rollback()
+                return False, None, error
             db.insert_row("all_vouchers", **values)
+            Vouchers.fetch_active_voucher(self.code, db)
             db.commit()
         except sqlalchemy.exc.IntegrityError as e:
             db.rollback()
-            return False
+            # should not happen
+            return False, None, u'Voucher code already exists'
         except Exception as e:
             logger.exception(e)
             db.rollback()
-            return False
+            return False, None, u'Unknown Error'
         # else:
         #     db.commit()
-        return {'id': self.id, 'code': self.code}
+        return True, {'id': self.id, 'code': self.code}, None
 
-    def update_to_date(self, to_date):
-        db = CouponsAlchemyDB()
-        db.begin()
+    @staticmethod
+    def get_active_voucher(code, db):
+        now = datetime.datetime.now()
+        active_voucher_params = {
+            'to': now,
+            'code': code
+        }
+        sql = "select * from all_vouchers where `to` >= :to && code=:code order by `from` asc limit 0,1"
+        active_voucher_dict = db.execute_raw_sql(sql, active_voucher_params)
+        if active_voucher_dict:
+            active_voucher = Vouchers.from_dict(active_voucher_dict[0])
+            present_voucher = Vouchers.find_one(code, db)
+            values = active_voucher.get_value_dict()
+            if not present_voucher:
+                db.insert_row("vouchers", **values)
+            else:
+                if present_voucher.id != active_voucher.id:
+                    db.delete_row_in_transaction("vouchers", **{'code': code})
+                    db.insert_row("vouchers", **values)
+            return active_voucher
+        else:
+            db.delete_row_in_transaction("vouchers", **{'code': code})
+        return False
+
+    @staticmethod
+    def fetch_active_voucher(code, db=None):
+        if not db:
+            db = CouponsAlchemyDB()
+            db.begin()
+            try:
+                active_voucher = Vouchers.get_active_voucher(code, db)
+                db.commit()
+                return active_voucher
+            except Exception as e:
+                logger.exception(e)
+                db.rollback()
+                return False
+        else:
+            return Vouchers.get_active_voucher(code, db)
+
+    def update_to_date_single(self, to_date, db):
+        # db = CouponsAlchemyDB()
+        # db.begin()
         try:
             now = datetime.datetime.utcnow()
             if self.to_date < now < to_date:
@@ -100,8 +141,8 @@ class Vouchers(object):
                         existing_voucher_dict['variants'] = self.rules_list[0].criteria_obj.variants[0]
                     else:
                         existing_voucher_dict['variants'] = None
-                    from src.rules.utils import find_overlapping_vouchers
-                    success, error_list = find_overlapping_vouchers(existing_voucher_dict, db)
+                    from src.rules.utils import find_overlapping_freebie_vouchers
+                    success, error_list = find_overlapping_freebie_vouchers(existing_voucher_dict, db)
                     if not success:
                         db.rollback()
                         return False, error_list
@@ -118,9 +159,8 @@ class Vouchers(object):
                     db.update_row("vouchers", "id", id=self.id_bin, to=self.to_date)
                     db.update_row("all_vouchers", "id", id=self.id_bin, to=self.to_date)
                 else:
-                    value_dict = self.get_value_dict()
-                    db.insert_row("vouchers", **value_dict)
                     db.update_row("all_vouchers", "id", id=self.id_bin, to=self.to_date)
+                Vouchers.fetch_active_voucher(self.code, db)
             elif self.to_date > now and to_date > now:
                 # voucher has not expired and the request is to extend the end date further
                 # Hence just update all_vouchers and in case of freebies, update there as well
@@ -129,17 +169,23 @@ class Vouchers(object):
                 db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
                 if self.type is not VoucherType.regular_coupon.value:
                     db.update_row("auto_freebie_search", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
+                Vouchers.fetch_active_voucher(self.code, db)
             elif to_date < now < self.to_date:
                 # The voucher has not expired but request wants to expire the voucher
                 # Go ahead delete rows from vouchers and auto_freebie_search
                 # and update to=now in all_vouchers
                 # expire request
-                db.update_row("all_vouchers", "id", to=now, id=self.id_bin)
                 self.delete(db)
+                if self.from_date > now:
+                    db.delete_row_in_transaction("all_vouchers", **{'id': self.id_bin})
+                else:
+                    db.update_row("all_vouchers", "id", to=now, id=self.id_bin)
+                Vouchers.fetch_active_voucher(self.code, db)
             elif to_date < now and self.to_date < now:
                 # Its a request to expire a voucher which has already expired.
                 # go ahead and delete it if it exists in vouchers and auto_freebie_search table
                 self.delete(db)
+                Vouchers.fetch_active_voucher(self.code, db)
             else:
                 # Unknown case has not been handled, Hence putting a logger
                 logger.error(u'The Voucher : {}, to_date: {}'.format(self.__dict__, to_date))
@@ -151,6 +197,30 @@ class Vouchers(object):
         # else:
         #     db.commit()
         return True, None
+
+    def update_to_date(self, to_date):
+        now = datetime.datetime.now()
+        if now < to_date <= self.from_date:
+            return False, [u'to date cannot be less than from date']
+        db = CouponsAlchemyDB()
+        db.begin()
+        query_dict = {
+            'to': self.to_date,
+            'code': self.code
+        }
+        sql = "select * from all_vouchers where `from` > :to && code=:code order by `from` asc limit 0,1"
+        existing_voucher = db.execute_raw_sql(sql, query_dict)
+        if existing_voucher:
+            existing_voucher = Vouchers.from_dict(existing_voucher[0])
+            if existing_voucher.from_date < now:
+                # There is at least one voucher which follows chronologically, hence this voucher is locked.
+                db.rollback()
+                return False, [u'This voucher has been expired. Please try updating another voucher with same code']
+            if to_date >= existing_voucher.from_date:
+                # overlapping intervals
+                db.rollback()
+                return False, [u'Voucher to_date clashes with another voucher with same code']
+        return self.update_to_date_single(to_date, db)
 
     def get_value_dict(self):
         values = dict()
@@ -169,31 +239,22 @@ class Vouchers(object):
         return values
 
     @staticmethod
-    def find_one(code):
-        db = CouponsAlchemyDB()
+    def find_one(code, db=None):
+        if not db:
+            db = CouponsAlchemyDB()
         voucher_dict = db.find_one("vouchers", **{'code': code})
         if voucher_dict:
-            voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
-            if voucher_dict.get('schedule'):
-                voucher_dict['schedule'] = json.loads(voucher_dict.get('schedule'))
-            else:
-                voucher_dict['schedule'] = list()
-            voucher = Vouchers(**voucher_dict)
+            voucher = Vouchers.from_dict(voucher_dict)
             return voucher
         return False
 
     @staticmethod
-    def find_one_all_vouchers(code):
+    def find_one_all_vouchers(code, from_date):
+        # from_date must be a timezone unaware UTC datetime object
         db = CouponsAlchemyDB()
-        voucher_dict = db.find("all_vouchers", order_by="_to", _limit=1, **{'code': code})
+        voucher_dict = db.find_one("all_vouchers", **{'code': code, 'from': from_date})
         if voucher_dict:
-            voucher_dict = voucher_dict[0]
-            voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
-            if voucher_dict.get('schedule'):
-                voucher_dict['schedule'] = json.loads(voucher_dict.get('schedule'))
-            else:
-                voucher_dict['schedule'] = list()
-            voucher = Vouchers(**voucher_dict)
+            voucher = Vouchers.from_dict(voucher_dict)
             return voucher
         return False
 
@@ -203,12 +264,7 @@ class Vouchers(object):
         voucher_list = list()
         voucher_dict_list = db.find("all_vouchers", **{'code': code})
         for voucher_dict in voucher_dict_list:
-            voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
-            if voucher_dict.get('schedule'):
-                voucher_dict['schedule'] = json.loads(voucher_dict.get('schedule'))
-            else:
-                voucher_dict['schedule'] = list()
-            voucher = Vouchers(**voucher_dict)
+            voucher = Vouchers.from_dict(voucher_dict)
             voucher_list.append(voucher)
         return voucher_list
 
@@ -217,12 +273,7 @@ class Vouchers(object):
         db = CouponsAlchemyDB()
         voucher_dict = db.find_one("vouchers", **{'id': id})
         if voucher_dict:
-            voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
-            if voucher_dict.get('schedule'):
-                voucher_dict['schedule'] = json.loads(voucher_dict.get('schedule'))
-            else:
-                voucher_dict['schedule'] = list()
-            voucher = Vouchers(**voucher_dict)
+            voucher = Vouchers.from_dict(voucher_dict)
             return voucher
         return False
 
@@ -302,8 +353,10 @@ class Vouchers(object):
         assert isinstance(voucher, Vouchers)
         # if self.type is VoucherType.regular_coupon.value or voucher.type is VoucherType.regular_coupon.value:
         #     return False
-        if (voucher.to_date > self.from_date and voucher.to_date < self.to_date) or \
-                (self.to_date > voucher.from_date and self.to_date < voucher.to_date):
+        if self.from_date <= voucher.to_date <= self.to_date \
+                or self.from_date <= voucher.from_date <= self.to_date \
+                or voucher.from_date <= self.from_date <= voucher.to_date \
+                or voucher.from_date <= self.to_date <= voucher.to_date:
             return False
         return True
 
@@ -313,6 +366,16 @@ class Vouchers(object):
         db.delete_row_in_transaction("vouchers", **{'id': self.id_bin})
         if self.type is not VoucherType.regular_coupon.value:
             db.delete_row_in_transaction("auto_freebie_search", **{'voucher_id': self.id_bin})
+
+    @staticmethod
+    def from_dict(voucher_dict):
+        voucher_dict['id'] = binascii.b2a_hex(voucher_dict['id'])
+        if voucher_dict.get('schedule'):
+            voucher_dict['schedule'] = json.loads(voucher_dict.get('schedule'))
+        else:
+            voucher_dict['schedule'] = list()
+        voucher = Vouchers(**voucher_dict)
+        return voucher
 
     # def update_cache(self):
     #     voucher = Vouchers.find_one(self.id)

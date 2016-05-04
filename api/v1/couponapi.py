@@ -3,11 +3,11 @@ import logging
 import werkzeug
 from flask import request
 from lib.decorator import jsonify, check_login
-from lib.utils import is_timezone_aware, create_error_response, length_validator,\
+from lib.utils import length_validator, get_utc_timezone_unaware_date_object, create_error_response,\
     create_success_response, is_valid_schedule_object, is_valid_duration_string, handle_unprocessable_entity
 from src.enums import *
 from src.rules.vouchers import VoucherTransactionLog, Vouchers
-from src.rules.utils import get_benefits, apply_benefits, create_and_save_rule_list,\
+from src.rules.utils import apply_benefits, create_and_save_rule_list,\
     save_vouchers, fetch_auto_benefits, fetch_order_response, get_benefits_new
 from src.rules.validate import validate_coupon, validate_for_create_coupon,\
     validate_for_create_voucher
@@ -19,237 +19,6 @@ from utils import create_freebie_coupon
 from src.rules.rule import RuleCriteria, Benefits
 
 logger = logging.getLogger(__name__)
-
-
-@voucher_api.route('/apply', methods=['POST'])
-@jsonify
-# @check_login
-def apply_coupon():
-    logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
-    apply_coupon_args = {
-        'order_id': fields.Str(required=True, location='json'),
-
-        'customer_id': fields.Str(required=True, location='json'),
-
-        'area_id': fields.Int(required=True, location='json'),
-
-        'products': fields.List(
-            fields.Nested(
-                {
-                    'item_id': fields.Int(validate=validate.Range(min=0), required=True),
-                    'quantity': fields.Int(validate=validate.Range(min=1), required=True),
-                    'coupon_codes': fields.List(
-                        fields.Str(),
-                        required=False
-                    )
-                }
-            ),
-            required=True,
-            location='json'
-        ),
-
-        'coupon_codes': fields.List(
-            fields.Str(required=True, validate=validate.Length(min=1)),
-            location='json',
-            required=True
-        ),
-
-        'benefits': fields.List(
-            fields.Nested(
-                {
-                    'items': fields.List(fields.Int, required=True),
-                    'couponCode': fields.Str(required=True),
-                    'freebies': fields.List(fields.Int, required=False),
-                    'discount': fields.Float(validate=validate.Range(min=0), required=False),
-                    'type': fields.Int(
-                        validate=validate.OneOf(
-                            [l.value for l in list(VoucherType)], [l.name for l in list(VoucherType)]),
-                        required=True),
-                    'paymentMode': fields.List(fields.Int, required=False),
-                    'channel': fields.Int(
-                        validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
-                        required=False)
-                }
-            ),
-            required=False,
-            location='json'
-        ),
-
-        'channel': fields.Int(
-            validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
-            required=True,
-            location='json'
-            ),
-
-        'source': fields.Str(required=False, missing=None, location='json')
-
-    }
-    try:
-        args = parser.parse(apply_coupon_args, request)
-    except werkzeug.exceptions.UnprocessableEntity as e:
-        return handle_unprocessable_entity(e)
-
-    order_exists, benefits_given = fetch_order_response(args)
-    if order_exists:
-        return benefits_given
-    success, order, error = validate_coupon(args, validate_for_apply=True)
-    if success:
-        if order.failed_vouchers:
-            voucher_success = False
-        else:
-            voucher_success = True
-        # coupon is valid, try applying it
-        benefits = get_benefits(order)
-        benefits['success'] = voucher_success
-        benefits['errors'] = error
-        if not voucher_success:
-            benefits['error'] = {
-                'code': 400,
-                'error': ','.join(error)
-            }
-        else:
-            benefits_applied, http_code, error = apply_benefits(args, order, benefits)
-            if not benefits_applied:
-                # hopefully it will never happen,
-                # if it happens then only I will know what went wrong
-                benefits['error'] = {
-                    'code': http_code,
-                    'error': error
-                }
-                benefits['errors'] = [error]
-                benefits['success'] = False
-        return benefits
-    products = list()
-    for product in args.get('products'):
-        product_dict = dict()
-        product_dict['itemid'] = product.get('item_id')
-        product_dict['quantity'] = product.get('quantity')
-        product_dict['discount'] = 0.0
-        products.append(product_dict)
-    else:
-        return {
-            'success': False,
-            'error': {
-                'code': 503,
-                'error': ','.join(error)
-            },
-            'products': products,
-            'freebies': [],
-            'totalDiscount': 0.0,
-            'channel': [],
-            'paymentModes': [],
-            'errors': error
-        }
-
-
-@voucher_api.route('/check', methods=['POST'])
-@jsonify
-# @check_login
-def check_coupon():
-    logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
-    check_coupon_args = {
-        'order_id': fields.Str(required=False, location='json'),
-
-        'customer_id': fields.Str(required=True, location='json'),
-
-        'area_id': fields.Int(required=True, location='json'),
-
-        'products': fields.List(
-            fields.Nested(
-                {
-                    'item_id': fields.Int(validate=validate.Range(min=0), required=True),
-                    'quantity': fields.Int(validate=validate.Range(min=1), required=True),
-                    'coupon_codes': fields.List(
-                        fields.Str(),
-                        required=False
-                    )
-                }
-            ),
-            required=True,
-            location='json'
-        ),
-
-        'coupon_codes': fields.List(
-            fields.Str(),
-            location='json',
-            required=False,
-            missing=list()
-        ),
-
-        'benefits': fields.List(
-            fields.Nested(
-                {
-                    'items': fields.List(fields.Int, required=True),
-                    'couponCode': fields.Str(required=True),
-                    'freebies': fields.List(fields.Int, required=False),
-                    'discount': fields.Float(validate=validate.Range(min=0), required=False),
-                    'type': fields.Int(
-                        validate=validate.OneOf(
-                            [l.value for l in list(VoucherType)], [l.name for l in list(VoucherType)]),
-                        required=True),
-                    'paymentMode': fields.List(fields.Int, required=False),
-                    'channel': fields.Int(
-                        validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
-                        required=False)
-                }
-            ),
-            required=False,
-            location='json'
-        ),
-
-        'channel': fields.Int(
-            validate=validate.OneOf([l.value for l in list(Channels)], [l.name for l in list(Channels)]),
-            required=True,
-            location='json'
-            ),
-
-        'source': fields.Str(required=False, missing=None, location='json')
-
-    }
-    try:
-        args = parser.parse(check_coupon_args, request)
-    except werkzeug.exceptions.UnprocessableEntity as e:
-        return handle_unprocessable_entity(e)
-
-    success, order, error = validate_coupon(args)
-
-    if success:
-        if order.failed_vouchers:
-            voucher_success = False
-        else:
-            voucher_success = True
-        # coupon is valid, try applying it
-        fetch_auto_benefits(order, VoucherType.regular_freebie)
-        fetch_auto_benefits(order, VoucherType.auto_freebie)
-        benefits = get_benefits(order)
-        benefits['success'] = voucher_success
-        benefits['errors'] = error
-        if not voucher_success:
-            benefits['error'] = {
-                'code': 400,
-                'error': ','.join(error)
-            }
-        return benefits
-    products = list()
-    for product in args.get('products'):
-        product_dict = dict()
-        product_dict['itemid'] = product.get('item_id')
-        product_dict['quantity'] = product.get('quantity')
-        product_dict['discount'] = 0.0
-        products.append(product_dict)
-    return {
-        'success': False,
-        'error': {
-            'code': 503,
-            'error': ','.join(error)
-        },
-        'products': products,
-        'freebies': [],
-        'totalDiscount': 0.0,
-        'channel': [],
-        'paymentModes': [],
-        'errors': error
-    }
 
 
 @voucher_api.route('/create', methods=['POST'])
@@ -514,11 +283,8 @@ def create_voucher():
         if not rule_id_list:
             return create_error_response(400, u'Unknown Exception')
 
-        if is_timezone_aware(args.get('from')):
-            args['from'] = args.get('from').replace(tzinfo=None)
-
-        if is_timezone_aware(args.get('to')):
-            args['to'] = args.get('to').replace(tzinfo=None)
+        args['from'] = get_utc_timezone_unaware_date_object(args.get('from'))
+        args['to'] = get_utc_timezone_unaware_date_object(args.get('to'))
 
         success, error = validate_for_create_voucher(args)
         if not success:
@@ -585,27 +351,47 @@ def update_coupon():
     for data in data_list:
         coupon_list = data.get('coupons')
         to_date = data['update']['to']
-        if is_timezone_aware(to_date):
-            to_date = to_date.replace(tzinfo=None)
-        for coupon in coupon_list:
-            voucher = Vouchers.find_one_all_vouchers(coupon)
-            if not voucher:
-                error_dict = {
-                    'code': coupon,
-                    'error': u'Voucher with code {} not found'.format(coupon)
-                }
-                error_list.append(error_dict)
-                continue
+        for coupon_obj in coupon_list:
+            code = coupon_obj.get('code')
+            from_date = coupon_obj.get('from')
+            if from_date:
+                voucher = Vouchers.find_one_all_vouchers(code, from_date)
+                if not voucher:
+                    error_dict = {
+                        'code': code,
+                        'error': u'Voucher code {} with from date as {} not found'.format(code, from_date.isoformat())
+                    }
+                    error_list.append(error_dict)
+                    continue
+            else:
+                # from date not given, check if only one voucher exist,
+                # then update to date, else return with error
+                voucher_list = Vouchers.find_all_by_code(code)
+                if not voucher_list:
+                    error_dict = {
+                        'code': code,
+                        'error': u'Voucher code {} not found'.format(code)
+                    }
+                    error_list.append(error_dict)
+                    continue
+                if len(voucher_list) != 1:
+                    error_dict = {
+                        'code': code,
+                        'error': u'Multiple Vouchers found with code {}, Please provide from date'.format(code)
+                    }
+                    error_list.append(error_dict)
+                    continue
+                voucher = voucher_list[0]
             success, error = voucher.update_to_date(to_date)
             if not success:
                 error_dict = {
-                    'code': coupon,
+                    'code': code,
                     'error': ','.join(error)
                 }
                 error_list.append(error_dict)
                 continue
             success_dict = {
-                'code': coupon
+                'code': code
             }
             success_list.append(success_dict)
     return {

@@ -539,7 +539,7 @@ class CreateRule(unittest.TestCase):
                 }
             },
             {
-                'coupons': ['TEST1CODE25'],
+                'coupons': [{'code': 'TEST1CODE25'}],
                 'update': {
                     'to': two_days_after.isoformat()
                 }
@@ -550,13 +550,13 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(response.status_code == 400, response.data)
         wrong_date_format_args = [
             {
-                'coupons': ['TEST1CODE14'],
+                'coupons': [{'code': 'TEST1CODE14'}],
                 'update': {
                     'to': 'dssfds'
                 }
             },
             {
-                'coupons': ['TEST1CODE25'],
+                'coupons': [{'code': 'TEST1CODE25'}],
                 'update': {
                     'to': four_days_after.isoformat()
                 }
@@ -567,13 +567,13 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(response.status_code == 400, response.data)
         no_date_args = [
             {
-                'coupons': ['TEST1CODE14'],
+                'coupons': [{'code': 'TEST1CODE14'}],
                 'update': {
                     'to': two_days_after.isoformat()
                 }
             },
             {
-                'coupons': ['TEST1CODE25'],
+                'coupons': [{'code': 'TEST1CODE25'}],
             }
         ]
         response = self.client.put(url_for('voucher_api/v1.update_coupon'), data=json.dumps(no_date_args),
@@ -581,13 +581,13 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(response.status_code == 400, response.data)
         args = [
             {
-                'coupons': ['TEST1CODE14'],
+                'coupons': [{'code': 'TEST1CODE14'}],
                 'update': {
                     'to': two_days_after.isoformat()
                 }
             },
             {
-                'coupons': ['TEST1CODE25'],
+                'coupons': [{'code': 'TEST1CODE25'}],
                 'update': {
                     'to': four_days_after.isoformat()
                 }
@@ -598,13 +598,13 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(response.status_code == 200, response.data)
         partial_args = [
             {
-                'coupons': ['HARSHMATHUR'],
+                'coupons': [{'code': 'HARSHMATHUR'}],
                 'update': {
                     'to': two_days_after.isoformat()
                 }
             },
             {
-                'coupons': ['TEST1CODE25'],
+                'coupons': [{'code': 'TEST1CODE25'}],
                 'update': {
                     'to': four_days_after.isoformat()
                 }
@@ -720,6 +720,19 @@ class CreateRule(unittest.TestCase):
                     rule_create_data, test_rule.__dict__))
 
     def test_check_auto_freebie(self):
+        values = {
+            'token': u'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy',
+            'agent_id': 1,
+            'agent_name': u'askmegrocery',
+            'created_at': datetime.datetime.utcnow(),
+            'last_accessed_at': datetime.datetime.utcnow()
+        }
+        db = CouponsAlchemyDB()
+        db.insert_row("tokens", **values)
+        headers= {
+            'X-API-USER': 'askmegrocery',
+            'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
+        }
         today = datetime.datetime.utcnow()
         tomorrow = today+timedelta(days=2)
         rule_create_data = {
@@ -752,7 +765,7 @@ class CreateRule(unittest.TestCase):
             ]
         }
         response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
-                                    content_type='application/json')
+                                    headers=headers, content_type='application/json')
         data = json.loads(response.data)
         order_data = {
             "area_id": 29557,
@@ -765,14 +778,27 @@ class CreateRule(unittest.TestCase):
                 },
             ]
         }
-        response = self.client.post(url_for('voucher_api/v1.check_coupon'), data=json.dumps(order_data),
-                                    content_type='application/json')
+        response = self.client.post(url_for('voucher_api/v1.1.check_coupon_v2'), data=json.dumps(order_data),
+                                    headers=headers, content_type='application/json')
         self.assertTrue(response.status_code == 200, u'{}'.format(response.data))
         data = json.loads(response.data)
         self.assertTrue(data.get('couponCodes')[0] == 'TEST1CODE67', response.data)
         self.assertTrue(data.get('benefits')[0]['freebies'] == [[1]], response.data)
 
     def test_apply_auto_freebie_coupon(self):
+        values = {
+            'token': u'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy',
+            'agent_id': 1,
+            'agent_name': u'askmegrocery',
+            'created_at': datetime.datetime.utcnow(),
+            'last_accessed_at': datetime.datetime.utcnow()
+        }
+        db = CouponsAlchemyDB()
+        db.insert_row("tokens", **values)
+        headers= {
+            'X-API-USER': 'askmegrocery',
+            'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
+        }
         today = datetime.datetime.utcnow()
         tomorrow = today+timedelta(days=2)
         rule_create_data = {
@@ -819,11 +845,11 @@ class CreateRule(unittest.TestCase):
             ],
             "coupon_codes": ["TEST1CODE67"]
         }
-        response = self.client.post(url_for('voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
-                                    content_type='application/json')
+        response = self.client.post(url_for('voucher_api/v1.1.apply_coupon_v2'), data=json.dumps(order_data),
+                                    headers=headers, content_type='application/json')
         self.assertTrue(response.status_code == 200, u'{}'.format(response.data))
-        response = self.client.post(url_for('voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
-                                    content_type='application/json')
+        response = self.client.post(url_for('voucher_api/v1.1.apply_coupon_v2'), data=json.dumps(order_data),
+                                    headers=headers, content_type='application/json')
         self.assertTrue(response.status_code == 200, u'{}'.format(response.data))
         data = json.loads(response.data)
         self.assertTrue(len(data.get('benefits')) == 1, response.data)
@@ -870,7 +896,7 @@ class CreateRule(unittest.TestCase):
         all_vouchers_code_dict = db.find_one("all_vouchers", **{'code': 'TEST1CODE69'})
         expire_args = [
             {
-                'coupons': ['TEST1CODE69'],
+                'coupons': [{'code': 'TEST1CODE69'}],
                 'update': {
                     'to': day_before.isoformat()
                 }
@@ -1380,6 +1406,19 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(data.get('data', dict()).get('success_list'), response.data)
 
     def test_check_and_apply_coupon_false_partial_success_iff_all_validate(self):
+        values = {
+            'token': u'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy',
+            'agent_id': 1,
+            'agent_name': u'askmegrocery',
+            'created_at': datetime.datetime.utcnow(),
+            'last_accessed_at': datetime.datetime.utcnow()
+        }
+        db = CouponsAlchemyDB()
+        db.insert_row("tokens", **values)
+        headers= {
+            'X-API-USER': 'askmegrocery',
+            'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
+        }
         today = datetime.datetime.utcnow()
         tomorrow = today+timedelta(days=2)
         rule_create_data = {
@@ -1490,8 +1529,8 @@ class CreateRule(unittest.TestCase):
             "coupon_codes": ["TEST1CODE1"],
             "source": "organic"
         }
-        response = self.client.post(url_for('voucher_api/v1.check_coupon'), data=json.dumps(order_data),
-                                    content_type='application/json')
+        response = self.client.post(url_for('voucher_api/v1.1.check_coupon_v2'), data=json.dumps(order_data),
+                                    headers=headers, content_type='application/json')
         self.assertTrue(response.status_code == 200, u'{}'.format(response.data))
         data = json.loads(response.data)
         self.assertTrue(data.get('success'), response.data)
@@ -1510,8 +1549,8 @@ class CreateRule(unittest.TestCase):
             "order_id": "1234",
             "source": "organic"
         }
-        response = self.client.post(url_for('voucher_api/v1.check_coupon'), data=json.dumps(order_data),
-                                    content_type='application/json')
+        response = self.client.post(url_for('voucher_api/v1.1.check_coupon_v2'), data=json.dumps(order_data),
+                                    headers=headers, content_type='application/json')
         self.assertTrue(response.status_code == 400, u'{}'.format(response.data))
         data = json.loads(response.data)
         self.assertTrue(not data.get('success'), response.data)
@@ -1531,8 +1570,8 @@ class CreateRule(unittest.TestCase):
             "order_id": "1234",
             "source": "organic"
         }
-        response = self.client.post(url_for('voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
-                                    content_type='application/json')
+        response = self.client.post(url_for('voucher_api/v1.1.apply_coupon_v2'), data=json.dumps(order_data),
+                                    headers=headers, content_type='application/json')
         self.assertTrue(response.status_code == 400, u'{}'.format(response.data))
         data = json.loads(response.data)
         self.assertTrue(not data.get('success'), response.data)
@@ -1581,7 +1620,7 @@ class CreateRule(unittest.TestCase):
                                     content_type='application/json')
         expire_args = [
             {
-                'coupons': ['TEST1CODE259'],
+                'coupons': [{'code': 'TEST1CODE259'}],
                 'update': {
                     'to': day_before.isoformat()
                 }
@@ -1591,10 +1630,10 @@ class CreateRule(unittest.TestCase):
                                     content_type='application/json')
         db = CouponsAlchemyDB()
         voucher_dict = db.find_one("vouchers", **{'code': 'TEST1CODE259'})
-        self.assertTrue(not voucher_dict)
+        self.assertTrue(not voucher_dict, response.data)
         future_args = [
             {
-                'coupons': ['TEST1CODE259'],
+                'coupons': [{'code': 'TEST1CODE259'}],
                 'update': {
                     'to': tomorrow.isoformat()
                 }
@@ -1607,7 +1646,7 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(voucher_dict)
         expire_args = [
             {
-                'coupons': ['TEST1CODE259'],
+                'coupons': [{'code': 'TEST1CODE259'}],
                 'update': {
                     'to': day_before.isoformat()
                 }
@@ -1652,7 +1691,7 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(voucher_dict)
         future_args = [
             {
-                'coupons': ['TEST1CODE259'],
+                'coupons': [{'code': 'TEST1CODE259'}],
                 'update': {
                     'to': tomorrow.isoformat()
                 }
@@ -1897,7 +1936,6 @@ class CreateRule(unittest.TestCase):
         nowtime = datetime.datetime.utcnow()
         oldtime = timedelta(minutes=10)
         oldfromnowtime = (nowtime - oldtime).time().isoformat()
-
         rule_create_data = {
             "name": "test_rule_1",
             "description": "test_some_description_1",
@@ -1993,10 +2031,6 @@ class CreateRule(unittest.TestCase):
         hour -= 1
         today = today.date()
         tomorrow = today+timedelta(days=2)
-        nowtime = datetime.datetime.utcnow()
-        oldtime = timedelta(minutes=10)
-        oldfromnowtime = (nowtime - oldtime).time().isoformat()
-
         rule_create_data = {
             "name": "test_rule_1",
             "description": "test_some_description_1",
@@ -2065,3 +2099,300 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(data.get('success'), response.data)
         self.assertTrue(len(data.get('benefits')) == 1, response.data)
+
+    def test_update_to_date(self):
+        # 1. To verify that we can successfully update an expired coupon
+        #    when there is no active coupon present.
+        # 2. To verify that updating a coupon fails if there exists a voucher after that in chronological order
+        #    be it active or inactive
+        # 3. To update to_date of a voucher which is in future and present, fail if the to_date clashes with some other, else
+        #    update successfully
+        # 4. To delete a voucher in future
+        # 5. To fail while deleting a voucher which is already history.
+        values = {
+            'token': u'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy',
+            'agent_id': 1,
+            'agent_name': u'askmegrocery',
+            'created_at': datetime.datetime.utcnow(),
+            'last_accessed_at': datetime.datetime.utcnow()
+        }
+        db = CouponsAlchemyDB()
+        db.insert_row("tokens", **values)
+        headers= {
+            'X-API-USER': 'askmegrocery',
+            'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
+        }
+        today = datetime.datetime.utcnow().date()
+        tomorrow = today+timedelta(days=1)
+        day_after = tomorrow + timedelta(days=1)
+        day_after_day_after = day_after + timedelta(days=1)
+        rule_1_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1"],
+            "from": day_after.isoformat(),
+            "to": day_after_day_after.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": None,
+                        "range_max": None,
+                        "cart_range_min": 100,
+                        "cart_range_max": None,
+                        "channels": [],
+                        "brands": [],
+                        "products": {
+                            'in':[],
+                            'not_in': []
+                        },
+                        "categories": {
+                            "in": [],
+                            "not_in": []
+                        },
+                        "storefronts": [],
+                        "variants": [],
+                        "sellers": [],
+                        "location": {
+                            "country":[],
+                            "state": [],
+                            "city": [],
+                            "area": [],
+                            "zone": []
+                        },
+                        "payment_modes": [],
+                        "valid_on_order_no": []
+                    },
+                    "benefits": {
+                        "percentage": 10,
+                        "max_discount": 250
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_1_create_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(not data.get('data',dict()).get('error_list') and
+                        len(data.get('data', dict()).get('success_list', list())) is 1, response.data)
+        voucher = Vouchers.find_one('TEST1CODE1')
+        self.assertTrue(voucher.to_date == datetime.datetime.combine(day_after_day_after, datetime.datetime.min.time()))
+        rule_2_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": None,
+                        "range_max": None,
+                        "cart_range_min": 100,
+                        "cart_range_max": None,
+                        "channels": [],
+                        "brands": [],
+                        "products": {
+                            'in':[],
+                            'not_in': []
+                        },
+                        "categories": {
+                            "in": [],
+                            "not_in": []
+                        },
+                        "storefronts": [],
+                        "variants": [],
+                        "sellers": [],
+                        "location": {
+                            "country":[],
+                            "state": [],
+                            "city": [],
+                            "area": [],
+                            "zone": []
+                        },
+                        "payment_modes": [],
+                        "valid_on_order_no": []
+                    },
+                    "benefits": {
+                        "percentage": 10,
+                        "max_discount": 250
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_2_create_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(not data.get('data',dict()).get('error_list') and
+                        len(data.get('data', dict()).get('success_list', list())) is 1, response.data)
+        voucher = Vouchers.find_one('TEST1CODE1')
+        self.assertTrue(voucher.to_date == datetime.datetime.combine(tomorrow, datetime.datetime.min.time()))
+        yesterday = today - timedelta(days=4)
+        expire_args = [
+            {
+                'coupons': [{'code': 'TEST1CODE1', 'from': today.isoformat()}],
+                'update': {
+                    'to': yesterday.isoformat()
+                }
+            }
+        ]
+        response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(expire_args),
+                                    content_type='application/json')
+        voucher = Vouchers.find_one('TEST1CODE1')
+        self.assertTrue(voucher.to_date == datetime.datetime.combine(day_after_day_after, datetime.datetime.min.time()))
+        voucher_list = Vouchers.find_all_by_code('TEST1CODE1')
+        self.assertTrue(len(voucher_list) == 2)
+        now = datetime.datetime.utcnow()
+        fifteen_minutes_later = now + timedelta(minutes=15)
+        rule_2_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1"],
+            "from": now.isoformat(),
+            "to": fifteen_minutes_later.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": None,
+                        "range_max": None,
+                        "cart_range_min": 100,
+                        "cart_range_max": None,
+                        "channels": [],
+                        "brands": [],
+                        "products": {
+                            'in':[],
+                            'not_in': []
+                        },
+                        "categories": {
+                            "in": [],
+                            "not_in": []
+                        },
+                        "storefronts": [],
+                        "variants": [],
+                        "sellers": [],
+                        "location": {
+                            "country":[],
+                            "state": [],
+                            "city": [],
+                            "area": [],
+                            "zone": []
+                        },
+                        "payment_modes": [],
+                        "valid_on_order_no": []
+                    },
+                    "benefits": {
+                        "percentage": 10,
+                        "max_discount": 250
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_2_create_data),
+                                    content_type='application/json')
+        failed_update_args = [
+            {
+                'coupons': [{'code': 'TEST1CODE1', 'from': today.isoformat()}],
+                'update': {
+                    'to': tomorrow.isoformat()
+                }
+            }
+        ]
+        response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(failed_update_args),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(not data.get('data',dict()).get('success_list') and
+                        len(data.get('data', dict()).get('error_list', list())) is 1, response.data)
+        day_after_day_after_day_after = day_after_day_after + timedelta(days=1)
+        day_after_day_after_day_after_day_after = day_after_day_after_day_after + timedelta(days=1)
+        rule_2_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1"],
+            "from": day_after_day_after_day_after.isoformat(),
+            "to": day_after_day_after_day_after_day_after.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": None,
+                        "range_max": None,
+                        "cart_range_min": 100,
+                        "cart_range_max": None,
+                        "channels": [],
+                        "brands": [],
+                        "products": {
+                            'in':[],
+                            'not_in': []
+                        },
+                        "categories": {
+                            "in": [],
+                            "not_in": []
+                        },
+                        "storefronts": [],
+                        "variants": [],
+                        "sellers": [],
+                        "location": {
+                            "country":[],
+                            "state": [],
+                            "city": [],
+                            "area": [],
+                            "zone": []
+                        },
+                        "payment_modes": [],
+                        "valid_on_order_no": []
+                    },
+                    "benefits": {
+                        "percentage": 10,
+                        "max_discount": 250
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_2_create_data),
+                                    content_type='application/json')
+        failed_update_args = [
+            {
+                'coupons': [{'code': 'TEST1CODE1', 'from': day_after.isoformat()}],
+                'update': {
+                    'to': day_after_day_after_day_after_day_after.isoformat()
+                }
+            }
+        ]
+        response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(failed_update_args),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(not data.get('data',dict()).get('success_list') and
+                        len(data.get('data', dict()).get('error_list', list())) is 1, response.data)
+        delete_update_args = [
+            {
+                'coupons': [{'code': 'TEST1CODE1', 'from': day_after_day_after_day_after.isoformat()}],
+                'update': {
+                    'to': yesterday.isoformat()
+                }
+            }
+        ]
+        response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(delete_update_args),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(not data.get('data',dict()).get('error_list') and
+                        len(data.get('data', dict()).get('success_list', list())) is 1, response.data)
+        voucher_list = Vouchers.find_all_by_code('TEST1CODE1')
+        self.assertTrue(len(voucher_list) == 3)
