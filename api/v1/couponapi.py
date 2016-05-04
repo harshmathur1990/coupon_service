@@ -1,5 +1,6 @@
 import json
 import logging
+import werkzeug
 from flask import request
 from lib.decorator import jsonify, check_login
 from lib.utils import is_timezone_aware, create_error_response, length_validator,\
@@ -83,7 +84,21 @@ def apply_coupon():
         'source': fields.Str(required=False, missing=None, location='json')
 
     }
-    args = parser.parse(apply_coupon_args, request)
+    try:
+        args = parser.parse(apply_coupon_args, request)
+    except werkzeug.exceptions.UnprocessableEntity as e:
+        key_list = list()
+        for key in e.data['messages'].keys():
+            key_list.append(key)
+        rv = {
+            'success': False,
+            'error': {
+                'code': 422,
+                'error': u'Invalid value for the following keys {}'.format(key_list)
+            },
+            'errors': [u'Invalid value for the following keys {}'.format(key_list)]
+        }
+        return rv
     order_exists, benefits_given = fetch_order_response(args)
     if order_exists:
         return benefits_given
@@ -201,7 +216,22 @@ def check_coupon():
         'source': fields.Str(required=False, missing=None, location='json')
 
     }
-    args = parser.parse(check_coupon_args, request)
+    try:
+        args = parser.parse(check_coupon_args, request)
+    except werkzeug.exceptions.UnprocessableEntity as e:
+        key_list = list()
+        for key in e.data['messages'].keys():
+            key_list.append(key)
+        rv = {
+            'success': False,
+            'error': {
+                'code': 422,
+                'error': u'Invalid value for the following keys {}'.format(key_list)
+            },
+            'errors': [u'Invalid value for the following keys {}'.format(key_list)]
+        }
+        return rv
+
     success, order, error = validate_coupon(args)
 
     if success:
@@ -483,7 +513,21 @@ def create_voucher():
         )
 
     }
-    args = parser.parse(coupon_create_args, req=request, validate=is_valid_schedule_object)
+    try:
+        args = parser.parse(coupon_create_args, req=request, validate=is_valid_schedule_object)
+    except werkzeug.exceptions.UnprocessableEntity as e:
+        key_list = list()
+        for key in e.data['messages'].keys():
+            key_list.append(key)
+        rv = {
+            'success': False,
+            'error': {
+                'code': 422,
+                'error': u'Invalid value for the following keys {}'.format(key_list)
+            },
+            'errors': [u'Invalid value for the following keys {}'.format(key_list)]
+        }
+        return rv
 
     # api specific validation
     success, error = validate_for_create_api_v1(args)
@@ -533,7 +577,22 @@ def confirm_order():
         'order_id': fields.Str(required=True, location='json'),
         'payment_status': fields.Bool(required=True, location='json')
     }
-    args = parser.parse(confirm_order_args, request)
+    try:
+        args = parser.parse(confirm_order_args, request)
+    except werkzeug.exceptions.UnprocessableEntity as e:
+        key_list = list()
+        for key in e.data['messages'].keys():
+            key_list.append(key)
+        rv = {
+            'success': False,
+            'error': {
+                'code': 422,
+                'error': u'Invalid value for the following keys {}'.format(key_list)
+            },
+            'errors': [u'Invalid value for the following keys {}'.format(key_list)]
+        }
+        return rv
+
     success, error = VoucherTransactionLog.make_transaction_log_entry(args)
     if not success:
         rv = create_error_response(400, error)
@@ -547,7 +606,19 @@ def confirm_order():
 # @check_login
 def update_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
-    data_list = json.loads(request.get_data())
+    try:
+        data_list = json.loads(request.get_data())
+    except Exception as e:
+        rv = {
+            'success': False,
+            'error': {
+                'code': 422,
+                'error': u'Unable to parse Json'
+            },
+            'errors': [u'Unable to parse Json']
+        }
+        return rv
+
     success, error = validate_for_update(data_list)
     if not success:
         return create_error_response(400, error)
@@ -597,7 +668,22 @@ def get_coupon():
     get_coupon_args = {
         'coupon_codes': fields.List(fields.Str(), required=True, location='json')
     }
-    args = parser.parse(get_coupon_args, request)
+    try:
+        args = parser.parse(get_coupon_args, request)
+    except werkzeug.exceptions.UnprocessableEntity as e:
+        key_list = list()
+        for key in e.data['messages'].keys():
+            key_list.append(key)
+        rv = {
+            'success': False,
+            'error': {
+                'code': 422,
+                'error': u'Invalid value for the following keys {}'.format(key_list)
+            },
+            'errors': [u'Invalid value for the following keys {}'.format(key_list)]
+        }
+        return rv
+
     success_list = list()
     error_list = list()
     coupon_codes = args.get('coupon_codes')
@@ -742,7 +828,22 @@ def apply_coupon_v2():
 
         'source': fields.Str(required=False, missing=None, location='json')
     }
-    args = parser.parse(apply_coupon_args, request)
+    try:
+        args = parser.parse(apply_coupon_args, request)
+    except werkzeug.exceptions.UnprocessableEntity as e:
+        key_list = list()
+        for key in e.data['messages'].keys():
+            key_list.append(key)
+        rv = {
+            'success': False,
+            'error': {
+                'code': 422,
+                'error': u'Invalid value for the following keys {}'.format(key_list)
+            },
+            'errors': [u'Invalid value for the following keys {}'.format(key_list)]
+        }
+        return rv
+
     order_exists, benefits_given = fetch_order_response(args)
     if order_exists:
         return benefits_given
@@ -860,7 +961,22 @@ def check_coupon_v2():
         'source': fields.Str(required=False, missing=None, location='json')
 
     }
-    args = parser.parse(check_coupon_args, request)
+    try:
+        args = parser.parse(check_coupon_args, request)
+    except werkzeug.exceptions.UnprocessableEntity as e:
+        key_list = list()
+        for key in e.data['messages'].keys():
+            key_list.append(key)
+        rv = {
+            'success': False,
+            'error': {
+                'code': 422,
+                'error': u'Invalid value for the following keys {}'.format(key_list)
+            },
+            'errors': [u'Invalid value for the following keys {}'.format(key_list)]
+        }
+        return rv
+
     success, order, error = validate_coupon(args)
 
     if success:
