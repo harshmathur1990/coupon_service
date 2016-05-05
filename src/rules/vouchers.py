@@ -49,8 +49,8 @@ class Vouchers(object):
         db = CouponsAlchemyDB()
         db.begin()
         try:
-            from src.rules.utils import find_overlapping_vouchers
-            success, error = find_overlapping_vouchers(self, db)
+            from src.rules.utils import is_validity_period_exclusive_for_voucher_code
+            success, error = is_validity_period_exclusive_for_voucher_code(self, db)
             if not success:
                 db.rollback()
                 return False, None, error
@@ -123,26 +123,8 @@ class Vouchers(object):
                 # else insert rows in both the tables while updating all_vouchers
                 self.to_date = to_date
                 if self.type is not VoucherType.regular_coupon.value:
-                    self.get_rule(db)
-                    # TODO: no need to assume freebie/auto-apply coupons will have a single rule. \
-                    # so we should actually run a loop here to check for each rule in the voucher
-                    existing_voucher_dict = {
-                        'type': self.type,
-                        'zone': self.rules_list[0].criteria_obj.zone[0],
-                        'range_min': self.rules_list[0].criteria_obj.range_min,
-                        'range_max': self.rules_list[0].criteria_obj.range_max,
-                        'cart_range_min': self.rules_list[0].criteria_obj.cart_range_min,
-                        'cart_range_max': self.rules_list[0].criteria_obj.cart_range_max,
-                        'from': self.from_date,
-                        'to': self.to_date,
-                        'code': self.code
-                    }
-                    if self.type is VoucherType.auto_freebie.value:
-                        existing_voucher_dict['variants'] = self.rules_list[0].criteria_obj.variants[0]
-                    else:
-                        existing_voucher_dict['variants'] = None
-                    from src.rules.utils import find_overlapping_freebie_vouchers
-                    success, error_list = find_overlapping_freebie_vouchers(existing_voucher_dict, db)
+                    from src.rules.utils import is_validity_period_exclusive_for_freebie_vouchers
+                    success, error_list = is_validity_period_exclusive_for_freebie_vouchers(self, db)
                     if not success:
                         db.rollback()
                         return False, error_list
@@ -165,6 +147,12 @@ class Vouchers(object):
                 # voucher has not expired and the request is to extend the end date further
                 # Hence just update all_vouchers and in case of freebies, update there as well
                 self.to_date = to_date
+                if self.type is not VoucherType.regular_coupon.value:
+                    from src.rules.utils import is_validity_period_exclusive_for_freebie_vouchers
+                    success, error_list = is_validity_period_exclusive_for_freebie_vouchers(self, db)
+                    if not success:
+                        db.rollback()
+                        return False, error_list
                 db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
                 db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
                 if self.type is not VoucherType.regular_coupon.value:
@@ -215,7 +203,7 @@ class Vouchers(object):
             if existing_voucher.from_date < now:
                 # There is at least one voucher which follows chronologically, hence this voucher is locked.
                 db.rollback()
-                return False, [u'This voucher has been expired. Please try updating another voucher with same code']
+                return False, [u'This voucher can not be extended, try creating a new voucher with same voucher code.']
             if to_date >= existing_voucher.from_date:
                 # overlapping intervals
                 db.rollback()

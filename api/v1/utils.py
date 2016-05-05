@@ -1,7 +1,7 @@
 import binascii
 from src.sqlalchemydb import CouponsAlchemyDB
 from src.enums import VoucherType
-from src.rules.utils import find_overlapping_freebie_vouchers
+from src.rules.utils import is_validity_period_exclusive_for_freebie_voucher_code
 from src.rules.utils import create_rule_object, save_vouchers, save_auto_freebie_from_voucher_dict
 
 
@@ -75,7 +75,7 @@ def create_freebie_coupon(args):
         existing_voucher_dict['variants'] = None
         data['criteria']['variants'] = []
 
-    success, error_list = find_overlapping_freebie_vouchers(existing_voucher_dict)
+    success, error_list = is_validity_period_exclusive_for_freebie_voucher_code(existing_voucher_dict)
     if not success:
         return False, None, error_list
 

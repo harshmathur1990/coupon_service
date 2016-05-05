@@ -588,7 +588,7 @@ def save_auto_freebie_from_voucher_dict(voucher_dict):
     save_auto_freebie_from_voucher(vouchers)
 
 
-def find_overlapping_freebie_vouchers(existing_voucher_dict, db=None):
+def is_validity_period_exclusive_for_freebie_voucher_code(existing_voucher_dict, db=None):
     sql = 'select * from `auto_freebie_search` where type=:type and zone=:zone and ('
 
     if existing_voucher_dict.get('cart_range_min'):
@@ -638,7 +638,7 @@ def find_overlapping_freebie_vouchers(existing_voucher_dict, db=None):
     return True, None
 
 
-def find_overlapping_vouchers(voucher, db=None):
+def is_validity_period_exclusive_for_voucher_code(voucher, db=None):
     if not db:
         db = CouponsAlchemyDB()
     date_overlapping_caluse = '(((:from >= `from` && :from <= `to`) or (:to >= `from` && :to <= `to`)) or ((`from` >= :from && `from` <= :to) or (`to` >= :from && `to` <= :to) ))'
@@ -652,3 +652,25 @@ def find_overlapping_vouchers(voucher, db=None):
     if voucher_list:
         return False, u'Vouchers with overlapping dates found for code {}'.format(voucher.code)
     return True, None
+
+
+def is_validity_period_exclusive_for_freebie_vouchers(voucher, db):
+    # TODO: no need to assume freebie/auto-apply coupons will have a single rule. \
+    # so we should actually run a loop here to check for each rule in the voucher
+    voucher.get_rule(db)
+    existing_voucher_dict = {
+        'type': voucher.type,
+        'zone': voucher.rules_list[0].criteria_obj.zone[0],
+        'range_min': voucher.rules_list[0].criteria_obj.range_min,
+        'range_max': voucher.rules_list[0].criteria_obj.range_max,
+        'cart_range_min': voucher.rules_list[0].criteria_obj.cart_range_min,
+        'cart_range_max': voucher.rules_list[0].criteria_obj.cart_range_max,
+        'from': voucher.from_date,
+        'to': voucher.to_date,
+        'code': voucher.code
+    }
+    if voucher.type is VoucherType.auto_freebie.value:
+        existing_voucher_dict['variants'] = voucher.rules_list[0].criteria_obj.variants[0]
+    else:
+        existing_voucher_dict['variants'] = None
+    return is_validity_period_exclusive_for_freebie_voucher_code(existing_voucher_dict, db)
