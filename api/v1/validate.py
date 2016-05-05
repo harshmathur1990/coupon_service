@@ -1,5 +1,6 @@
 from src.enums import VoucherType
 from dateutil import parser
+from lib.utils import get_utc_timezone_unaware_date_object
 
 def validate_for_create_api_v1(data):
     success = True
@@ -87,12 +88,29 @@ def validate_for_update(data_list):
 
     for data in data_list:
         if not data.get('coupons') or not isinstance(data.get('coupons'), list):
-            return False, u'Every element of input list must have a list of coupons in key coupons'
+            return False, u'Every element of input list must have a list of dicts with each dict containing from date and code'
         if not data.get('update') or not data.get('update').get('to'):
             return False, u'Every element of input list must have a to date in key update[to]'
+        error = False
+        for coupon_obj in data.get('coupons'):
+            if not isinstance(coupon_obj, dict):
+                error = u'coupons is not a list of dicts'
+                break
+            if not coupon_obj.get('code'):
+                error = u'Voucher code missing'
+                break
+            if coupon_obj.get('from'):
+                try:
+                    from_date = parser.parse(coupon_obj.get('from'))
+                    coupon_obj['from'] = get_utc_timezone_unaware_date_object(from_date)
+                except:
+                    error = u'From Date is not valid'
+                    break
+        if error:
+            return False, error
         try:
             to_date = parser.parse(data.get('update').get('to'))
-            data['update']['to'] = to_date
+            data['update']['to'] = get_utc_timezone_unaware_date_object(to_date)
         except ValueError:
             return False, u'Invalid Date format'
     return True, None

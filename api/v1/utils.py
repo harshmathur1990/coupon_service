@@ -1,7 +1,7 @@
 import binascii
 from src.sqlalchemydb import CouponsAlchemyDB
 from src.enums import VoucherType
-from src.rules.utils import find_overlapping_vouchers
+from src.rules.utils import is_validity_period_exclusive_for_freebie_voucher_code
 from src.rules.utils import create_rule_object, save_vouchers, save_auto_freebie_from_voucher_dict
 
 
@@ -11,6 +11,11 @@ def create_freebie_coupon(args):
     # in case of update, delete the voucher, delete entry from auto_freebie_search
     # create a new rule and create a new voucher on the created rule, and an entry in auto_freebie_search
     # Also it is ensured that at a time only one entry per zone, spending range and category can be there.
+    # Currently Scheduling is not supported in Freebies
+
+    if args.get('schedule'):
+        return False, None, [u'Scheduling is not supported in Freebie Coupons']
+
     code = args.get('code')[0]
     rule = args.get('rules')[0]
     criteria = rule.get('criteria')
@@ -70,7 +75,7 @@ def create_freebie_coupon(args):
         existing_voucher_dict['variants'] = None
         data['criteria']['variants'] = []
 
-    success, error_list = find_overlapping_vouchers(existing_voucher_dict)
+    success, error_list = is_validity_period_exclusive_for_freebie_voucher_code(existing_voucher_dict)
     if not success:
         return False, None, error_list
 

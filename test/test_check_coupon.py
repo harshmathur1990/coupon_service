@@ -136,9 +136,23 @@ class CheckCoupon(unittest.TestCase):
         db.delete_row("all_vouchers")
         db.delete_row("vouchers")
         db.delete_row("rule")
+        db.delete_row("tokens")
         self.app_context.pop()
 
     def test_check_coupon(self):
+        values = {
+            'token': u'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy',
+            'agent_id': 1,
+            'agent_name': u'askmegrocery',
+            'created_at': datetime.datetime.utcnow(),
+            'last_accessed_at': datetime.datetime.utcnow()
+        }
+        db = CouponsAlchemyDB()
+        db.insert_row("tokens", **values)
+        headers= {
+            'X-API-USER': 'askmegrocery',
+            'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
+        }
         today = datetime.datetime.utcnow()
         tomorrow = today+timedelta(days=2)
         rule_create_data = {
@@ -179,8 +193,8 @@ class CheckCoupon(unittest.TestCase):
                     },
                 ]
         }
-        response = self.client.post(url_for('voucher_api/v1.check_coupon'), data=json.dumps(order_data),
-                                    content_type='application/json')
+        response = self.client.post(url_for('voucher_api/v1.1.check_coupon_v2'), data=json.dumps(order_data),
+                                    headers=headers, content_type='application/json')
         self.assertTrue(response.status_code == 200, response.data)
         data = json.loads(response.data)
 #        self.assertTrue(not data.get('data',dict()).get('error_list') and

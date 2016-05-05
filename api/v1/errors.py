@@ -1,7 +1,6 @@
 from api import voucher_api
 from flask import request
 from flask import jsonify
-import json
 import logging
 
 logger = logging.getLogger(__name__)

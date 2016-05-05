@@ -1,6 +1,7 @@
 import grequests
 import logging
 import time
+import pytz
 import croniter
 from src.enums import SchedulerType
 from src.rules.user import User
@@ -184,3 +185,11 @@ def handle_unprocessable_entity(e):
         'errors': [u'Invalid value for the following keys {}'.format(key_list)]
     }
     return rv
+
+
+def get_utc_timezone_unaware_date_object(date_object):
+    if not is_timezone_aware(date_object):
+        return date_object
+    date_object = date_object.astimezone(pytz.UTC)
+    date_object = date_object.replace(tzinfo=None)
+    return date_object
