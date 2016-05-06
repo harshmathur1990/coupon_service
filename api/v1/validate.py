@@ -114,11 +114,12 @@ def validate_for_update(data_list):
                     break
         if error:
             return False, error
-        try:
-            to_date = parser.parse(data.get('update').get('to'))
-            data['update']['to'] = get_utc_timezone_unaware_date_object(to_date)
-        except ValueError:
-            return False, u'Invalid Date format'
+        if data.get('update').get('to'):
+            try:
+                to_date = parser.parse(data.get('update').get('to'))
+                data['update']['to'] = get_utc_timezone_unaware_date_object(to_date)
+            except ValueError:
+                return False, u'Invalid Date format'
 
         is_schedule_object_valid = is_valid_schedule_object(data.get('update'))
         if not is_schedule_object_valid:

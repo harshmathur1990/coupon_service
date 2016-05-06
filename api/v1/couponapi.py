@@ -346,8 +346,6 @@ def update_coupon():
     if not success:
         return create_error_response(400, error)
 
-    success_list = list()
-    error_list = list()
     success_list, error_list = update_keys_in_input_list(data_list)
     return {
         'success': True,

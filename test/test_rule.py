@@ -2396,3 +2396,102 @@ class CreateRule(unittest.TestCase):
                         len(data.get('data', dict()).get('success_list', list())) is 1, response.data)
         voucher_list = Vouchers.find_all_by_code('TEST1CODE1')
         self.assertTrue(len(voucher_list) == 3)
+
+    def test_full_update_api(self):
+        values = {
+            'token': u'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy',
+            'agent_id': 1,
+            'agent_name': u'askmegrocery',
+            'created_at': datetime.datetime.utcnow(),
+            'last_accessed_at': datetime.datetime.utcnow()
+        }
+        db = CouponsAlchemyDB()
+        db.insert_row("tokens", **values)
+        headers= {
+            'X-API-USER': 'askmegrocery',
+            'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
+        }
+        today = datetime.datetime.utcnow().date()
+        tomorrow = today+timedelta(days=1)
+        day_after = tomorrow + timedelta(days=1)
+        day_after_day_after = day_after + timedelta(days=1)
+        rule_1_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1"],
+            "from": day_after.isoformat(),
+            "to": day_after_day_after.isoformat(),
+            "custom": "Some Custom 1",
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": None,
+                        "range_max": None,
+                        "cart_range_min": 100,
+                        "cart_range_max": None,
+                        "channels": [],
+                        "brands": [],
+                        "products": {
+                            'in':[],
+                            'not_in': []
+                        },
+                        "categories": {
+                            "in": [],
+                            "not_in": []
+                        },
+                        "storefronts": [],
+                        "variants": [],
+                        "sellers": [],
+                        "location": {
+                            "country":[],
+                            "state": [],
+                            "city": [],
+                            "area": [],
+                            "zone": []
+                        },
+                        "payment_modes": [],
+                        "valid_on_order_no": []
+                    },
+                    "benefits": {
+                        "percentage": 10,
+                        "max_discount": 250
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_1_create_data),
+                                    content_type='application/json')
+        update_args = [
+            {
+                'coupons': [{'code': 'TEST1CODE1', 'from': day_after.isoformat()}],
+                'update': {
+                }
+            }
+        ]
+        response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(update_args),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 400, response.data)
+        update_args = [
+            {
+                'coupons': [{'code': 'TEST1CODE1', 'from': day_after.isoformat()}],
+                'update': {
+                    "custom": "Some Custom 2",
+                    "description": "test_some_description_2"
+                }
+            }
+        ]
+        response = self.client.post(url_for('voucher_api/v1.update_coupon'), data=json.dumps(update_args),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(not data.get('data',dict()).get('error_list') and
+                        len(data.get('data', dict()).get('success_list', list())) is 1, response.data)
+        voucher = Vouchers.find_one('TEST1CODE1')
+        voucher_in_all_voucher = db.find_one("all_vouchers", **{'code': 'TEST1CODE1'})
+        self.assertTrue(voucher.custom == 'Some Custom 2', voucher.__dict__)
+        self.assertTrue(voucher.description == 'test_some_description_2', voucher.__dict__)
+
