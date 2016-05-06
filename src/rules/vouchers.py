@@ -110,88 +110,75 @@ class Vouchers(object):
             return Vouchers.get_active_voucher(code, db)
 
     def update_to_date_single(self, to_date, db):
-        # db = CouponsAlchemyDB()
-        # db.begin()
-        try:
-            now = datetime.datetime.utcnow()
-            if self.to_date < now < to_date:
-                # voucher has expired and I am setting date of future,
-                # i.e. re-enabling the voucher
-                # need to check if the freebie clashes with some existing.
-                # Also update if the voucher already exists in voucher table
-                # or auto_freebie_search table
-                # else insert rows in both the tables while updating all_vouchers
-                self.to_date = to_date
-                if self.type is not VoucherType.regular_coupon.value:
-                    from src.rules.utils import is_validity_period_exclusive_for_freebie_vouchers
-                    success, error_list = is_validity_period_exclusive_for_freebie_vouchers(self, db)
-                    if not success:
-                        db.rollback()
-                        return False, error_list
-                    # insert values in auto freebie table
-                    # first cyclic import of the code!!!
-                    auto_freebie_dict = db.find_one("auto_freebie_search", **{'voucher_id': self.id_bin})
-                    if auto_freebie_dict:
-                        db.update_row("auto_freebie_search", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
-                    else:
-                        from utils import save_auto_freebie_from_voucher
-                        save_auto_freebie_from_voucher(self, db)
-                voucher_dict = db.find_one("vouchers", **{'id': self.id_bin})
-                if voucher_dict:
-                    db.update_row("vouchers", "id", id=self.id_bin, to=self.to_date)
-                    db.update_row("all_vouchers", "id", id=self.id_bin, to=self.to_date)
-                else:
-                    db.update_row("all_vouchers", "id", id=self.id_bin, to=self.to_date)
-                Vouchers.fetch_active_voucher(self.code, db)
-            elif self.to_date > now and to_date > now:
-                # voucher has not expired and the request is to extend the end date further
-                # Hence just update all_vouchers and in case of freebies, update there as well
-                self.to_date = to_date
-                if self.type is not VoucherType.regular_coupon.value:
-                    from src.rules.utils import is_validity_period_exclusive_for_freebie_vouchers
-                    success, error_list = is_validity_period_exclusive_for_freebie_vouchers(self, db)
-                    if not success:
-                        db.rollback()
-                        return False, error_list
-                db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
-                db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
-                if self.type is not VoucherType.regular_coupon.value:
+        now = datetime.datetime.utcnow()
+        if self.to_date < now < to_date:
+            # voucher has expired and I am setting date of future,
+            # i.e. re-enabling the voucher
+            # need to check if the freebie clashes with some existing.
+            # Also update if the voucher already exists in voucher table
+            # or auto_freebie_search table
+            # else insert rows in both the tables while updating all_vouchers
+            self.to_date = to_date
+            if self.type is not VoucherType.regular_coupon.value:
+                from src.rules.utils import is_validity_period_exclusive_for_freebie_vouchers
+                success, error_list = is_validity_period_exclusive_for_freebie_vouchers(self, db)
+                if not success:
+                    return False, error_list
+                # insert values in auto freebie table
+                # first cyclic import of the code!!!
+                auto_freebie_dict = db.find_one("auto_freebie_search", **{'voucher_id': self.id_bin})
+                if auto_freebie_dict:
                     db.update_row("auto_freebie_search", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
-                Vouchers.fetch_active_voucher(self.code, db)
-            elif to_date < now < self.to_date:
-                # The voucher has not expired but request wants to expire the voucher
-                # Go ahead delete rows from vouchers and auto_freebie_search
-                # and update to=now in all_vouchers
-                # expire request
-                self.delete(db)
-                if self.from_date > now:
-                    db.delete_row_in_transaction("all_vouchers", **{'id': self.id_bin})
                 else:
-                    db.update_row("all_vouchers", "id", to=now, id=self.id_bin)
-                Vouchers.fetch_active_voucher(self.code, db)
-            elif to_date < now and self.to_date < now:
-                # Its a request to expire a voucher which has already expired.
-                # go ahead and delete it if it exists in vouchers and auto_freebie_search table
-                self.delete(db)
-                Vouchers.fetch_active_voucher(self.code, db)
+                    from utils import save_auto_freebie_from_voucher
+                    save_auto_freebie_from_voucher(self, db)
+            voucher_dict = db.find_one("vouchers", **{'id': self.id_bin})
+            if voucher_dict:
+                db.update_row("vouchers", "id", id=self.id_bin, to=self.to_date)
+                db.update_row("all_vouchers", "id", id=self.id_bin, to=self.to_date)
             else:
-                # Unknown case has not been handled, Hence putting a logger
-                logger.error(u'The Voucher : {}, to_date: {}'.format(self.__dict__, to_date))
-            db.commit()
-        except Exception as e:
-            logger.exception(e)
-            db.rollback()
-            return False, [u'Unknown Error, Please try again after some time']
-        # else:
-        #     db.commit()
+                db.update_row("all_vouchers", "id", id=self.id_bin, to=self.to_date)
+            Vouchers.fetch_active_voucher(self.code, db)
+        elif self.to_date > now and to_date > now:
+            # voucher has not expired and the request is to extend the end date further
+            # Hence just update all_vouchers and in case of freebies, update there as well
+            self.to_date = to_date
+            if self.type is not VoucherType.regular_coupon.value:
+                from src.rules.utils import is_validity_period_exclusive_for_freebie_vouchers
+                success, error_list = is_validity_period_exclusive_for_freebie_vouchers(self, db)
+                if not success:
+                    return False, error_list
+            db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
+            db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
+            if self.type is not VoucherType.regular_coupon.value:
+                db.update_row("auto_freebie_search", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
+            Vouchers.fetch_active_voucher(self.code, db)
+        elif to_date < now < self.to_date:
+            # The voucher has not expired but request wants to expire the voucher
+            # Go ahead delete rows from vouchers and auto_freebie_search
+            # and update to=now in all_vouchers
+            # expire request
+            self.delete(db)
+            if self.from_date > now:
+                db.delete_row_in_transaction("all_vouchers", **{'id': self.id_bin})
+            else:
+                db.update_row("all_vouchers", "id", to=now, id=self.id_bin)
+            Vouchers.fetch_active_voucher(self.code, db)
+        elif to_date < now and self.to_date < now:
+            # Its a request to expire a voucher which has already expired.
+            # go ahead and delete it if it exists in vouchers and auto_freebie_search table
+            self.delete(db)
+            Vouchers.fetch_active_voucher(self.code, db)
+        else:
+            # Unknown case has not been handled, Hence putting a logger
+            logger.error(u'The Voucher : {}, to_date: {}'.format(self.__dict__, to_date))
+            return False, [u'Unknown Error, Please contact tech support']
         return True, None
 
-    def update_to_date(self, to_date):
+    def update_to_date(self, to_date, db):
         now = datetime.datetime.now()
         if now < to_date <= self.from_date:
             return False, [u'to date cannot be less than from date']
-        db = CouponsAlchemyDB()
-        db.begin()
         query_dict = {
             'to': self.to_date,
             'code': self.code
@@ -202,13 +189,22 @@ class Vouchers(object):
             existing_voucher = Vouchers.from_dict(existing_voucher[0])
             if existing_voucher.from_date < now:
                 # There is at least one voucher which follows chronologically, hence this voucher is locked.
-                db.rollback()
                 return False, [u'This voucher can not be extended, try creating a new voucher with same voucher code.']
             if to_date >= existing_voucher.from_date:
                 # overlapping intervals
-                db.rollback()
                 return False, [u'Voucher to_date clashes with another voucher with same code']
         return self.update_to_date_single(to_date, db)
+
+    def update(self, update_dict, db):
+        update_dict['id'] = self.id_bin
+        if 'to' in update_dict:
+            success, error_list = self.update_to_date(update_dict.get('to'), db)
+            if not success:
+                return False, error_list
+            del update_dict['to']
+        db.update_row("vouchers", "id", **update_dict)
+        db.update_row("all_vouchers", "id", **update_dict)
+        return True, None
 
     def get_value_dict(self):
         values = dict()
@@ -237,9 +233,10 @@ class Vouchers(object):
         return False
 
     @staticmethod
-    def find_one_all_vouchers(code, from_date):
+    def find_one_all_vouchers(code, from_date, db=None):
         # from_date must be a timezone unaware UTC datetime object
-        db = CouponsAlchemyDB()
+        if not db:
+            db = CouponsAlchemyDB()
         voucher_dict = db.find_one("all_vouchers", **{'code': code, 'from': from_date})
         if voucher_dict:
             voucher = Vouchers.from_dict(voucher_dict)
@@ -247,8 +244,9 @@ class Vouchers(object):
         return False
 
     @staticmethod
-    def find_all_by_code(code):
-        db = CouponsAlchemyDB()
+    def find_all_by_code(code, db=None):
+        if not db:
+            db = CouponsAlchemyDB()
         voucher_list = list()
         voucher_dict_list = db.find("all_vouchers", **{'code': code})
         for voucher_dict in voucher_dict_list:

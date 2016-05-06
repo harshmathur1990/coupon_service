@@ -7,7 +7,7 @@ from lib.utils import length_validator, get_utc_timezone_unaware_date_object, cr
     create_success_response, is_valid_schedule_object, is_valid_duration_string, handle_unprocessable_entity
 from src.enums import *
 from src.rules.vouchers import VoucherTransactionLog, Vouchers
-from src.rules.utils import apply_benefits, create_and_save_rule_list,\
+from src.rules.utils import apply_benefits, create_and_save_rule_list, update_keys_in_input_list,\
     save_vouchers, fetch_auto_benefits, fetch_order_response, get_benefits_new
 from src.rules.validate import validate_coupon, validate_for_create_coupon,\
     validate_for_create_voucher
@@ -348,52 +348,7 @@ def update_coupon():
 
     success_list = list()
     error_list = list()
-    for data in data_list:
-        coupon_list = data.get('coupons')
-        to_date = data['update']['to']
-        for coupon_obj in coupon_list:
-            code = coupon_obj.get('code')
-            from_date = coupon_obj.get('from')
-            if from_date:
-                voucher = Vouchers.find_one_all_vouchers(code, from_date)
-                if not voucher:
-                    error_dict = {
-                        'code': code,
-                        'error': u'Voucher code {} with from date as {} not found'.format(code, from_date.isoformat())
-                    }
-                    error_list.append(error_dict)
-                    continue
-            else:
-                # from date not given, check if only one voucher exist,
-                # then update to date, else return with error
-                voucher_list = Vouchers.find_all_by_code(code)
-                if not voucher_list:
-                    error_dict = {
-                        'code': code,
-                        'error': u'Voucher code {} not found'.format(code)
-                    }
-                    error_list.append(error_dict)
-                    continue
-                if len(voucher_list) != 1:
-                    error_dict = {
-                        'code': code,
-                        'error': u'Multiple Vouchers found with code {}, Please provide from date'.format(code)
-                    }
-                    error_list.append(error_dict)
-                    continue
-                voucher = voucher_list[0]
-            success, error = voucher.update_to_date(to_date)
-            if not success:
-                error_dict = {
-                    'code': code,
-                    'error': ','.join(error)
-                }
-                error_list.append(error_dict)
-                continue
-            success_dict = {
-                'code': code
-            }
-            success_list.append(success_dict)
+    success_list, error_list = update_keys_in_input_list(data_list)
     return {
         'success': True,
         'data': {
