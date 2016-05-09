@@ -674,3 +674,85 @@ def is_validity_period_exclusive_for_freebie_vouchers(voucher, db):
     else:
         existing_voucher_dict['variants'] = None
     return is_validity_period_exclusive_for_freebie_voucher_code(existing_voucher_dict, db)
+
+
+def fetch_voucher_for_coupon_details(coupon, db):
+    from_date = coupon.get('from')
+    code = coupon.get('code')
+    if from_date:
+        voucher = Vouchers.find_one_all_vouchers(code, from_date, db)
+        if not voucher:
+            return False, None, u'Voucher code {} with from date as {} not found'.format(code, from_date.isoformat())
+    else:
+        # from date not given, check if only one voucher exist,
+        # then update to date, else return with error
+        voucher_list = Vouchers.find_all_by_code(code, db)
+        if not voucher_list:
+            return False, None, u'Voucher code {} not found'.format(code)
+        if len(voucher_list) != 1:
+            return False, None, u'Multiple Vouchers found with code {}, Please provide from date'.format(code)
+        voucher = voucher_list[0]
+    return True, voucher, None
+
+
+def update_coupon(coupon, update_dict):
+    db = CouponsAlchemyDB()
+    db.begin()
+    try:
+        success, voucher, error = fetch_voucher_for_coupon_details(coupon, db)
+        if not success:
+            db.rollback()
+            return False, error
+        success, error_list = voucher.update(update_dict, db)
+        if not success:
+            db.rollback()
+            return False, u','.join(error_list)
+        db.commit()
+    except Exception as e:
+        logger.exception(e)
+        db.rollback()
+        return False, u'Unknown Error. Please Contact tech support'
+    return True, None
+
+
+def update_values_in_this_list_of_coupons(data):
+    success_list = list()
+    error_list = list()
+    coupon_list = data.get('coupons')
+    to_date = data['update'].get('to')
+    schedule = data['update'].get('schedule')
+    custom = data['update'].get('custom')
+    description = data['update'].get('description')
+    update_dict = dict()
+    if schedule:
+        update_dict['schedule'] = schedule
+    if custom:
+        update_dict['custom'] = custom
+    if description:
+        update_dict['description'] = description
+    if to_date:
+        update_dict['to'] = to_date
+    for coupon in coupon_list:
+        success, error = update_coupon(coupon, update_dict)
+        if not success:
+            error_dict = {
+                'code': coupon.get('code'),
+                'error': error
+            }
+            error_list.append(error_dict)
+            continue
+        success_dict = {
+            'code': coupon.get('code')
+        }
+        success_list.append(success_dict)
+    return success_list, error_list
+
+
+def update_keys_in_input_list(data_list):
+    success_list = list()
+    error_list = list()
+    for data in data_list:
+        success_list_in_this_data, error_list_in_this_data = update_values_in_this_list_of_coupons(data)
+        success_list += success_list_in_this_data
+        error_list += error_list_in_this_data
+    return success_list, error_list
