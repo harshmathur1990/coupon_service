@@ -9,6 +9,7 @@ class VerificationItemData(object):
         self.price = kwargs.get('price')
         self.quantity = kwargs.get('quantity')
         self.subscription_id = kwargs.get('subscription_id')
+        self.blacklisted = False
 
 
 class OrderData(object):

@@ -427,9 +427,11 @@ def save_vouchers(args, rule_id_list):
 
 def create_rule_object(data, user_id=None):
     criteria = data.get('criteria')
+    blacklist_criteria = data.get('blacklist_criteria', dict())
     benefits = data.get('benefits')
     description = data.get('description')
     rule_criteria_kwargs = dict()
+    rule_blacklist_criteria_kwargs = dict()
     rule_criteria_keys = [
         'brands', 'categories', 'channels', 'valid_on_order_no',
         'payment_modes', 'products', 'range_max', 'cart_range_min',
@@ -441,16 +443,23 @@ def create_rule_object(data, user_id=None):
 
     for a_key in rule_criteria_keys:
         keys = a_key.split('.')
-        if keys[0] not in criteria:
+        if keys[0] not in criteria and keys[0] not in blacklist_criteria:
             continue
         if len(keys) == 2:
-            if keys[1] not in criteria[keys[0]]:
+            if keys[1] not in criteria[keys[0]] and keys[1] not in blacklist_criteria.get(keys[0], dict()):
                 continue
-            rule_criteria_kwargs[keys[1]] = criteria.get(keys[0], dict()).get(keys[1])
+            if keys[1] in criteria[keys[0]]:
+                rule_criteria_kwargs[keys[1]] = criteria.get(keys[0], dict()).get(keys[1])
+            if keys[1] in blacklist_criteria.get(keys[0], dict()):
+                if blacklist_criteria.get(keys[0], dict()).get(keys[1]):
+                    rule_blacklist_criteria_kwargs[keys[1]] = blacklist_criteria.get(keys[0], dict()).get(keys[1])
         else:
             rule_criteria_kwargs[keys[0]] = criteria.get(keys[0])
+            if blacklist_criteria.get(keys[0]):
+                rule_blacklist_criteria_kwargs[keys[0]] = blacklist_criteria.get(keys[0])
 
     rule_criteria = RuleCriteria(**rule_criteria_kwargs)
+    rule_blacklist_criteria = RuleCriteria(**rule_blacklist_criteria_kwargs)
     freebie_benefit_list = list()
     for freebie in benefits.get('freebies', list()):
         freebie_dict = dict()
@@ -470,7 +479,7 @@ def create_rule_object(data, user_id=None):
     benefit_list.append(percentage_benefit)
     benefits = Benefits(max_discount=benefits.get('max_discount'), data=benefit_list)
     id = uuid.uuid1().hex
-    rule = Rule(id=id, description=description,
+    rule = Rule(id=id, description=description, blacklist_criteria_json=rule_blacklist_criteria.canonical_json(),
                 criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
                 created_by=user_id, updated_by=user_id, criteria_obj=rule_criteria, benefits_obj=benefits)
     return rule
