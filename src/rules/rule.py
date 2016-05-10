@@ -87,9 +87,10 @@ class Rule(object):
         if self.description:
             values['description'] = self.description
         values['criteria_json'] = self.criteria_json
+        values['blacklist_criteria_json'] = self.blacklist_criteria_json
         values['benefits_json'] = self.benefits_json
         un_hashed_string = unicode(self.criteria_json) + \
-            unicode(self.benefits_json)
+            unicode(self.blacklist_criteria_json) + unicode(self.benefits_json)
         values['sha2hash'] = hashlib.sha256(un_hashed_string).hexdigest()
         values['active'] = self.active
         if self.created_by:
@@ -163,8 +164,8 @@ class Rule(object):
             return True
         return False
 
-    def match_rule_criteria(self, order, code, criteria=None):
-        if not criteria:
+    def match_rule_criteria(self, order, code, criteria_obj=None):
+        if not criteria_obj:
             criteria_obj = self.criteria_obj
         if criteria_obj.valid_on_order_no:
             exact_order_no_list = list()
@@ -200,11 +201,11 @@ class Rule(object):
     def blacklist_items(self, order, code):
         if not self.blacklist_criteria_obj:
             return
-        success, error = self.match_rule_criteria(order, code, criteria=self.blacklist_criteria_obj)
+        success, error = self.match_rule_criteria(order, code, criteria_obj=self.blacklist_criteria_obj)
         if not success:
             return
         for item in order.items:
-            if self.blacklist_criteria_obj.match_item(item):
+            if not item.blacklisted and self.blacklist_criteria_obj.match_item(item):
                 item.blacklisted = True
                 order.total_price -= item.price * item.quantity
 
