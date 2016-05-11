@@ -164,9 +164,77 @@ class Rule(object):
             return True
         return False
 
-    def match_rule_criteria(self, order, code, criteria_obj=None):
-        if not criteria_obj:
-            criteria_obj = self.criteria_obj
+    def match_rule_blacklist_criteria(self, order):
+
+        criteria_obj = self.blacklist_criteria_obj
+
+        success = None
+
+        if criteria_obj.valid_on_order_no:
+            exact_order_no_list = list()
+            min_order_no = None
+            for an_order_no in criteria_obj.valid_on_order_no:
+                try:
+                    # to convert order nos which are exact integers
+                    exact_order_no_list.append(int(an_order_no))
+                except ValueError:
+                    # to convert order nos which are like 4+ means minimum order no 4
+                    if not min_order_no:
+                        min_order_no = int(an_order_no[:-1])
+            if (exact_order_no_list and order.order_no not in exact_order_no_list) or \
+                    (min_order_no and order.order_no < min_order_no):
+                return False
+            if exact_order_no_list and order.order_no in exact_order_no_list:
+                success = True
+            if min_order_no and order.order_no >= min_order_no:
+                success = True
+
+        if criteria_obj.channels:
+            if order.channel not in criteria_obj.channels:
+                return False
+            else:
+                success = True
+
+        if criteria_obj.country:
+            if not get_intersection_of_lists(criteria_obj.country, order.country):
+                return False
+            else:
+                success = True
+
+        if criteria_obj.state:
+            if not get_intersection_of_lists(criteria_obj.state, order.state):
+                return False
+            else:
+                success = True
+
+        if criteria_obj.city:
+            if not get_intersection_of_lists(criteria_obj.city, order.city):
+                return False
+            else:
+                success = True
+
+        if criteria_obj.zone:
+            if not get_intersection_of_lists(self.criteria_obj.zone, order.zone):
+                return False
+            else:
+                success = True
+
+        if criteria_obj.area:
+            if order.area not in criteria_obj.area:
+                return False
+            else:
+                success = True
+
+        if criteria_obj.source:
+            if order.source not in criteria_obj.source:
+                return False
+            else:
+                success = True
+
+        return success
+
+    def match_rule_criteria(self, order, code):
+        criteria_obj = self.criteria_obj
         if criteria_obj.valid_on_order_no:
             exact_order_no_list = list()
             min_order_no = None
@@ -201,11 +269,11 @@ class Rule(object):
     def blacklist_items(self, order, code):
         if not self.blacklist_criteria_obj:
             return
-        success, error = self.match_rule_criteria(order, code, criteria_obj=self.blacklist_criteria_obj)
-        if not success:
+        success = self.match_rule_blacklist_criteria(order)
+        if success is False:
             return
         for item in order.items:
-            if not item.blacklisted and self.blacklist_criteria_obj.match_item(item):
+            if not item.blacklisted and self.blacklist_criteria_obj.match_item_to_blacklist(item):
                 item.blacklisted = True
                 order.total_price -= item.price * item.quantity
 
@@ -333,6 +401,55 @@ class RuleCriteria(object):
             return False
 
         return True
+
+    def match_item_to_blacklist(self, item):
+        assert isinstance(item, VerificationItemData)
+        success = None
+
+        if self.brands:
+            if item.brand not in self.brands:
+                return False
+            else:
+                success = True
+
+        if (self.categories['in'] and not get_intersection_of_lists(self.categories['in'], item.category)) or \
+                (self.categories['not_in'] and get_intersection_of_lists(self.categories['not_in'], item.category)):
+            return False
+
+        if self.categories['in'] and get_intersection_of_lists(self.categories['in'], item.category):
+            success = True
+
+        if self.categories['not_in'] and not get_intersection_of_lists(self.categories['not_in'], item.category):
+            success = True
+
+        if (self.products['in'] and not get_intersection_of_lists(self.products['in'], item.product)) or \
+                (self.products['not_in'] and get_intersection_of_lists(self.products['not_in'], item.product)):
+            return False
+
+        if self.products['in'] and get_intersection_of_lists(self.products['in'], item.product):
+            success = True
+
+        if self.products['not_in'] and not get_intersection_of_lists(self.products['not_in'], item.product):
+            success = True
+
+        if self.sellers:
+            if item.seller not in self.sellers:
+                return False
+            else:
+                success = True
+
+        if self.storefronts:
+            if item.storefront not in self.storefronts:
+                return False
+            else:
+                success = True
+        if self.variants:
+            if item.variant not in self.variants:
+                return False
+            else:
+                success = True
+
+        return success
 
 
 class Benefits(object):

@@ -2620,7 +2620,7 @@ class CreateRule(unittest.TestCase):
         }
         response = self.client.post(url_for('voucher_api/v1.1.check_coupon_v2'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
-        print response.data
-        # data = json.loads(response.data)
-        # self.assertTrue(data.get('success'), response.data)
-        # self.assertTrue(len(data.get('benefits')) == 1, response.data)
+        data = json.loads(response.data)
+        self.assertTrue(data.get('success'), response.data)
+        self.assertTrue(len(data.get('benefits')) == 1, response.data)
+        self.assertTrue(data.get('benefits')[0]['items'] == [2,3], response.data)
