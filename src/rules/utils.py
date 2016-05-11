@@ -686,8 +686,12 @@ def is_validity_period_exclusive_for_freebie_vouchers(voucher, db):
 
 
 def fetch_voucher_for_coupon_details(coupon, db):
-    from_date = coupon.get('from')
-    code = coupon.get('code')
+    from_date = None
+    if isinstance(coupon, dict):
+        from_date = coupon.get('from')
+        code = coupon.get('code')
+    else:
+        code = coupon
     if from_date:
         voucher = Vouchers.find_one_all_vouchers(code, from_date, db)
         if not voucher:
@@ -742,16 +746,20 @@ def update_values_in_this_list_of_coupons(data):
     if to_date:
         update_dict['to'] = to_date
     for coupon in coupon_list:
+        if isinstance(coupon, dict):
+            code = coupon.get('code')
+        else:
+            code = coupon
         success, error = update_coupon(coupon, update_dict)
         if not success:
             error_dict = {
-                'code': coupon.get('code'),
+                'code': code,
                 'error': error
             }
             error_list.append(error_dict)
             continue
         success_dict = {
-            'code': coupon.get('code')
+            'code': code
         }
         success_list.append(success_dict)
     return success_list, error_list

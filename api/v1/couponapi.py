@@ -218,23 +218,11 @@ def create_voucher():
                                 missing=list()
                             ),
                         },
-                        validate=lambda val: length_validator(val, 8000)
+                        validate=lambda val: length_validator(val, 2000)
                     ),
 
                     'blacklist_criteria': fields.Nested(
                         {
-
-                            'range_min': fields.Int(required=False, missing=None,
-                                                    validate=validate.Range(min=0)),
-
-                            'range_max': fields.Int(required=False, missing=None,
-                                                    validate=validate.Range(min=0)),
-
-                            "cart_range_min": fields.Int(required=False, missing=None,
-                                                         validate=validate.Range(min=0)),
-
-                            "cart_range_max": fields.Int(required=False, missing=None,
-                                                         validate=validate.Range(min=0)),
 
                             'channels': fields.List(
                                 fields.Int(
@@ -367,7 +355,7 @@ def create_voucher():
                                 missing=list()
                             ),
                         },
-                        validate=lambda val: length_validator(val, 8000),
+                        validate=lambda val: length_validator(val, 2000),
                         required=False,
                         missing=dict()
                     ),
@@ -403,7 +391,7 @@ def create_voucher():
                             'percentage': None,
                             'max_discount': None
                         },
-                        validate=lambda val: length_validator(val, 2000)
+                        validate=lambda val: length_validator(val, 1000)
                     )
                 }
             ),

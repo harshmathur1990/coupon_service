@@ -214,7 +214,7 @@ class Rule(object):
                 success = True
 
         if criteria_obj.zone:
-            if not get_intersection_of_lists(self.criteria_obj.zone, order.zone):
+            if not get_intersection_of_lists(criteria_obj.zone, order.zone):
                 return False
             else:
                 success = True
@@ -258,7 +258,7 @@ class Rule(object):
             return False, u'This coupon {} is not valid in your state'.format(code)
         if criteria_obj.city and not get_intersection_of_lists(criteria_obj.city, order.city):
             return False, u'This coupon {} is not valid in your city'.format(code)
-        if criteria_obj.zone and not get_intersection_of_lists(self.criteria_obj.zone, order.zone):
+        if criteria_obj.zone and not get_intersection_of_lists(criteria_obj.zone, order.zone):
             return False, u'This coupon {} is not valid in your zone'.format(code)
         if criteria_obj.area and order.area not in criteria_obj.area:
             return False, u'This coupon {} is not valid in your area'.format(code)
@@ -275,7 +275,6 @@ class Rule(object):
         for item in order.items:
             if not item.blacklisted and self.blacklist_criteria_obj.match_item_to_blacklist(item):
                 item.blacklisted = True
-                order.total_price -= item.price * item.quantity
 
     def match(self, order, code):
         assert isinstance(order, OrderData)
