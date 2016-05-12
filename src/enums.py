@@ -61,3 +61,9 @@ class SchedulerType(Enum):
     daily = 0
     exact = 1
     cron = 2
+
+
+class MatchStatus(Enum):
+    found_matching = 0
+    found_not_matching = 1
+    not_found = 2
