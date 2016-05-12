@@ -99,21 +99,23 @@ def validate_for_update(data_list):
 
         error = False
         for coupon_obj in data.get('coupons'):
-            if not isinstance(coupon_obj, dict):
-                error = u'coupons is not a list of dicts'
-                break
-            if not coupon_obj.get('code'):
-                error = u'Voucher code missing'
-                break
-            if coupon_obj.get('from'):
-                try:
-                    from_date = parser.parse(coupon_obj.get('from'))
-                    coupon_obj['from'] = get_utc_timezone_unaware_date_object(from_date)
-                except:
-                    error = u'From Date is not valid'
+            if isinstance(coupon_obj, dict):
+                # error = u'coupons is not a list of dicts'
+
+                if not coupon_obj.get('code'):
+                    error = u'Voucher code missing'
                     break
+                if coupon_obj.get('from'):
+                    try:
+                        from_date = parser.parse(coupon_obj.get('from'))
+                        coupon_obj['from'] = get_utc_timezone_unaware_date_object(from_date)
+                    except:
+                        error = u'From Date is not valid'
+                        break
+
         if error:
             return False, error
+
         if data.get('update').get('to'):
             try:
                 to_date = parser.parse(data.get('update').get('to'))

@@ -5,7 +5,7 @@ import logging
 import canonicaljson
 from data import OrderData, VerificationItemData
 from lib.utils import get_intersection_of_lists
-from src.enums import UseType, BenefitType, Channels
+from src.enums import UseType, BenefitType, Channels, MatchStatus
 from src.sqlalchemydb import CouponsAlchemyDB
 
 logger = logging.getLogger()
@@ -23,6 +23,8 @@ class Rule(object):
         self.description = kwargs.get('description')
         self.criteria_obj = kwargs.get('criteria_obj')
         self.criteria_json = kwargs.get('criteria_json')
+        self.blacklist_criteria_obj = kwargs.get('blacklist_criteria_obj')
+        self.blacklist_criteria_json = kwargs.get('blacklist_criteria_json')
         self.benefits_json = kwargs.get('benefits_json')
         self.benefits_obj = kwargs.get('benefits_obj')
         self.sha2hash = kwargs.get('sha2hash')
@@ -34,6 +36,9 @@ class Rule(object):
         if not self.criteria_obj:
             criteria_dict = canonicaljson.json.loads(self.criteria_json)
             self.criteria_obj = RuleCriteria(**criteria_dict)
+        if not self.blacklist_criteria_obj and self.blacklist_criteria_json is not None:
+            blacklist_criteria_dict = canonicaljson.json.loads(self.blacklist_criteria_json)
+            self.blacklist_criteria_obj = RuleCriteria(**blacklist_criteria_dict)
         if not self.benefits_obj:
             benefits_dict = canonicaljson.json.loads(self.benefits_json)
             self.benefits_obj = Benefits(**benefits_dict)
@@ -82,9 +87,10 @@ class Rule(object):
         if self.description:
             values['description'] = self.description
         values['criteria_json'] = self.criteria_json
+        values['blacklist_criteria_json'] = self.blacklist_criteria_json
         values['benefits_json'] = self.benefits_json
         un_hashed_string = unicode(self.criteria_json) + \
-            unicode(self.benefits_json)
+            unicode(self.blacklist_criteria_json) + unicode(self.benefits_json)
         values['sha2hash'] = hashlib.sha256(un_hashed_string).hexdigest()
         values['active'] = self.active
         if self.created_by:
@@ -158,16 +164,16 @@ class Rule(object):
             return True
         return False
 
-    def match(self, order, code):
-        assert isinstance(order, OrderData)
-        if self.criteria_obj.cart_range_min and order.total_price < self.criteria_obj.cart_range_min:
-            return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.criteria_obj.cart_range_min, code)
-        if self.criteria_obj.cart_range_max and order.total_price > self.criteria_obj.cart_range_max:
-            return False, None, u'Coupon {} is valid only till max amount {}'.format(code, self.criteria_obj.cart_range_max)
-        if self.criteria_obj.valid_on_order_no:
+    def match_criteria(self, order, code, criteria_obj=None):
+        if not criteria_obj:
+            criteria_obj = self.criteria_obj
+
+        found_matching = False
+
+        if criteria_obj.valid_on_order_no:
             exact_order_no_list = list()
             min_order_no = None
-            for an_order_no in self.criteria_obj.valid_on_order_no:
+            for an_order_no in criteria_obj.valid_on_order_no:
                 try:
                     # to convert order nos which are exact integers
                     exact_order_no_list.append(int(an_order_no))
@@ -175,39 +181,107 @@ class Rule(object):
                     # to convert order nos which are like 4+ means minimum order no 4
                     if not min_order_no:
                         min_order_no = int(an_order_no[:-1])
-            if (exact_order_no_list and order.order_no not in exact_order_no_list) or \
-                    (min_order_no and order.order_no < min_order_no):
-                return False, None, u'This coupon {} is not applicable on this order'.format(code)
-        if self.criteria_obj.channels and order.channel not in self.criteria_obj.channels:
-            return False, None, u'This coupon {} is only valid on orders from {}'.format(code,
-                ','.join([Channels(c).name for c in self.criteria_obj.channels]))
-        if self.criteria_obj.country and not get_intersection_of_lists(self.criteria_obj.country, order.country):
-            return False, None, u'This coupon {} is not valid in your country'.format(code)
-        if self.criteria_obj.state and not get_intersection_of_lists(self.criteria_obj.state, order.state):
-            return False, None, u'This coupon {} is not valid in your state'.format(code)
-        if self.criteria_obj.city and not get_intersection_of_lists(self.criteria_obj.city, order.city):
-            return False, None, u'This coupon {} is not valid in your city'.format(code)
-        if self.criteria_obj.zone and not get_intersection_of_lists(self.criteria_obj.zone, order.zone):
-            return False, None, u'This coupon {} is not valid in your zone'.format(code)
-        if self.criteria_obj.area and order.area not in self.criteria_obj.area:
-            return False, None, u'This coupon {} is not valid in your area'.format(code)
-        if self.criteria_obj.source and order.source not in self.criteria_obj.source:
-            return False, None, u'This coupon {} is not valid on this order'.format(code)
+
+            if exact_order_no_list or min_order_no:
+                if (exact_order_no_list and order.order_no in exact_order_no_list) \
+                        or (min_order_no and order.order_no >= min_order_no):
+                    found_matching = True
+                else:
+                    return MatchStatus.found_not_matching, u'This coupon {} is not applicable on this order'.format(code)
+
+        if criteria_obj.channels:
+            if order.channel in criteria_obj.channels:
+                found_matching = True
+            else:
+                return MatchStatus.found_not_matching, u'This coupon {} is only valid on orders from {}'.format(
+                    code,','.join([Channels(c).name for c in criteria_obj.channels]))
+
+        if criteria_obj.country:
+            if get_intersection_of_lists(criteria_obj.country, order.country):
+                found_matching = True
+            else:
+                return MatchStatus.found_not_matching, u'This coupon {} is not valid in your country'.format(code)
+
+        if criteria_obj.state:
+            if get_intersection_of_lists(criteria_obj.state, order.state):
+                found_matching = True
+            else:
+                return MatchStatus.found_not_matching, u'This coupon {} is not valid in your state'.format(code)
+
+        if criteria_obj.city:
+            if get_intersection_of_lists(criteria_obj.city, order.city):
+                found_matching = True
+            else:
+                return MatchStatus.found_not_matching, u'This coupon {} is not valid in your city'.format(code)
+
+        if criteria_obj.zone:
+            if get_intersection_of_lists(criteria_obj.zone, order.zone):
+                found_matching = True
+            else:
+                return MatchStatus.found_not_matching, u'This coupon {} is not valid in your zone'.format(code)
+
+        if criteria_obj.area:
+            if order.area in criteria_obj.area:
+                found_matching = True
+            else:
+                return MatchStatus.found_not_matching, u'This coupon {} is not valid in your area'.format(code)
+
+        if criteria_obj.source:
+            if order.source in criteria_obj.source:
+                found_matching = True
+            else:
+                return MatchStatus.found_not_matching, u'This coupon {} is not valid on this order'.format(code)
+
+        if found_matching:
+            return MatchStatus.found_matching, None
+        else:
+            return MatchStatus.not_found, None
+
+    def blacklist_items(self, order, code):
+
+        if not self.blacklist_criteria_obj:
+            return
+
+        status, error = self.match_criteria(order, code, criteria_obj=self.blacklist_criteria_obj)
+        if status is MatchStatus.found_not_matching:
+            return
+
+        for item in order.items:
+            if self.blacklist_criteria_obj.match(item) is MatchStatus.found_matching:
+                item.blacklisted = True
+
+    def match(self, order, code):
+        assert isinstance(order, OrderData)
+
+        for item in order.items:
+            item.blacklisted = False
+
+        self.blacklist_items(order, code)
+
+        status, error = self.match_criteria(order, code)
+        if status is MatchStatus.found_not_matching:
+            return False, None, error
+
         subscription_id_list = list()
         total = 0.0
         for item in order.items:
             assert isinstance(item, VerificationItemData)
-            if self.criteria_obj.match_item(item):
+            if not item.blacklisted and self.criteria_obj.match(item) is not MatchStatus.found_not_matching:
                 total += item.price * item.quantity
                 subscription_id_list.append(item.subscription_id)
 
         if not subscription_id_list:
             return False, None, u'No matching items found for this coupon {}'.format(code)
 
+        if self.criteria_obj.cart_range_min and order.total_price < self.criteria_obj.cart_range_min:
+            return False, u'Total Order amount should not be less than {} for coupon code {}'.format(self.criteria_obj.cart_range_min, code)
+        if self.criteria_obj.cart_range_max and order.total_price > self.criteria_obj.cart_range_max:
+            return False, u'Coupon {} is valid only till max amount {}'.format(code, self.criteria_obj.cart_range_max)
         if self.criteria_obj.range_min and total < self.criteria_obj.range_min:
             return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.criteria_obj.range_min, code)
         if self.criteria_obj.range_max and total > self.criteria_obj.range_max:
             return False, None, u'Coupon {} is valid only till max amount {}'.format(code, self.criteria_obj.range_max)
+
 
         return True, {'total': total, 'subscription_id_list': subscription_id_list}, None
 
@@ -284,26 +358,55 @@ class RuleCriteria(object):
     def canonical_json(self):
         return canonicaljson.encode_canonical_json(self.__dict__)
 
-    def match_item(self, item):
+    def match(self, item):
         assert isinstance(item, VerificationItemData)
-        if self.brands and item.brand not in self.brands:
-            return False
-        if (self.categories['in'] and not get_intersection_of_lists(self.categories['in'], item.category)) or \
-                (self.categories['not_in'] and get_intersection_of_lists(self.categories['not_in'], item.category)):
-            return False
 
-        if (self.products['in'] and not get_intersection_of_lists(self.products['in'], item.product)) or \
-                (self.products['not_in'] and get_intersection_of_lists(self.products['not_in'], item.product)):
-            return False
+        found_matching = False
 
-        if self.sellers and item.seller not in self.sellers:
-            return False
-        if self.storefronts and item.storefront not in self.storefronts:
-            return False
-        if self.variants and item.variant not in self.variants:
-            return False
+        if self.brands:
+            if item.brand in self.brands:
+                found_matching = True
+            else:
+                return MatchStatus.found_not_matching
 
-        return True
+        if self.categories['in'] or self.categories['not_in']:
+           if (self.categories['in'] and get_intersection_of_lists(self.categories['in'], item.category)) \
+                   or (self.categories['not_in']
+                       and not get_intersection_of_lists(self.categories['not_in'], item.category)):
+               found_matching = True
+           else:
+               return MatchStatus.found_not_matching
+
+        if self.products['in'] or self.products['not_in']:
+           if (self.products['in'] and get_intersection_of_lists(self.products['in'], item.product)) \
+                   or (self.products['not_in']
+                       and not get_intersection_of_lists(self.products['not_in'], item.product)):
+               found_matching = True
+           else:
+               return MatchStatus.found_not_matching
+
+        if self.sellers:
+            if item.seller in self.sellers:
+                found_matching = True
+            else:
+                return MatchStatus.found_not_matching
+
+        if self.storefronts:
+            if item.storefront in self.storefronts:
+                found_matching = True
+            else:
+                return MatchStatus.found_not_matching
+
+        if self.variants:
+            if item.variant in self.variants:
+                found_matching = True
+            else:
+                return MatchStatus.found_not_matching
+
+        if found_matching:
+            return MatchStatus.found_matching
+        else:
+            return MatchStatus.not_found
 
 
 class Benefits(object):

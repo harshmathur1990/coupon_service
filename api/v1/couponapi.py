@@ -218,7 +218,146 @@ def create_voucher():
                                 missing=list()
                             ),
                         },
-                        validate=lambda val: length_validator(val, 8000)
+                        validate=lambda val: length_validator(val, 2000)
+                    ),
+
+                    'blacklist_criteria': fields.Nested(
+                        {
+
+                            'channels': fields.List(
+                                fields.Int(
+                                    validate=validate.OneOf(
+                                        [l.value for l in list(Channels)], [l.name for l in list(Channels)])),
+                                required=False,
+                                missing=list()
+                            ),
+
+                            'source': fields.List(
+                                fields.Str(),
+                                required=False,
+                                missing=list(),
+                                location='json'
+                            ),
+
+                            'brands': fields.List(
+                                fields.Int(
+                                    validate=validate.Range(min=0)
+                                ),
+                                required=False,
+                                missing=list()
+                            ),
+
+                            'products': fields.Nested(
+                                {
+                                    'in': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ),
+                                        required=False,
+                                        missing=list(),
+                                    ),
+                                    'not_in': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ),
+                                        required=False,
+                                        missing=list(),
+                                    )
+                                },
+                                required=False,
+                                missing={'in': [], 'not_in': []}
+                            ),
+
+                            'categories': fields.Nested(
+                                {
+                                    'in': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ),
+                                        required=False,
+                                        missing=list(),
+                                    ),
+                                    'not_in': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ),
+                                        required=False,
+                                        missing=list(),
+                                    )
+                                },
+                                required=False,
+                                missing={'in': [], 'not_in': []}
+                            ),
+
+                            'storefronts': fields.List(
+                                fields.Int(
+                                    validate=validate.Range(min=0)
+                                ),
+                                required=False,
+                                missing=list()
+                            ),
+
+                            'variants': fields.List(
+                                fields.Int(
+                                    validate=validate.Range(min=0)
+                                ),
+                                required=False,
+                                missing=list()
+                            ),
+
+                            'sellers': fields.List(
+                                fields.Int(
+                                    validate=validate.Range(min=0)
+                                ),
+                                required=False,
+                                missing=list()
+                            ),
+
+                            'location': fields.Nested(
+                                {
+                                    'country': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ), required=False, missing=list()
+                                    ),
+                                    'state': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ), required=False, missing=list()
+                                    ),
+                                    'city': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ), required=False, missing=list()
+                                    ),
+                                    'area': fields.List(
+                                        fields.Int(
+                                            validate=validate.Range(min=0)
+                                        ), required=False, missing=list()
+                                    ),
+                                    'zone': fields.List(
+                                        fields.Int(), required=False, missing=list()
+                                    ),
+                                },
+                                required=False,
+                                missing={'country': [], 'state': [], 'city': [], 'area': [], 'zone': []}
+                            ),
+
+                            'payment_modes': fields.List(
+                                fields.Str(),
+                                missing=list(),
+                                required=False
+                            ),
+
+                            'valid_on_order_no': fields.List(
+                                fields.Str(),
+                                required=False,
+                                missing=list()
+                            ),
+                        },
+                        validate=lambda val: length_validator(val, 2000),
+                        required=False,
+                        missing=dict()
                     ),
 
                     'benefits': fields.Nested(
@@ -252,7 +391,7 @@ def create_voucher():
                             'percentage': None,
                             'max_discount': None
                         },
-                        validate=lambda val: length_validator(val, 2000)
+                        validate=lambda val: length_validator(val, 1000)
                     )
                 }
             ),
