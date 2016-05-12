@@ -247,12 +247,14 @@ class Rule(object):
             return
 
         for item in order.items:
-            item.blacklisted = False
             if self.blacklist_criteria_obj.match(item) is MatchStatus.found_matching:
                 item.blacklisted = True
 
     def match(self, order, code):
         assert isinstance(order, OrderData)
+
+        for item in order.items:
+            item.blacklisted = False
 
         self.blacklist_items(order, code)
 
