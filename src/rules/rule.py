@@ -273,7 +273,8 @@ class Rule(object):
         if success is False:
             return
         for item in order.items:
-            if not item.blacklisted and self.blacklist_criteria_obj.match_item_to_blacklist(item):
+            item.blacklisted = False
+            if self.blacklist_criteria_obj.match_item_to_blacklist(item):
                 item.blacklisted = True
 
     def match(self, order, code):
@@ -304,6 +305,7 @@ class Rule(object):
             return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.criteria_obj.range_min, code)
         if self.criteria_obj.range_max and total > self.criteria_obj.range_max:
             return False, None, u'Coupon {} is valid only till max amount {}'.format(code, self.criteria_obj.range_max)
+
 
         return True, {'total': total, 'subscription_id_list': subscription_id_list}, None
 

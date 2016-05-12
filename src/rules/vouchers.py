@@ -277,8 +277,6 @@ class Vouchers(object):
         voucher_match = False
         failed_rule_list = list()
         for rule in rules:
-            for item in order.items:
-                item.blacklisted = False
             status = rule.check_usage(order.customer_id, self.id_bin)
             if not status.get('success', False):
                 failed_voucher = copy.deepcopy(self)
