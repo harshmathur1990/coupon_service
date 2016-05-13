@@ -195,8 +195,8 @@ def get_utc_timezone_unaware_date_object(date_object):
     return date_object
 
 
-def is_between(now, date1, date2):
-    if now > date2 or now < date1:
+def is_between(this_date, start_date, end_date):
+    if this_date > end_date or this_date < start_date:
         return False
     return True
 

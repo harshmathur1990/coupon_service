@@ -2,12 +2,9 @@ import binascii
 import datetime
 import json
 import logging
-
-from flask import request
-
 from api.v1.data import VerificationItemData, OrderData
 from api.v1.rule_criteria import RuleCriteria
-from config import SUBSCRIPTIONURL, TOKEN, LOCATIONURL, USERINFOURL, USERFROMMOBILEURL
+from config import SUBSCRIPTIONURL, TOKEN, LOCATIONURL, USERFROMMOBILEURL
 from lib import cache
 from lib.utils import make_api_call
 from src.enums import VoucherType, BenefitType
@@ -225,11 +222,7 @@ def fetch_location_dict(area_id):
 
 
 def fetch_user_details(customer_id):
-    if u'{}'.format(request.url_rule) == u'/vouchers/v1/check' or \
-                    u'{}'.format(request.url_rule) == u'/vouchers/v1/apply':
-        user_info_url = USERINFOURL + str(customer_id) + '/'
-    else:
-        user_info_url = USERFROMMOBILEURL + str(customer_id) + '/'
+    user_info_url = USERFROMMOBILEURL + str(customer_id) + '/'
     headers = {
         'Authorization': TOKEN
     }
@@ -258,13 +251,7 @@ def fetch_order_detail(args):
     if not success:
         return False, None, error
 
-    success, order_no, error = fetch_user_details(customer_id)
-    if not success:
-        return False, None, error
-
-    order_no += 1
     order_data_dict = dict()
-    order_data_dict['order_no'] = order_no
     order_data_dict.update(location_dict)
     order_data_dict['channel'] = args.get('channel')
     order_data_dict['source'] = args.get('source')
@@ -409,22 +396,6 @@ def is_validity_period_exclusive_for_freebie_voucher_code(existing_voucher_dict,
         if error_list:
             return False, error_list
 
-    return True, None
-
-
-def is_validity_period_exclusive_for_voucher_code(voucher, db=None):
-    if not db:
-        db = CouponsAlchemyDB()
-    date_overlapping_caluse = '(((:from >= `from` && :from <= `to`) or (:to >= `from` && :to <= `to`)) or ((`from` >= :from && `from` <= :to) or (`to` >= :from && `to` <= :to) ))'
-    date_overlap_params = {
-        'from': voucher.from_date,
-        'to': voucher.to_date,
-        'code': voucher.code
-    }
-    sql = "select * from all_vouchers where code=:code && ("+date_overlapping_caluse+")"
-    voucher_list = db.execute_raw_sql(sql, date_overlap_params)
-    if voucher_list:
-        return False, u'Vouchers with overlapping dates found for code {}'.format(voucher.code)
     return True, None
 
 

@@ -6,11 +6,12 @@ import logging
 import uuid
 
 import sqlalchemy
-
+from api.v1.utils import is_validity_period_exclusive_for_freebie_vouchers
 from api.v1.data import OrderData
 from rule import Rule
 from src.enums import VoucherTransactionStatus, VoucherType
 from src.sqlalchemydb import CouponsAlchemyDB
+from src.rules.utils import is_auto_benefit_voucher
 
 logger = logging.getLogger()
 
@@ -50,7 +51,7 @@ class Vouchers(object):
         db = CouponsAlchemyDB()
         db.begin()
         try:
-            from api.v1.utils import is_validity_period_exclusive_for_voucher_code
+            from src.rules.utils import is_validity_period_exclusive_for_voucher_code
             success, error = is_validity_period_exclusive_for_voucher_code(self, db)
             if not success:
                 db.rollback()
@@ -120,8 +121,7 @@ class Vouchers(object):
             # or auto_freebie_search table
             # else insert rows in both the tables while updating all_vouchers
             self.to_date = to_date
-            if self.type is not VoucherType.regular_coupon.value:
-                from api.v1.utils import is_validity_period_exclusive_for_freebie_vouchers
+            if is_auto_benefit_voucher(self.type):
                 success, error_list = is_validity_period_exclusive_for_freebie_vouchers(self, db)
                 if not success:
                     return False, error_list
@@ -278,7 +278,7 @@ class Vouchers(object):
         voucher_match = False
         failed_rule_list = list()
         for rule in rules:
-            status = rule.check_usage(order.customer_id, self.id_bin)
+            status = rule.criteria_obj.check_usage(order.customer_id, self.id_bin)
             if not status.get('success', False):
                 failed_voucher = copy.deepcopy(self)
                 failed_voucher.rules_list = [rule]

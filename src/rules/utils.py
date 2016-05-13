@@ -180,7 +180,7 @@ def apply_benefits(args, order, benefits):
                 continue
             voucher_id_list.append(voucher_id)
             rule = existing_voucher['voucher'].rules_list[0]
-            status = rule.check_usage(order.customer_id, existing_voucher['voucher'].id_bin, db)
+            status = rule.criteria_obj.check_usage(order.customer_id, existing_voucher['voucher'].id_bin, db)
             if not status.get('success', False):
                 db.rollback()
                 return False, 400, u'Voucher {} has expired'.format(existing_voucher['voucher'].code)
@@ -372,3 +372,25 @@ def update_keys_in_input_list(data_list):
         success_list += success_list_in_this_data
         error_list += error_list_in_this_data
     return success_list, error_list
+
+
+def is_validity_period_exclusive_for_voucher_code(voucher, db=None):
+    if not db:
+        db = CouponsAlchemyDB()
+    date_overlapping_caluse = '(((:from >= `from` && :from <= `to`) or (:to >= `from` && :to <= `to`)) or ((`from` >= :from && `from` <= :to) or (`to` >= :from && `to` <= :to) ))'
+    date_overlap_params = {
+        'from': voucher.from_date,
+        'to': voucher.to_date,
+        'code': voucher.code
+    }
+    sql = "select * from all_vouchers where code=:code && ("+date_overlapping_caluse+")"
+    voucher_list = db.execute_raw_sql(sql, date_overlap_params)
+    if voucher_list:
+        return False, u'Vouchers with overlapping dates found for code {}'.format(voucher.code)
+    return True, None
+
+
+def is_auto_benefit_voucher(type):
+    if type is VoucherType.auto_freebie.value or type is VoucherType.regular_freebie.value:
+        return True
+    return False

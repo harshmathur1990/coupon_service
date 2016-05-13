@@ -4,6 +4,7 @@ from api.v1.data import VerificationItemData
 from lib.utils import get_intersection_of_lists
 from src.enums import UseType, MatchStatus, Channels
 from src.sqlalchemydb import CouponsAlchemyDB
+from api.v1.errors import UserNotFoundException
 
 
 class RuleCriteria(object):
@@ -133,6 +134,13 @@ class RuleCriteria(object):
         found_matching = False
 
         if self.valid_on_order_no:
+            from api.v1.utils import fetch_user_details
+            success, order_no, error = fetch_user_details(order.customer_id)
+            if not success:
+                raise UserNotFoundException()
+
+            order_no += 1
+            order.order_no = order_no
             exact_order_no_list = list()
             min_order_no = None
             for an_order_no in self.valid_on_order_no:

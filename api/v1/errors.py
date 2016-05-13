@@ -40,3 +40,13 @@ def handle_error(error):
     res = jsonify(rv)
     res.status_code = 500
     return res
+
+
+class UserNotFoundException(Exception):
+    def __init__(self, message, errors):
+
+        # Call the base class constructor with the parameters it needs
+        super(UserNotFoundException, self).__init__(message)
+
+        # Now for your custom code...
+        self.errors = errors
