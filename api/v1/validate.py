@@ -1,6 +1,7 @@
 from src.enums import VoucherType
 from dateutil import parser
-from lib.utils import get_utc_timezone_unaware_date_object, is_valid_schedule_object
+from lib.utils import get_utc_timezone_unaware_date_object, is_valid_schedule_object, get_intersection_of_lists
+
 
 def validate_for_create_api_v1(data):
     success = True
@@ -131,3 +132,49 @@ def validate_for_update(data_list):
             del data.get('update')['schedule']
 
     return True, None
+
+
+def validate_for_create_coupon(data):
+    error = list()
+    success = True
+
+    rules = data.get('rules')
+
+    for rule in rules:
+        criteria = rule.get('criteria')
+
+        if criteria.get('range_max') and criteria.get('range_min') and \
+                        criteria.get('range_max') < criteria.get('range_min'):
+            success = False
+            error.append(u'range_max must not be less than range_min')
+
+        if criteria.get('cart_range_max') and criteria.get('cart_range_min') and \
+                        criteria.get('cart_range_max') < criteria.get('cart_range_min'):
+            success = False
+            error.append(u'cart_range_max must not be less than cart_range_min')
+
+        in_categories = criteria.get('categories').get('in')
+
+        not_in_categories = criteria.get('categories').get('not_in')
+
+        if in_categories and not_in_categories:
+            intersection = get_intersection_of_lists(in_categories, not_in_categories)
+            if intersection:
+                success = False
+                error.append(
+                    u'Categories[in] and Categories[not_in] must not have any category in common in a rule {}'.format(
+                        intersection))
+
+        in_products = criteria.get('products').get('in')
+
+        not_in_products = criteria.get('products').get('not_in')
+
+        if in_products and not_in_products:
+            intersection = get_intersection_of_lists(in_products, not_in_products)
+            if intersection:
+                success = False
+                error.append(
+                    u'Products[in] and products[not_in] must not have any product in common in a rule {}'.format(
+                        intersection))
+
+    return success, error

@@ -1,15 +1,16 @@
 import binascii
-import logging
-import uuid
 import copy
 import datetime
-import sqlalchemy
 import json
-from data import OrderData
+import logging
+import uuid
+
+import sqlalchemy
+
+from api.v1.data import OrderData
 from rule import Rule
 from src.enums import VoucherTransactionStatus, VoucherType
 from src.sqlalchemydb import CouponsAlchemyDB
-
 
 logger = logging.getLogger()
 
@@ -49,7 +50,7 @@ class Vouchers(object):
         db = CouponsAlchemyDB()
         db.begin()
         try:
-            from src.rules.utils import is_validity_period_exclusive_for_voucher_code
+            from api.v1.utils import is_validity_period_exclusive_for_voucher_code
             success, error = is_validity_period_exclusive_for_voucher_code(self, db)
             if not success:
                 db.rollback()
@@ -120,7 +121,7 @@ class Vouchers(object):
             # else insert rows in both the tables while updating all_vouchers
             self.to_date = to_date
             if self.type is not VoucherType.regular_coupon.value:
-                from src.rules.utils import is_validity_period_exclusive_for_freebie_vouchers
+                from api.v1.utils import is_validity_period_exclusive_for_freebie_vouchers
                 success, error_list = is_validity_period_exclusive_for_freebie_vouchers(self, db)
                 if not success:
                     return False, error_list
@@ -130,7 +131,7 @@ class Vouchers(object):
                 if auto_freebie_dict:
                     db.update_row("auto_freebie_search", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
                 else:
-                    from utils import save_auto_freebie_from_voucher
+                    from api.v1.utils import save_auto_freebie_from_voucher
                     save_auto_freebie_from_voucher(self, db)
             voucher_dict = db.find_one("vouchers", **{'id': self.id_bin})
             if voucher_dict:
@@ -144,7 +145,7 @@ class Vouchers(object):
             # Hence just update all_vouchers and in case of freebies, update there as well
             self.to_date = to_date
             if self.type is not VoucherType.regular_coupon.value:
-                from src.rules.utils import is_validity_period_exclusive_for_freebie_vouchers
+                from api.v1.utils import is_validity_period_exclusive_for_freebie_vouchers
                 success, error_list = is_validity_period_exclusive_for_freebie_vouchers(self, db)
                 if not success:
                     return False, error_list

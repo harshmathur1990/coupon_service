@@ -193,3 +193,20 @@ def get_utc_timezone_unaware_date_object(date_object):
     date_object = date_object.astimezone(pytz.UTC)
     date_object = date_object.replace(tzinfo=None)
     return date_object
+
+
+def is_between(now, date1, date2):
+    if now > date2 or now < date1:
+        return False
+    return True
+
+
+def get_num_from_str(str):
+    str = str.strip()
+    try:
+        if len(str) is 0 or str is None:
+            return 0
+        else:
+            return int(str)
+    except Exception as exp:
+        return 0
