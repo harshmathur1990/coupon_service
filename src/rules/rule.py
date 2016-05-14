@@ -3,11 +3,9 @@ import hashlib
 import logging
 
 import canonicaljson
-
-from api.v1.data import OrderData
-from api.v1.rule_criteria import RuleCriteria
-from src.enums import UseType, BenefitType, MatchStatus
+from src.enums import BenefitType, MatchStatus
 from src.sqlalchemydb import CouponsAlchemyDB
+from config import method_dict
 
 logger = logging.getLogger()
 
@@ -36,10 +34,10 @@ class Rule(object):
         self.updated_at = kwargs.get('updated_at')
         if not self.criteria_obj:
             criteria_dict = canonicaljson.json.loads(self.criteria_json)
-            self.criteria_obj = RuleCriteria(**criteria_dict)
+            self.criteria_obj = method_dict.get('criteria_class')(**criteria_dict)
         if not self.blacklist_criteria_obj and self.blacklist_criteria_json is not None:
             blacklist_criteria_dict = canonicaljson.json.loads(self.blacklist_criteria_json)
-            self.blacklist_criteria_obj = RuleCriteria(**blacklist_criteria_dict)
+            self.blacklist_criteria_obj = method_dict.get('criteria_class')(**blacklist_criteria_dict)
         if not self.benefits_obj:
             benefits_dict = canonicaljson.json.loads(self.benefits_json)
             self.benefits_obj = Benefits(**benefits_dict)
@@ -132,7 +130,6 @@ class Rule(object):
                 item.blacklisted = True
 
     def match(self, order, code):
-        assert isinstance(order, OrderData)
 
         for item in order.items:
             item.blacklisted = False

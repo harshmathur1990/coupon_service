@@ -6,8 +6,6 @@ from datetime import timedelta
 
 import croniter
 from dateutil import parser
-
-from api.v1.data import OrderData
 from lib.utils import get_intersection_of_lists, is_between, get_num_from_str
 from rule import Rule
 from src.enums import *
@@ -315,7 +313,9 @@ def update_coupon(coupon, update_dict):
         if not success:
             db.rollback()
             return False, error
-        success, error_list = voucher.update(update_dict, db)
+        from config import method_dict
+        callback = method_dict.get('check_auto_benefit_exclusivity')
+        success, error_list = voucher.update(update_dict, db, callback)
         if not success:
             db.rollback()
             return False, u','.join(error_list)

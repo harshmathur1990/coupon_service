@@ -6,12 +6,13 @@ from api.v1.data import VerificationItemData, OrderData
 from api.v1.rule_criteria import RuleCriteria
 from config import SUBSCRIPTIONURL, TOKEN, LOCATIONURL, USERFROMMOBILEURL
 from lib import cache
-from lib.utils import make_api_call
+from lib.utils import make_api_call, create_success_response, create_error_response, get_utc_timezone_unaware_date_object
 from src.enums import VoucherType, BenefitType
 from src.rules.constants import GROCERY_ITEM_KEY, GROCERY_CACHE_TTL, GROCERY_LOCATION_KEY
 from src.rules.rule import Benefits
-from src.rules.utils import create_rule_object, save_vouchers
+from src.rules.utils import create_rule_object, save_vouchers, create_and_save_rule_list
 from src.rules.vouchers import Vouchers
+from src.rules.validate import validate_for_create_voucher
 from src.sqlalchemydb import CouponsAlchemyDB
 
 logger = logging.getLogger(__name__)
@@ -113,6 +114,26 @@ def create_freebie_coupon(args):
     for s in success_list:
         del s['id']
     return True, success_list, error_list
+
+
+def create_regular_coupon(args):
+    rule_id_list, rule_list = create_and_save_rule_list(args)
+    assert(len(rule_list) == len(rule_id_list))
+    if not rule_id_list:
+        return create_error_response(400, u'Unknown Exception')
+
+    args['from'] = get_utc_timezone_unaware_date_object(args.get('from'))
+    args['to'] = get_utc_timezone_unaware_date_object(args.get('to'))
+
+    success, error = validate_for_create_voucher(args)
+    if not success:
+        return create_error_response(400, error)
+
+    success_list, error_list = save_vouchers(args, rule_id_list)
+
+    for s in success_list:
+        del s['id']
+    return create_success_response(success_list, error_list)
 
 
 def generate_auto_freebie():
@@ -478,3 +499,76 @@ def fetch_auto_benefits(order, freebie_type=VoucherType.regular_freebie):
             success_dict['total'] = order.total_price
             success_dict['subscription_id_list'] = item_list
         order.existing_vouchers.append(success_dict)
+
+
+def fetch_coupon(args):
+    success_list = list()
+    error_list = list()
+    coupon_codes = args.get('coupon_codes')
+    for coupon_code in coupon_codes:
+        voucher_list = Vouchers.find_all_by_code(coupon_code)
+        if not voucher_list:
+            error_dict = {
+                'code': coupon_code,
+                'error': u'Voucher code {} not found'.format(coupon_code)
+            }
+            error_list.append(error_dict)
+            continue
+        for voucher in voucher_list:
+            voucher_dict = dict()
+            rules = list()
+            voucher.get_rule()
+            for rule in voucher.rules_list:
+                criteria_obj = rule.criteria_obj
+                rule_dict = dict()
+                criteria = dict()
+                benefits = dict()
+                location_dict = dict()
+                rule_dict['description'] = rule.description
+                criteria['no_of_uses_allowed_per_user'] = criteria_obj.usage['no_of_uses_allowed_per_user']
+                criteria['no_of_total_uses_allowed'] = criteria_obj.usage['no_of_total_uses_allowed']
+                criteria['range_min'] = criteria_obj.range_min
+                criteria['range_max'] = criteria_obj.range_max
+                criteria['cart_range_min'] = criteria_obj.cart_range_min
+                criteria['cart_range_max'] = criteria_obj.cart_range_max
+                criteria['channels'] = criteria_obj.channels
+                criteria['brands'] = criteria_obj.brands
+                criteria['products'] = criteria_obj.products
+                criteria['categories'] = criteria_obj.categories
+                criteria['storefronts'] = criteria_obj.storefronts
+                criteria['variants'] = criteria_obj.variants
+                criteria['sellers'] = criteria_obj.sellers
+                location_dict['country'] = criteria_obj.country
+                location_dict['state'] = criteria_obj.state
+                location_dict['city'] = criteria_obj.city
+                location_dict['area'] = criteria_obj.area
+                location_dict['zone'] = criteria_obj.zone
+                criteria['location'] = location_dict
+                criteria['valid_on_order_no'] = criteria_obj.valid_on_order_no
+                criteria['payment_modes'] = criteria_obj.payment_modes
+                benefits_obj = rule.benefits_obj
+                benefits['max_discount'] = benefits_obj.max_discount
+                for data in benefits_obj.data:
+                    type = BenefitType(data.get('type'))
+                    if type is BenefitType.amount:
+                        benefits['amount'] = data.get('value')
+                    elif type is BenefitType.percentage:
+                        benefits['percentage'] = data.get('value')
+                    else:
+                        benefits['freebies'] = [data.get('value')]
+                if not benefits.get('freebies'):
+                    benefits['freebies'] = [[]]
+                rule_dict['criteria'] = criteria
+                rule_dict['benefits'] = benefits
+                rules.append(rule_dict)
+            voucher_dict['rules'] = rules
+            voucher_dict['description'] = voucher.description
+            voucher_dict['from'] = voucher.from_date.isoformat()
+            voucher_dict['to'] = voucher.to_date.isoformat()
+            voucher_dict['code'] = voucher.code
+            voucher_dict['user_id'] = voucher.created_by
+            voucher_dict['type'] = voucher.type
+            voucher_dict['custom'] = voucher.custom
+            voucher_dict['schedule'] = voucher.schedule
+            success_list.append(voucher_dict)
+    return create_success_response(success_list, error_list)

@@ -1,7 +1,6 @@
 import canonicaljson
 
 from api.v1.data import VerificationItemData
-from lib.utils import get_intersection_of_lists
 from src.enums import UseType, MatchStatus, Channels
 from src.sqlalchemydb import CouponsAlchemyDB
 from api.v1.errors import UserNotFoundException
@@ -81,7 +80,7 @@ class RuleCriteria(object):
 
     def match_item(self, item):
         assert isinstance(item, VerificationItemData)
-
+        from lib.utils import get_intersection_of_lists
         found_matching = False
 
         if self.brands:
@@ -130,7 +129,7 @@ class RuleCriteria(object):
             return MatchStatus.not_found
 
     def match_criteria(self, order, code):
-
+        from lib.utils import get_intersection_of_lists
         found_matching = False
 
         if self.valid_on_order_no:
@@ -230,7 +229,7 @@ class RuleCriteria(object):
             return False, u'Coupon {} is valid only till max amount {}'.format(code, self.cart_range_max)
 
         if self.range_min and total < self.range_min:
-            return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.criteria_obj.range_min, code)
+            return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.range_min, code)
 
         if self.range_max and total > self.range_max:
             return False, None, u'Coupon {} is valid only till max amount {}'.format(code, self.range_max)
