@@ -1,12 +1,11 @@
 import binascii
 import hashlib
 import logging
-
+import importlib
 import canonicaljson
 from src.enums import BenefitType, MatchStatus
 from src.sqlalchemydb import CouponsAlchemyDB
 from config import method_dict
-
 logger = logging.getLogger()
 
 
@@ -34,10 +33,16 @@ class Rule(object):
         self.updated_at = kwargs.get('updated_at')
         if not self.criteria_obj:
             criteria_dict = canonicaljson.json.loads(self.criteria_json)
-            self.criteria_obj = method_dict.get('criteria_class')(**criteria_dict)
+            self.criteria_obj = getattr(
+                importlib.import_module(
+                    method_dict.get('criteria_class')['package']),
+                method_dict.get('criteria_class')['attribute'])(**criteria_dict)
         if not self.blacklist_criteria_obj and self.blacklist_criteria_json is not None:
             blacklist_criteria_dict = canonicaljson.json.loads(self.blacklist_criteria_json)
-            self.blacklist_criteria_obj = method_dict.get('criteria_class')(**blacklist_criteria_dict)
+            self.blacklist_criteria_obj = getattr(
+                importlib.import_module(
+                    method_dict.get('criteria_class')['package']),
+                method_dict.get('criteria_class')['attribute'])(**blacklist_criteria_dict)
         if not self.benefits_obj:
             benefits_dict = canonicaljson.json.loads(self.benefits_json)
             self.benefits_obj = Benefits(**benefits_dict)

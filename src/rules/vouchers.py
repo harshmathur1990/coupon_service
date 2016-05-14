@@ -9,7 +9,7 @@ import sqlalchemy
 from rule import Rule
 from src.enums import VoucherTransactionStatus, VoucherType
 from src.sqlalchemydb import CouponsAlchemyDB
-from src.rules.utils import is_auto_benefit_voucher
+
 
 logger = logging.getLogger()
 
@@ -111,6 +111,7 @@ class Vouchers(object):
 
     def update_to_date_single(self, to_date, db, validity_period_exclusive_for_benefit_voucher_callback=None):
         now = datetime.datetime.utcnow()
+        from src.rules.utils import is_auto_benefit_voucher
         if self.to_date < now < to_date:
             # voucher has expired and I am setting date of future,
             # i.e. re-enabling the voucher
@@ -264,7 +265,6 @@ class Vouchers(object):
         return False
 
     def match(self, order):
-        assert isinstance(order, OrderData)
         rules = self.get_rule()
         if not self.is_coupon_valid_with_existing_coupon(order):
             failed_dict = {

@@ -3,7 +3,7 @@ import json
 import logging
 import uuid
 from datetime import timedelta
-
+import importlib
 import croniter
 from dateutil import parser
 from lib.utils import get_intersection_of_lists, is_between, get_num_from_str
@@ -64,7 +64,6 @@ def get_voucher(voucher_code):
 
 
 def get_benefits_new(order):
-    assert isinstance(order, OrderData)
     products_dict = dict()
     benefits_list = list()
     payment_modes_list = list()
@@ -314,7 +313,10 @@ def update_coupon(coupon, update_dict):
             db.rollback()
             return False, error
         from config import method_dict
-        callback = method_dict.get('check_auto_benefit_exclusivity')
+        callback = getattr(
+            importlib.import_module(
+                method_dict.get('check_auto_benefit_exclusivity')['package']),
+            method_dict.get('check_auto_benefit_exclusivity')['attribute'])
         success, error_list = voucher.update(update_dict, db, callback)
         if not success:
             db.rollback()

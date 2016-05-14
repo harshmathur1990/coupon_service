@@ -34,5 +34,4 @@ TOKEN = CONFIG["token"]
 
 module_name = 'client_method_dict' + '.' + client
 module = importlib.import_module(module_name)
-
 method_dict = getattr(module, 'method_dict')
