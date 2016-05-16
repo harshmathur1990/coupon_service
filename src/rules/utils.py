@@ -6,7 +6,7 @@ from datetime import timedelta
 import importlib
 import croniter
 from dateutil import parser
-from lib.utils import get_intersection_of_lists, is_between, get_num_from_str
+from lib.utils import get_intersection_of_lists, is_between, get_num_from_str, create_error_response
 from rule import Rule
 from src.enums import *
 from src.sqlalchemydb import CouponsAlchemyDB
@@ -396,3 +396,12 @@ def is_auto_benefit_voucher(type):
     if type is VoucherType.auto_freebie.value or type is VoucherType.regular_freebie.value:
         return True
     return False
+
+
+def make_transaction_log_entry(args):
+    success, error = VoucherTransactionLog.make_transaction_log_entry(args)
+    if not success:
+        rv = create_error_response(400, error)
+    else:
+        rv = {'success': success}
+    return rv

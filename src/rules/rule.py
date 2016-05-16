@@ -134,14 +134,14 @@ class Rule(object):
             if self.blacklist_criteria_obj.match_item(item) is MatchStatus.found_matching:
                 item.blacklisted = True
 
-    def match(self, order, code):
+    def match(self, order, voucher):
 
         for item in order.items:
             item.blacklisted = False
 
-        self.blacklist_items(order, code)
+        self.blacklist_items(order, voucher.code)
 
-        return self.criteria_obj.match(order, code)
+        return self.criteria_obj.match(order, voucher)
 
 
 class Benefits(object):

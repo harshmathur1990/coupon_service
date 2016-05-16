@@ -572,3 +572,27 @@ def fetch_coupon(args):
             voucher_dict['schedule'] = voucher.schedule
             success_list.append(voucher_dict)
     return create_success_response(success_list, error_list)
+
+
+def create_failed_api_response(args, error_list):
+    products = list()
+    for product in args.get('products'):
+        product_dict = dict()
+        product_dict['itemid'] = product.get('item_id')
+        product_dict['quantity'] = product.get('quantity')
+        product_dict['discount'] = 0.0
+        products.append(product_dict)
+    rv = {
+        'success': False,
+        'error': {
+            'code': 503,
+            'error': ','.join(error_list)
+        },
+        'products': products,
+        'freebies': [],
+        'totalDiscount': 0.0,
+        'channel': [],
+        'paymentModes': [],
+        'errors': error_list
+    }
+    return rv

@@ -3,6 +3,7 @@ import logging
 
 from src.enums import VoucherType
 from utils import get_voucher
+from lib.exceptions import UserNotFoundException
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ def validate_coupon(coupon_list, order, validate_for_apply=False):
     # applicable etc.
     # If this method returns True, then order will be an Object of OrderData and
     # it will have failed_vouchers as a list and existing vouchers as list.
-
+    success = True
     for a_coupon in coupon_list:
         voucher, error = get_voucher(a_coupon)
         if not voucher:
@@ -39,18 +40,15 @@ def validate_coupon(coupon_list, order, validate_for_apply=False):
             }
             order.failed_vouchers.append(failed_dict)
             continue
-        if validate_for_apply:
-            voucher.match(order)
-        else:
-            if voucher.type is VoucherType.regular_coupon.value:
+        try:
+            if validate_for_apply:
                 voucher.match(order)
+            else:
+                if voucher.type is VoucherType.regular_coupon.value:
+                    voucher.match(order)
+            error_list = [failed_vouchers['error'] for failed_vouchers in order.failed_vouchers]
+        except UserNotFoundException:
+            success = False
+            error_list = [u'User not Found']
 
-        # if not order.can_accommodate_new_vouchers:
-        #     break
-
-    error_list = [failed_vouchers['error'] for failed_vouchers in order.failed_vouchers]
-    # if not order.existing_vouchers and len(args.get('coupon_codes', list())) > 0:
-    #     # error_list.append(u'No matching items found for these coupons')
-    #     return False, order, error_list
-    # else:
-    return error_list
+    return success, error_list

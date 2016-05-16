@@ -4,7 +4,6 @@ import datetime
 import json
 import logging
 import uuid
-
 import sqlalchemy
 from rule import Rule
 from src.enums import VoucherTransactionStatus, VoucherType
@@ -277,18 +276,7 @@ class Vouchers(object):
         voucher_match = False
         failed_rule_list = list()
         for rule in rules:
-            status = rule.criteria_obj.check_usage(order.customer_id, self.id_bin)
-            if not status.get('success', False):
-                failed_voucher = copy.deepcopy(self)
-                failed_voucher.rules_list = [rule]
-                failed_dict = {
-                    'voucher': failed_voucher,
-                    'error': u'Voucher {} has expired'.format(self.code)
-                }
-                failed_rule_list.append(failed_dict)
-                # continue
-                break
-            success, data, error = rule.match(order, self.code)
+            success, data, error = rule.match(order, self)
             if not success:
                 failed_voucher = copy.deepcopy(self)
                 failed_voucher.rules_list = [rule]
@@ -475,7 +463,5 @@ class VoucherTransactionLog(object):
             db.rollback()
             success = False
             error = u'Unknown error'
-        # else:
-        #     db.commit()
 
         return success, error

@@ -6,16 +6,15 @@ from lib.decorator import jsonify, check_login
 from lib.utils import length_validator, create_error_response,\
     create_success_response, is_valid_schedule_object, is_valid_duration_string, handle_unprocessable_entity
 from src.enums import VoucherType, Channels, SchedulerType
-from src.rules.vouchers import VoucherTransactionLog
 from src.rules.utils import apply_benefits, update_keys_in_input_list,\
-    fetch_order_response, get_benefits_new
+    fetch_order_response, get_benefits_new, make_transaction_log_entry
 from api.v1.utils import fetch_auto_benefits, fetch_order_detail, create_regular_coupon, fetch_coupon
 from src.rules.validate import validate_coupon
 from webargs import fields, validate
 from webargs.flaskparser import parser
 from api import voucher_api, voucher_api_v_1_1
 from validate import validate_for_create_api_v1, validate_for_update
-from utils import create_freebie_coupon
+from utils import create_freebie_coupon, create_failed_api_response
 
 logger = logging.getLogger(__name__)
 
@@ -438,12 +437,7 @@ def confirm_order():
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
-    success, error = VoucherTransactionLog.make_transaction_log_entry(args)
-    if not success:
-        rv = create_error_response(400, error)
-    else:
-        rv = {'success': success}
-    return rv
+    return make_transaction_log_entry(args)
 
 
 @voucher_api.route('/update', methods=['PUT', 'POST'])
@@ -691,29 +685,11 @@ def check_coupon_v2():
     success, order, error_list = fetch_order_detail(args)
 
     if not success:
-        products = list()
-        for product in args.get('products'):
-            product_dict = dict()
-            product_dict['itemid'] = product.get('item_id')
-            product_dict['quantity'] = product.get('quantity')
-            product_dict['discount'] = 0.0
-            products.append(product_dict)
-        rv = {
-            'success': False,
-            'error': {
-                'code': 503,
-                'error': ','.join(error_list)
-            },
-            'products': products,
-            'freebies': [],
-            'totalDiscount': 0.0,
-            'channel': [],
-            'paymentModes': [],
-            'errors': error_list
-        }
-        return rv
+        return create_failed_api_response(args, error_list)
 
-    error_list = validate_coupon(args.get('coupon_codes', list()), order)
+    success, error_list = validate_coupon(args.get('coupon_codes', list()), order)
+    if not success:
+        return create_failed_api_response(args, error_list)
 
     if order.failed_vouchers:
         voucher_success = False

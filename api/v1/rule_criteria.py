@@ -3,7 +3,7 @@ import canonicaljson
 from api.v1.data import VerificationItemData
 from src.enums import UseType, MatchStatus, Channels
 from src.sqlalchemydb import CouponsAlchemyDB
-from api.v1.errors import UserNotFoundException
+from lib.exceptions import UserNotFoundException
 
 
 class RuleCriteria(object):
@@ -133,13 +133,6 @@ class RuleCriteria(object):
         found_matching = False
 
         if self.valid_on_order_no:
-            from api.v1.utils import fetch_user_details
-            success, order_no, error = fetch_user_details(order.customer_id)
-            if not success:
-                raise UserNotFoundException()
-
-            order_no += 1
-            order.order_no = order_no
             exact_order_no_list = list()
             min_order_no = None
             for an_order_no in self.valid_on_order_no:
@@ -152,11 +145,23 @@ class RuleCriteria(object):
                         min_order_no = int(an_order_no[:-1])
 
             if exact_order_no_list or min_order_no:
-                if (exact_order_no_list and order.order_no in exact_order_no_list) \
-                        or (min_order_no and order.order_no >= min_order_no):
+                # if minimum order no is given 1 (1+), than the condition is true always.
+                # else fetch order details and check if the coupon is valid on
+                # that particular order no
+                if min_order_no and min_order_no is 1:
                     found_matching = True
                 else:
-                    return MatchStatus.found_not_matching, u'This coupon {} is not applicable on this order'.format(code)
+                    from api.v1.utils import fetch_user_details
+                    success, order_no, error = fetch_user_details(order.customer_id)
+                    if not success:
+                        raise UserNotFoundException()
+                    order_no += 1
+                    order.order_no = order_no
+                    if (exact_order_no_list and order.order_no in exact_order_no_list) \
+                            or (min_order_no and order.order_no >= min_order_no):
+                        found_matching = True
+                    else:
+                        return MatchStatus.found_not_matching, u'This coupon {} is not applicable on this order'.format(code)
 
         if self.channels:
             if order.channel in self.channels:
@@ -206,8 +211,12 @@ class RuleCriteria(object):
         else:
             return MatchStatus.not_found, None
 
-    def match(self, order, code):
-        status, error = self.match_criteria(order, code)
+    def match(self, order, voucher):
+        success, error = self.check_usage(order.customer_id, voucher.id_bin)
+        if not success:
+            return False, None, u'Coupon {} has expired'.format(voucher.code)
+
+        status, error = self.match_criteria(order, voucher.code)
         if status is MatchStatus.found_not_matching:
             return False, None, error
 
@@ -220,26 +229,27 @@ class RuleCriteria(object):
                 subscription_id_list.append(item.subscription_id)
 
         if not subscription_id_list:
-            return False, None, u'No matching items found for this coupon {}'.format(code)
+            return False, None, u'No matching items found for this coupon {}'.format(voucher.code)
 
         if self.cart_range_min and order.total_price < self.cart_range_min:
-            return False, u'Total Order amount should not be less than {} for coupon code {}'.format(self.cart_range_min, code)
+            return False, u'Total Order amount should not be less than {} for coupon code {}'.format(self.cart_range_min, voucher.code)
 
         if self.cart_range_max and order.total_price > self.cart_range_max:
-            return False, u'Coupon {} is valid only till max amount {}'.format(code, self.cart_range_max)
+            return False, u'Coupon {} is valid only till max amount {}'.format(voucher.code, self.cart_range_max)
 
         if self.range_min and total < self.range_min:
-            return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.range_min, code)
+            return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.range_min, voucher.code)
 
         if self.range_max and total > self.range_max:
-            return False, None, u'Coupon {} is valid only till max amount {}'.format(code, self.range_max)
+            return False, None, u'Coupon {} is valid only till max amount {}'.format(voucher.code, self.range_max)
 
         return True, {'total': total, 'subscription_id_list': subscription_id_list}, None
 
     def check_usage(self, user_id, voucher_id, db=None):
         use_type = self.usage['use_type']
         rv = {
-            'success': True
+            'success': True,
+            'msg': None
         }
         if use_type is UseType.both.value:
             is_voucher_exhausted = self.is_voucher_exhausted(voucher_id, db)
@@ -263,7 +273,7 @@ class RuleCriteria(object):
             if is_voucher_exhausted:
                 rv['success'] = False
                 rv['msg'] = 'This voucher has expired'
-        return rv
+        return rv['success'], rv['msg']
 
     def is_voucher_exhausted(self, voucher_id, db=None):
         if not db:
