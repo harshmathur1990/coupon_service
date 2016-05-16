@@ -64,6 +64,7 @@ def get_voucher(voucher_code):
 
 
 def get_benefits_new(order):
+    # This may not be as generic it seems, We may need to rewrite it per client
     products_dict = dict()
     benefits_list = list()
     payment_modes_list = list()
@@ -247,8 +248,13 @@ def save_vouchers(args, rule_id_list):
 
 def create_rule_object(data, user_id=None):
     description = data.get('description')
-    from api.v1.utils import get_criteria_kwargs
-    rule_criteria, rule_blacklist_criteria, benefits = get_criteria_kwargs(data)
+    from config import method_dict
+    get_rule_criteria_blacklist_criteria_and_benefits = getattr(
+        importlib.import_module(
+            method_dict.get('get_rule_criteria_blacklist_criteria_and_benefits')['package']),
+        method_dict.get('get_rule_criteria_blacklist_criteria_and_benefits')['attribute'])
+
+    rule_criteria, rule_blacklist_criteria, benefits = get_rule_criteria_blacklist_criteria_and_benefits(data)
     id = uuid.uuid1().hex
     rule = Rule(id=id, description=description, blacklist_criteria_json=rule_blacklist_criteria.canonical_json(),
                 criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),

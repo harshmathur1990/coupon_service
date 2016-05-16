@@ -3,6 +3,7 @@ import copy
 import datetime
 import json
 import logging
+import importlib
 import uuid
 import sqlalchemy
 from rule import Rule
@@ -38,7 +39,7 @@ class Vouchers(object):
         rule_id_list = self.rules.split(',')
         rules_list = list()
         for rule_id in rule_id_list:
-            rule = Rule.find_one(rule_id, db=None)
+            rule = Rule.find_one(rule_id, db)
             rules_list.append(rule)
         self.rules_list = rules_list
         return rules_list
@@ -130,8 +131,12 @@ class Vouchers(object):
                 if auto_freebie_dict:
                     db.update_row("auto_freebie_search", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
                 else:
-                    from api.v1.utils import save_auto_freebie_from_voucher
-                    save_auto_freebie_from_voucher(self, db)
+                    from config import method_dict
+                    save_auto_benefits_from_voucher = getattr(
+                        importlib.import_module(
+                            method_dict.get('save_auto_benefits_from_voucher')['package']),
+                        method_dict.get('save_auto_benefits_from_voucher')['attribute'])
+                    save_auto_benefits_from_voucher(self, db)
             voucher_dict = db.find_one("vouchers", **{'id': self.id_bin})
             if voucher_dict:
                 db.update_row("vouchers", "id", id=self.id_bin, to=self.to_date)
