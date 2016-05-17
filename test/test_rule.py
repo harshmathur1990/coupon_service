@@ -20,7 +20,7 @@ class CreateRule(unittest.TestCase):
 
     def tearDown(self):
         db = CouponsAlchemyDB()
-        db.delete_row("auto_freebie_search")
+        db.delete_row("auto_benefits")
         db.delete_row("voucher_use_tracker")
         db.delete_row("user_voucher_transaction_log")
         db.delete_row("all_vouchers")

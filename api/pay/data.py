@@ -4,13 +4,13 @@ class VerificationItemData(object):
         self.product = kwargs.get('product')
         self.vendor = kwargs.get('vendor')  # may not be required
         self.amount = kwargs.get('amount')
-        self.order_id = kwargs.get('order_id')
         self.blacklisted = False
 
 
 class OrderData(object):
     def __init__(self, **kwargs):
         self.order_no = kwargs.get('order_no')
+        self.order_id = kwargs.get('order_id')
         self.country = kwargs.get('country')  # list
         self.state = kwargs.get('state')  # can and will be treated as list ex: Haryana/Delhi
         self.city = kwargs.get('city')  # treated as list for same reason above

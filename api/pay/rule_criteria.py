@@ -196,9 +196,15 @@ class RuleCriteria(object):
         if status is MatchStatus.found_not_matching:
             return False, None, error
 
-        status = self.match_item(order.item)
-        if status is MatchStatus.found_not_matching:
-            return False, None, u'No Matching items found for coupon {}'.format(voucher.code)
+        subscription_id_list = list()
+        total = 0.0
+        for item in order.items:
+            if not item.blacklisted and self.criteria_obj.match(item) is not MatchStatus.found_not_matching:
+                total += item.price
+                subscription_id_list.append(item.subscription_id)
+
+        if not subscription_id_list:
+            return False, None, u'No matching items found for this coupon {}'.format(voucher.code)
 
         if self.cart_range_min and order.total_price < self.cart_range_min:
             return False, u'Total Order amount should not be less than {} for coupon code {}'.format(self.cart_range_min, voucher.code)

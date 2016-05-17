@@ -117,7 +117,7 @@ class Vouchers(object):
             # i.e. re-enabling the voucher
             # need to check if the freebie clashes with some existing.
             # Also update if the voucher already exists in voucher table
-            # or auto_freebie_search table
+            # or auto_benefits table
             # else insert rows in both the tables while updating all_vouchers
             self.to_date = to_date
             if is_auto_benefit_voucher(self.type):
@@ -127,9 +127,9 @@ class Vouchers(object):
                         return False, error_list
                 # insert values in auto freebie table
                 # first cyclic import of the code!!!
-                auto_freebie_dict = db.find_one("auto_freebie_search", **{'voucher_id': self.id_bin})
+                auto_freebie_dict = db.find_one("auto_benefits", **{'voucher_id': self.id_bin})
                 if auto_freebie_dict:
-                    db.update_row("auto_freebie_search", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
+                    db.update_row("auto_benefits", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
                 else:
                     from config import method_dict
                     save_auto_benefits_from_voucher = getattr(
@@ -156,11 +156,11 @@ class Vouchers(object):
             db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
             db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
             if self.type is not VoucherType.regular_coupon.value:
-                db.update_row("auto_freebie_search", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
+                db.update_row("auto_benefits", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
             Vouchers.fetch_active_voucher(self.code, db)
         elif to_date < now < self.to_date:
             # The voucher has not expired but request wants to expire the voucher
-            # Go ahead delete rows from vouchers and auto_freebie_search
+            # Go ahead delete rows from vouchers and auto_benefits
             # and update to=now in all_vouchers
             # expire request
             self.delete(db)
@@ -171,7 +171,7 @@ class Vouchers(object):
             Vouchers.fetch_active_voucher(self.code, db)
         elif to_date < now and self.to_date < now:
             # Its a request to expire a voucher which has already expired.
-            # go ahead and delete it if it exists in vouchers and auto_freebie_search table
+            # go ahead and delete it if it exists in vouchers and auto_benefits table
             self.delete(db)
             Vouchers.fetch_active_voucher(self.code, db)
         else:
@@ -344,7 +344,7 @@ class Vouchers(object):
             db = CouponsAlchemyDB()
         db.delete_row_in_transaction("vouchers", **{'id': self.id_bin})
         if self.type is not VoucherType.regular_coupon.value:
-            db.delete_row_in_transaction("auto_freebie_search", **{'voucher_id': self.id_bin})
+            db.delete_row_in_transaction("auto_benefits", **{'voucher_id': self.id_bin})
 
     @staticmethod
     def from_dict(voucher_dict):
