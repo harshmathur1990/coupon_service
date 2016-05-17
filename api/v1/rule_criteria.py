@@ -232,10 +232,10 @@ class RuleCriteria(object):
             return False, None, u'No matching items found for this coupon {}'.format(voucher.code)
 
         if self.cart_range_min and order.total_price < self.cart_range_min:
-            return False, u'Total Order amount should not be less than {} for coupon code {}'.format(self.cart_range_min, voucher.code)
+            return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.cart_range_min, voucher.code)
 
         if self.cart_range_max and order.total_price > self.cart_range_max:
-            return False, u'Coupon {} is valid only till max amount {}'.format(voucher.code, self.cart_range_max)
+            return False, None, u'Coupon {} is valid only till max amount {}'.format(voucher.code, self.cart_range_max)
 
         if self.range_min and total < self.range_min:
             return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.range_min, voucher.code)

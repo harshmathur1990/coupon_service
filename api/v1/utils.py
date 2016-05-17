@@ -2,18 +2,18 @@ import binascii
 import datetime
 import json
 import logging
+
 from api.v1.data import VerificationItemData, OrderData
 from api.v1.rule_criteria import RuleCriteria
 from config import SUBSCRIPTIONURL, TOKEN, LOCATIONURL, USERFROMMOBILEURL
 from lib import cache
-from lib.utils import make_api_call, create_success_response, create_error_response, get_utc_timezone_unaware_date_object, \
-    get_intersection_of_lists
-from src.enums import VoucherType, BenefitType, Channels
+from lib.utils import make_api_call, create_success_response, create_error_response, get_utc_timezone_unaware_date_object
+from src.enums import VoucherType, BenefitType
 from src.rules.constants import GROCERY_ITEM_KEY, GROCERY_CACHE_TTL, GROCERY_LOCATION_KEY
 from src.rules.rule import Benefits
 from src.rules.utils import create_rule_object, save_vouchers, create_and_save_rule_list
-from src.rules.vouchers import Vouchers
 from src.rules.validate import validate_for_create_voucher
+from src.rules.vouchers import Vouchers
 from src.sqlalchemydb import CouponsAlchemyDB
 
 logger = logging.getLogger(__name__)
@@ -597,105 +597,3 @@ def create_failed_api_response(args, error_list):
         'errors': error_list
     }
     return rv
-
-
-def get_benefits_new(order):
-    # This may not be as generic it seems, We may need to rewrite it per client
-    products_dict = dict()
-    benefits_list = list()
-    payment_modes_list = list()
-    channels_list = list()
-    for item in order.items:
-        product_dict = dict()
-        product_dict['itemid'] = item.subscription_id
-        product_dict['quantity'] = item.quantity
-        product_dict['discount'] = 0.0
-        products_dict[item.subscription_id] = product_dict
-    for existing_voucher in order.existing_vouchers:
-        rules = existing_voucher['voucher'].rules_list
-        for rule in rules:
-            benefits = rule.benefits_obj
-            benefit_list = benefits.data
-            total = existing_voucher['total']
-            subscription_id_list = existing_voucher['subscription_id_list']
-            max_discount = benefits.max_discount
-            benefit_dict = dict()
-            for benefit in benefit_list:
-                if benefit['value'] is 0 and benefit['type'] == BenefitType.amount.value and existing_voucher['voucher'].custom:
-                    pass
-                elif not benefit['value']:
-                    continue
-                flat_discount = 0.0
-                percentage_discount = 0.0
-                percentage_discount_actual = 0.0
-                freebie_list = list()
-                benefit_type = BenefitType(benefit['type'])
-                if benefit_type is BenefitType.freebie:
-                    freebie_list.append(benefit['value'])
-                else:
-                    if benefit_type is BenefitType.amount and benefit['value']:
-                        flat_discount = benefit['value']
-                    elif benefit_type is BenefitType.percentage and benefit['value']:
-                        percentage = benefit['value']
-                        percentage_discount = percentage * total / 100
-                        percentage_discount_actual = percentage_discount
-                    if max_discount and flat_discount > max_discount:
-                        flat_discount = max_discount
-                    if max_discount and percentage_discount > max_discount:
-                        percentage_discount = max_discount
-                    for item in order.items:
-                        if item.subscription_id in subscription_id_list:
-                            if flat_discount:
-                                item_flat_discount = (item.quantity * item.price * flat_discount)/total
-                                products_dict[item.subscription_id]['discount'] = max(
-                                    products_dict[item.subscription_id]['discount'], item_flat_discount)
-                            if percentage_discount:
-                                item_percentage_discount = (item.quantity * item.price * percentage_discount)/total
-                                products_dict[item.subscription_id]['discount'] = max(
-                                    products_dict[item.subscription_id]['discount'], item_percentage_discount)
-                benefit_dict['couponCode'] = existing_voucher['voucher'].code
-                benefit_dict['flat_discount'] = flat_discount
-                benefit_dict['prorated_discount'] = percentage_discount
-                benefit_dict['prorated_discount_actual'] = percentage_discount_actual
-                benefit_dict['freebies'] = freebie_list
-                benefit_dict['items'] = subscription_id_list
-                benefit_dict['type'] = existing_voucher['voucher'].type
-                benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
-                benefit_dict['channel'] = [Channels(c).value for c in rule.criteria_obj.channels]
-                benefit_dict['custom'] = existing_voucher['voucher'].custom
-                if max_discount:
-                    benefit_dict['max_discount'] = max_discount
-                else:
-                    benefit_dict['max_discount'] = None
-                benefits_list.append(benefit_dict)
-                if not payment_modes_list:
-                    payment_modes_list = benefit_dict['paymentMode']
-                else:
-                    payment_modes_list = get_intersection_of_lists(payment_modes_list, benefit_dict['paymentMode'])
-                if not channels_list:
-                    channels_list = benefit_dict['channel']
-                else:
-                    channels_list = get_intersection_of_lists(channels_list, benefit_dict['channel'])
-    total_discount = 0.0
-    products_list = list()
-    for item in products_dict:
-        product_dict = products_dict[item]
-        products_list.append(product_dict)
-        total_discount += product_dict['discount']
-        product_dict['discount'] = round(product_dict['discount'], 2)
-
-    for a_benefit in benefits_list:
-        # if a_benefit.get('prorated_discount_actual'):
-        a_benefit['prorated_discount'] = a_benefit['prorated_discount_actual']
-        del a_benefit['prorated_discount_actual']
-
-    total_discount = round(total_discount, 2)
-    response_dict = dict()
-
-    response_dict['products'] = products_list
-    response_dict['benefits'] = benefits_list
-    response_dict['totalDiscount'] = total_discount
-    response_dict['paymentMode'] = payment_modes_list
-    response_dict['channel'] = channels_list
-    response_dict['couponCodes'] = [existing_voucher['voucher'].code for existing_voucher in order.existing_vouchers]
-    return response_dict

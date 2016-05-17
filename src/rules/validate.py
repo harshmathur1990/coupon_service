@@ -46,9 +46,10 @@ def validate_coupon(coupon_list, order, validate_for_apply=False):
             else:
                 if voucher.type is VoucherType.regular_coupon.value:
                     voucher.match(order)
-            error_list = [failed_vouchers['error'] for failed_vouchers in order.failed_vouchers]
         except UserNotFoundException:
             success = False
             error_list = [u'User not Found']
+            return success, error_list
 
+    error_list = [failed_vouchers['error'] for failed_vouchers in order.failed_vouchers]
     return success, error_list

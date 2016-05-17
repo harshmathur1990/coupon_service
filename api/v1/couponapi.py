@@ -8,7 +8,7 @@ from lib.utils import length_validator, create_error_response,\
 from src.enums import VoucherType, Channels, SchedulerType
 from src.rules.utils import apply_benefits, update_keys_in_input_list,\
     fetch_order_response, get_benefits_new, make_transaction_log_entry
-from api.v1.utils import fetch_auto_benefits, fetch_order_detail, create_regular_coupon, fetch_coupon, get_benefits_new
+from api.v1.utils import fetch_auto_benefits, fetch_order_detail, create_regular_coupon, fetch_coupon
 from src.rules.validate import validate_coupon
 from webargs import fields, validate
 from webargs.flaskparser import parser
@@ -584,7 +584,7 @@ def apply_coupon_v2():
         }
         return rv
 
-    error_list = validate_coupon(args.get('coupon_codes', list()), order, validate_for_apply=True)
+    success, error_list = validate_coupon(args.get('coupon_codes', list()), order, validate_for_apply=True)
 
     if order.failed_vouchers:
         voucher_success = False
