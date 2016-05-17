@@ -157,23 +157,41 @@ def get_user_details(response):
         return False, None, u'Unable to fetch User details'
 
 
-def fetch_items(item_id_list, item_to_quantity):
-    cached_item_list = list()
-    to_fetch_item_list = list()
-    for item_id in item_id_list:
-        key = GROCERY_ITEM_KEY + u'{}'.format(item_id)
-        obj = cache.get(key)
-        if obj:
-            cached_item_list.append(obj)
+def fetch_items(subscription_id_list, item_map):
+    # item_map is a subscription id to a list dicts of item ids and their resp quantities
+    # we must cache subscription id to subscription dict and fetch the rest from the api
+    # and set the cache for them.
+    # While iterating over subscription ids, build the list of verification item dicts
+    # and create the item and add it to final resultant list.
+    item_list = list()
+    to_fetch_subscription_list = list()
+    for subscription_id in subscription_id_list:
+        key = GROCERY_ITEM_KEY + u'{}'.format(subscription_id)
+        subscription_dict = cache.get(key)
+        if subscription_dict:
+            for item in item_map.get(subscription_id):
+                item_id = item.get('item_id')
+                quantity = item.get('quantity')
+                item_dict = dict()
+                item_dict['brand'] = subscription_dict.get('brandid')
+                item_dict['category'] = [subscription_dict.get('categoryid')]
+                item_dict['product'] = [subscription_dict.get('productid')]
+                item_dict['seller'] = subscription_dict.get('sellerid')
+                item_dict['storefront'] = subscription_dict.get('storefront')
+                item_dict['variant'] = subscription_dict.get('variantid')
+                item_dict['price'] = subscription_dict.get('offerprice')
+                item_dict['quantity'] = quantity
+                item_dict['subscription_id'] = subscription_id
+                item_dict['item_id'] = item_id
+                item_obj = VerificationItemData(**item_dict)
+                item_list.append(item_obj)
         else:
-            to_fetch_item_list.append(item_id)
+            to_fetch_subscription_list.append(subscription_id)
 
-    for item in cached_item_list:
-        item.quantity = item_to_quantity[item.subscription_id]
-    if to_fetch_item_list:
-        item_id_list_str = ','.join(u'{}'.format(v) for v in to_fetch_item_list)
+    if to_fetch_subscription_list:
+        subscription_id_list_str = ','.join(u'{}'.format(v) for v in to_fetch_subscription_list)
 
-        item_url = SUBSCRIPTIONURL + item_id_list_str + '/'
+        item_url = SUBSCRIPTIONURL + subscription_id_list_str + '/'
 
         headers = {
             'Authorization': TOKEN
@@ -189,26 +207,30 @@ def fetch_items(item_id_list, item_to_quantity):
             logger.exception(e)
             return False, None, u'Unable to fetch Items'
 
-        if not isinstance(data_list, list) or len(data_list) != len(to_fetch_item_list):
+        if not isinstance(data_list, list) or len(data_list) != len(to_fetch_subscription_list):
             return False, None, u'Invalid Item ids provided'
 
         for data in data_list:
-            item_dict = dict()
-            item_dict['brand'] = data.get('brandid')
-            item_dict['category'] = [data.get('categoryid')]
-            item_dict['product'] = [data.get('productid')]
-            item_dict['seller'] = data.get('sellerid')
-            item_dict['storefront'] = data.get('storefront')
-            item_dict['variant'] = data.get('variantid')
-            item_dict['price'] = data.get('offerprice')
-            item_dict['quantity'] = item_to_quantity[data.get('itemid')]
-            item_dict['subscription_id'] = data.get('itemid')
-            item_obj = VerificationItemData(**item_dict)
             key = GROCERY_ITEM_KEY + u'{}'.format(data.get('itemid'))
-            cache.set(key, item_obj, ex=GROCERY_CACHE_TTL)
-            cached_item_list.append(item_obj)
+            cache.set(key, data, ex=GROCERY_CACHE_TTL)
+            for item in item_map.get(data.get('itemid')):
+                item_id = item.get('item_id')
+                quantity = item.get('quantity')
+                item_dict = dict()
+                item_dict['brand'] = data.get('brandid')
+                item_dict['category'] = [data.get('categoryid')]
+                item_dict['product'] = [data.get('productid')]
+                item_dict['seller'] = data.get('sellerid')
+                item_dict['storefront'] = data.get('storefront')
+                item_dict['variant'] = data.get('variantid')
+                item_dict['price'] = data.get('offerprice')
+                item_dict['quantity'] = quantity
+                item_dict['subscription_id'] = data.get('itemid')
+                item_dict['item_id'] = item_id
+                item_obj = VerificationItemData(**item_dict)
+                item_list.append(item_obj)
 
-    return True, cached_item_list, None
+    return True, item_list, None
 
 
 def fetch_location_dict(area_id):
@@ -257,15 +279,20 @@ def fetch_order_detail(args):
     # custom implementation for askmegrocery, this method has to be
     # re-written to integrate with other sites' services
     area_id = args.get('area_id')
-    customer_id = args.get('customer_id')
-    item_id_list = list()
-    item_to_quantity = dict()
+    subscription_id_set = set()
+    item_map = dict()
 
     for item in args.get('products', list()):
-        item_id_list.append(item.get('item_id'))
-        item_to_quantity[item.get('item_id')] = item.get('quantity')
+        subscription_id_set.add(item.get('subscription_id'))
+        item_dict = {
+            'item_id': item.get('subscription_id'),
+            'quantity': item.get('quantity')
+        }
+        subscription_to_item_list = item_map.get(item.get('subscription_id'), list())
+        subscription_to_item_list.append(item_dict)
+        item_map[item.get('subscription_id')] = subscription_to_item_list
 
-    success, items, error = fetch_items(item_id_list, item_to_quantity)
+    success, items, error = fetch_items(list(subscription_id_set), item_map)
     if not success:
         return False, None, error
 
@@ -495,10 +522,10 @@ def fetch_auto_benefits(order, freebie_type=VoucherType.regular_freebie):
         }
         if freebie_type is VoucherType.auto_freebie:
             success_dict['total'] = variant_total_map[voucher_dict['variants']]
-            success_dict['subscription_id_list'] = subscription_variant_map[voucher_dict['variants']]
+            success_dict['item_id_list'] = subscription_variant_map[voucher_dict['variants']]
         else:
             success_dict['total'] = order.total_price
-            success_dict['subscription_id_list'] = item_list
+            success_dict['item_id_list'] = item_list
         order.existing_vouchers.append(success_dict)
 
 

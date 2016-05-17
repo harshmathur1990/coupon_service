@@ -220,15 +220,15 @@ class RuleCriteria(object):
         if status is MatchStatus.found_not_matching:
             return False, None, error
 
-        subscription_id_list = list()
+        item_id_list = list()
         total = 0.0
         for item in order.items:
             assert isinstance(item, VerificationItemData)
             if not item.blacklisted and self.match_item(item) is not MatchStatus.found_not_matching:
                 total += item.price * item.quantity
-                subscription_id_list.append(item.subscription_id)
+                item_id_list.append(item.item_id)
 
-        if not subscription_id_list:
+        if not item_id_list:
             return False, None, u'No matching items found for this coupon {}'.format(voucher.code)
 
         if self.cart_range_min and order.total_price < self.cart_range_min:
@@ -243,7 +243,7 @@ class RuleCriteria(object):
         if self.range_max and total > self.range_max:
             return False, None, u'Coupon {} is valid only till max amount {}'.format(voucher.code, self.range_max)
 
-        return True, {'total': total, 'subscription_id_list': subscription_id_list}, None
+        return True, {'total': total, 'item_id_list': item_id_list}, None
 
     def check_usage(self, user_id, voucher_id, db=None):
         use_type = self.usage['use_type']

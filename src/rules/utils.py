@@ -315,24 +315,23 @@ def make_transaction_log_entry(args):
 
 
 def get_benefits_new(order):
-    # This may not be as generic it seems, We may need to rewrite it per client
     products_dict = dict()
     benefits_list = list()
     payment_modes_list = list()
     channels_list = list()
     for item in order.items:
         product_dict = dict()
-        product_dict['itemid'] = item.subscription_id
+        product_dict['itemid'] = item.item_id
         product_dict['quantity'] = item.quantity
         product_dict['discount'] = 0.0
-        products_dict[item.subscription_id] = product_dict
+        products_dict[item.item_id] = product_dict
     for existing_voucher in order.existing_vouchers:
         rules = existing_voucher['voucher'].rules_list
         for rule in rules:
             benefits = rule.benefits_obj
             benefit_list = benefits.data
             total = existing_voucher['total']
-            subscription_id_list = existing_voucher['subscription_id_list']
+            item_id_list = existing_voucher['item_id_list']
             max_discount = benefits.max_discount
             benefit_dict = dict()
             for benefit in benefit_list:
@@ -359,21 +358,21 @@ def get_benefits_new(order):
                     if max_discount and percentage_discount > max_discount:
                         percentage_discount = max_discount
                     for item in order.items:
-                        if item.subscription_id in subscription_id_list:
+                        if item.item_id in item_id_list:
                             if flat_discount:
                                 item_flat_discount = (item.quantity * item.price * flat_discount)/total
-                                products_dict[item.subscription_id]['discount'] = max(
-                                    products_dict[item.subscription_id]['discount'], item_flat_discount)
+                                products_dict[item.item_id]['discount'] = max(
+                                    products_dict[item.item_id]['discount'], item_flat_discount)
                             if percentage_discount:
                                 item_percentage_discount = (item.quantity * item.price * percentage_discount)/total
-                                products_dict[item.subscription_id]['discount'] = max(
-                                    products_dict[item.subscription_id]['discount'], item_percentage_discount)
+                                products_dict[item.item_id]['discount'] = max(
+                                    products_dict[item.item_id]['discount'], item_percentage_discount)
                 benefit_dict['couponCode'] = existing_voucher['voucher'].code
                 benefit_dict['flat_discount'] = flat_discount
                 benefit_dict['prorated_discount'] = percentage_discount
                 benefit_dict['prorated_discount_actual'] = percentage_discount_actual
                 benefit_dict['freebies'] = freebie_list
-                benefit_dict['items'] = subscription_id_list
+                benefit_dict['items'] = item_id_list
                 benefit_dict['type'] = existing_voucher['voucher'].type
                 benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
                 benefit_dict['channel'] = [Channels(c).value for c in rule.criteria_obj.channels]
@@ -400,7 +399,6 @@ def get_benefits_new(order):
         product_dict['discount'] = round(product_dict['discount'], 2)
 
     for a_benefit in benefits_list:
-        # if a_benefit.get('prorated_discount_actual'):
         a_benefit['prorated_discount'] = a_benefit['prorated_discount_actual']
         del a_benefit['prorated_discount_actual']
 

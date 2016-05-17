@@ -218,6 +218,7 @@ class RuleCriteria(object):
         if self.range_max and order.total_price > self.range_max:
             return False, None, u'Coupon {} is valid only till max amount {}'.format(voucher.code, self.range_max)
 
+        import ipdb;ipdb.set_trace()
         return True, {'total': order.total_price, 'subscription_id_list': subscription_id_list}, None
 
     def check_usage(self, user_id, voucher_id, db=None):

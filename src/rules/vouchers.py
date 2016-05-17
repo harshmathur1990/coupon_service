@@ -296,7 +296,7 @@ class Vouchers(object):
             success_dict = {
                 'voucher': effectiveVoucher,
                 'total': data.get('total'),
-                'subscription_id_list': data.get('subscription_id_list')
+                'item_id_list': data.get('item_id_list')
             }
             order.existing_vouchers.append(success_dict)
             voucher_match = True

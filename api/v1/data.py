@@ -1,5 +1,6 @@
 class VerificationItemData(object):
     def __init__(self, **kwargs):
+        self.item_id = kwargs.get('item_id')
         self.brand = kwargs.get('brand')
         self.category = kwargs.get('category') # will be a list
         self.product = kwargs.get('product')
