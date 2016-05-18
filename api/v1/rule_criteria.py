@@ -1,12 +1,42 @@
 import canonicaljson
-
 from api.v1.data import VerificationItemData
-from src.enums import UseType, MatchStatus, Channels
+from src.enums import UseType, MatchStatus
 from src.sqlalchemydb import CouponsAlchemyDB
-from lib.exceptions import UserNotFoundException
+from api.v1.utils import fetch_user_details
+from src.rules.match_utils import match_list_intersection_atleast_one_common, \
+    match_value_in_list, match_user_order_no, match_in_not_in, match_greater_than, \
+    match_less_than, match_greater_than_equal_to, match_less_than_equal_to
 
 
 class RuleCriteria(object):
+    # (rule_criteria_attr, order_attr, match_method, callback (optional, if not None, input parameter is Order object))
+    criteria_attributes = [
+        ('channels', 'channel', match_value_in_list, None),
+        ('country', 'country', match_list_intersection_atleast_one_common, None),
+        ('state', 'state', match_list_intersection_atleast_one_common, None),
+        ('city', 'city', match_list_intersection_atleast_one_common, None),
+        ('zone', 'zone', match_list_intersection_atleast_one_common, None),
+        ('area', 'area', match_value_in_list, None),
+        ('source', 'source', match_value_in_list, None),
+        ('valid_on_order_no', None, match_user_order_no, fetch_user_details)
+    ]
+
+    item_attributes = [
+        ('brands', 'brand', match_value_in_list, None),
+        ('categories', 'category', match_in_not_in, None),
+        ('products', 'product', match_in_not_in, None),
+        ('sellers', 'seller', match_value_in_list, None),
+        ('storefronts', 'storefront', match_value_in_list, None),
+        ('variants', 'variant', match_value_in_list, None)
+    ]
+
+    match_attributes = [
+        ('cart_range_min', 'total_price', match_less_than, None),
+        ('cart_range_max', 'total_price', match_greater_than, None),
+        ('range_min', 'matching_criteria_total', match_less_than, None),
+        ('range_max', 'matching_criteria_total', match_greater_than, None),
+    ]
+
     def __init__(self, **kwargs):
         self.area = kwargs.get('area', list())
         self.brands = kwargs.get('brands', list())
@@ -80,48 +110,21 @@ class RuleCriteria(object):
 
     def match_item(self, item):
         assert isinstance(item, VerificationItemData)
-        from lib.utils import get_intersection_of_lists
         found_matching = False
 
-        if self.brands:
-            if item.brand in self.brands:
-                found_matching = True
+        for criteria_attr, item_attr, method, callback in self.item_attributes:
+            if method is match_in_not_in:
+                if getattr(self, criteria_attr)['in'] or getattr(self, criteria_attr)['not_in']:
+                    if method(getattr(self, criteria_attr), getattr(item, item_attr)):
+                        found_matching = True
+                    else:
+                        return MatchStatus.found_not_matching
             else:
-                return MatchStatus.found_not_matching
-
-        if self.categories['in'] or self.categories['not_in']:
-           if (self.categories['in'] and get_intersection_of_lists(self.categories['in'], item.category)) \
-                   or (self.categories['not_in']
-                       and not get_intersection_of_lists(self.categories['not_in'], item.category)):
-               found_matching = True
-           else:
-               return MatchStatus.found_not_matching
-
-        if self.products['in'] or self.products['not_in']:
-           if (self.products['in'] and get_intersection_of_lists(self.products['in'], item.product)) \
-                   or (self.products['not_in']
-                       and not get_intersection_of_lists(self.products['not_in'], item.product)):
-               found_matching = True
-           else:
-               return MatchStatus.found_not_matching
-
-        if self.sellers:
-            if item.seller in self.sellers:
-                found_matching = True
-            else:
-                return MatchStatus.found_not_matching
-
-        if self.storefronts:
-            if item.storefront in self.storefronts:
-                found_matching = True
-            else:
-                return MatchStatus.found_not_matching
-
-        if self.variants:
-            if item.variant in self.variants:
-                found_matching = True
-            else:
-                return MatchStatus.found_not_matching
+                if getattr(self, criteria_attr):
+                    if method(getattr(self, criteria_attr), getattr(item, item_attr)):
+                        found_matching = True
+                    else:
+                        return MatchStatus.found_not_matching
 
         if found_matching:
             return MatchStatus.found_matching
@@ -129,82 +132,21 @@ class RuleCriteria(object):
             return MatchStatus.not_found
 
     def match_criteria(self, order, code):
-        from lib.utils import get_intersection_of_lists
+
         found_matching = False
 
-        if self.valid_on_order_no:
-            exact_order_no_list = list()
-            min_order_no = None
-            for an_order_no in self.valid_on_order_no:
-                try:
-                    # to convert order nos which are exact integers
-                    exact_order_no_list.append(int(an_order_no))
-                except ValueError:
-                    # to convert order nos which are like 4+ means minimum order no 4
-                    if not min_order_no:
-                        min_order_no = int(an_order_no[:-1])
-
-            if exact_order_no_list or min_order_no:
-                # if minimum order no is given 1 (1+), than the condition is true always.
-                # else fetch order details and check if the coupon is valid on
-                # that particular order no
-                if min_order_no and min_order_no is 1:
-                    found_matching = True
-                else:
-                    from api.v1.utils import fetch_user_details
-                    success, order_no, error = fetch_user_details(order.customer_id)
-                    if not success:
-                        raise UserNotFoundException()
-                    order_no += 1
-                    order.order_no = order_no
-                    if (exact_order_no_list and order.order_no in exact_order_no_list) \
-                            or (min_order_no and order.order_no >= min_order_no):
+        for criteria_attr, order_attr, method, callback in self.criteria_attributes:
+            if getattr(self, criteria_attr):
+                if not callback:
+                    if method(getattr(self, criteria_attr), getattr(order, order_attr)):
                         found_matching = True
                     else:
-                        return MatchStatus.found_not_matching, u'This coupon {} is not applicable on this order'.format(code)
-
-        if self.channels:
-            if order.channel in self.channels:
-                found_matching = True
-            else:
-                return MatchStatus.found_not_matching, u'This coupon {} is only valid on orders from {}'.format(
-                    code,','.join([Channels(c).name for c in self.channels]))
-
-        if self.country:
-            if get_intersection_of_lists(self.country, order.country):
-                found_matching = True
-            else:
-                return MatchStatus.found_not_matching, u'This coupon {} is not valid in your country'.format(code)
-
-        if self.state:
-            if get_intersection_of_lists(self.state, order.state):
-                found_matching = True
-            else:
-                return MatchStatus.found_not_matching, u'This coupon {} is not valid in your state'.format(code)
-
-        if self.city:
-            if get_intersection_of_lists(self.city, order.city):
-                found_matching = True
-            else:
-                return MatchStatus.found_not_matching, u'This coupon {} is not valid in your city'.format(code)
-
-        if self.zone:
-            if get_intersection_of_lists(self.zone, order.zone):
-                found_matching = True
-            else:
-                return MatchStatus.found_not_matching, u'This coupon {} is not valid in your zone'.format(code)
-
-        if self.area:
-            if order.area in self.area:
-                found_matching = True
-            else:
-                return MatchStatus.found_not_matching, u'This coupon {} is not valid in your area'.format(code)
-
-        if self.source:
-            if order.source in self.source:
-                found_matching = True
-            else:
-                return MatchStatus.found_not_matching, u'This coupon {} is not valid on this order'.format(code)
+                        return MatchStatus.found_not_matching, u'This voucher {} is not valid on this order'.format(code)
+                else:
+                    if method(getattr(self, criteria_attr), order, callback):
+                        found_matching = True
+                    else:
+                        return MatchStatus.found_not_matching, u'This voucher {} is not valid on this order'.format(code)
 
         if found_matching:
             return MatchStatus.found_matching, None
@@ -228,22 +170,16 @@ class RuleCriteria(object):
                 total += item.price * item.quantity
                 item_id_list.append(item.item_id)
 
+        order.matching_criteria_total = total
+
         if not item_id_list:
             return False, None, u'No matching items found for this coupon {}'.format(voucher.code)
 
-        if self.cart_range_min and order.total_price < self.cart_range_min:
-            return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.cart_range_min, voucher.code)
+        for criteria_attr, order_attr, method, callback in self.match_attributes:
+            if getattr(self, criteria_attr) and method(getattr(self, criteria_attr), getattr(order, order_attr)):
+                return False, None, u'This voucher {} is not valid'.format(voucher.code)
 
-        if self.cart_range_max and order.total_price > self.cart_range_max:
-            return False, None, u'Coupon {} is valid only till max amount {}'.format(voucher.code, self.cart_range_max)
-
-        if self.range_min and total < self.range_min:
-            return False, None, u'Total Order amount should not be less than {} for coupon code {}'.format(self.range_min, voucher.code)
-
-        if self.range_max and total > self.range_max:
-            return False, None, u'Coupon {} is valid only till max amount {}'.format(voucher.code, self.range_max)
-
-        return True, {'total': total, 'item_id_list': item_id_list}, None
+        return True, {'total': order.matching_criteria_total, 'item_id_list': item_id_list}, None
 
     def check_usage(self, user_id, voucher_id, db=None):
         use_type = self.usage['use_type']

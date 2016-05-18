@@ -4,10 +4,8 @@ import json
 import logging
 
 from api.v1.data import VerificationItemData, OrderData
-from api.v1.rule_criteria import RuleCriteria
 from config import SUBSCRIPTIONURL, TOKEN, LOCATIONURL, USERFROMMOBILEURL
 from lib import cache
-from lib.utils import make_api_call, create_success_response, create_error_response, get_utc_timezone_unaware_date_object
 from src.enums import VoucherType, BenefitType
 from src.rules.constants import GROCERY_ITEM_KEY, GROCERY_CACHE_TTL, GROCERY_LOCATION_KEY
 from src.rules.rule import Benefits
@@ -15,6 +13,7 @@ from src.rules.utils import create_rule_object, save_vouchers, create_and_save_r
 from src.rules.validate import validate_for_create_voucher
 from src.rules.vouchers import Vouchers
 from src.sqlalchemydb import CouponsAlchemyDB
+from lib.utils import make_api_call, create_success_response, create_error_response, get_utc_timezone_unaware_date_object
 
 logger = logging.getLogger(__name__)
 
@@ -265,16 +264,6 @@ def fetch_location_dict(area_id):
     return True, location_dict, None
 
 
-def fetch_user_details(customer_id):
-    user_info_url = USERFROMMOBILEURL + str(customer_id) + '/'
-    headers = {
-        'Authorization': TOKEN
-    }
-    response_list = make_api_call([user_info_url], headers=headers)
-    response = response_list[0]
-    return get_user_details(response)
-
-
 def fetch_order_detail(args):
     # custom implementation for askmegrocery, this method has to be
     # re-written to integrate with other sites' services
@@ -342,7 +331,7 @@ def get_criteria_kwargs(data):
             rule_criteria_kwargs[keys[0]] = criteria.get(keys[0])
             if blacklist_criteria.get(keys[0]):
                 rule_blacklist_criteria_kwargs[keys[0]] = blacklist_criteria.get(keys[0])
-
+    from api.v1.rule_criteria import RuleCriteria
     rule_criteria = RuleCriteria(**rule_criteria_kwargs)
     rule_blacklist_criteria = RuleCriteria(**rule_blacklist_criteria_kwargs)
     freebie_benefit_list = list()
@@ -368,6 +357,17 @@ def get_criteria_kwargs(data):
     }
     benefits = Benefits(**benefit_criteria_kwargs)
     return rule_criteria, rule_blacklist_criteria, benefits
+
+
+def fetch_user_details(order):
+    customer_id = order.customer_id
+    user_info_url = USERFROMMOBILEURL + str(customer_id) + '/'
+    headers = {
+        'Authorization': TOKEN
+    }
+    response_list = make_api_call([user_info_url], headers=headers)
+    response = response_list[0]
+    return get_user_details(response)
 
 
 def save_auto_freebie_from_voucher(voucher, db=None):

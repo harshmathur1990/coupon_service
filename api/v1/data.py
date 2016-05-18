@@ -21,7 +21,7 @@ class OrderData(object):
         self.city = kwargs.get('city')  # treated as list for same reason above
         self.area = kwargs.get('area')
         self.zone = kwargs.get('zone')  # list
-        self.channel = kwargs.get('channel')
+        self.channel = kwargs.get('channels')
         self.items = kwargs.get('items')  # list of instances of VerificationItemData
         self.source = kwargs.get('source')
         self.total_price = 0.0
@@ -31,3 +31,4 @@ class OrderData(object):
         self.existing_vouchers = list()
         self.can_accommodate_new_vouchers = True
         self.failed_vouchers = list()
+        self.matching_criteria_total = 0.0
