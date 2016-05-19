@@ -212,7 +212,7 @@ def fetch_items(subscription_id_list, item_map):
         for data in data_list:
             key = GROCERY_ITEM_KEY + u'{}'.format(data.get('itemid'))
             cache.set(key, data, ex=GROCERY_CACHE_TTL)
-            for item in item_map.get(data.get('itemid')):
+            for item in item_map.get(u'{}'.format(data.get('itemid'))):
                 item_id = item.get('item_id')
                 quantity = item.get('quantity')
                 item_dict = dict()
@@ -274,7 +274,7 @@ def fetch_order_detail(args):
     for item in args.get('products', list()):
         subscription_id_set.add(item.get('subscription_id'))
         item_dict = {
-            'item_id': item.get('subscription_id'),
+            'item_id': item.get('item_id'),
             'quantity': item.get('quantity')
         }
         subscription_to_item_list = item_map.get(item.get('subscription_id'), list())

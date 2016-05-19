@@ -31,10 +31,10 @@ class RuleCriteria(object):
     ]
 
     match_attributes = [
-        ('cart_range_min', 'total_price', match_less_than, None),
-        ('cart_range_max', 'total_price', match_greater_than, None),
-        ('range_min', 'matching_criteria_total', match_less_than, None),
-        ('range_max', 'matching_criteria_total', match_greater_than, None),
+        ('cart_range_min', 'total_price', match_greater_than_equal_to, None),
+        ('cart_range_max', 'total_price', match_less_than_equal_to, None),
+        ('range_min', 'matching_criteria_total', match_greater_than_equal_to, None),
+        ('range_max', 'matching_criteria_total', match_less_than_equal_to, None),
     ]
 
     def __init__(self, **kwargs):
@@ -176,8 +176,9 @@ class RuleCriteria(object):
             return False, None, u'No matching items found for this coupon {}'.format(voucher.code)
 
         for criteria_attr, order_attr, method, callback in self.match_attributes:
-            if getattr(self, criteria_attr) and method(getattr(self, criteria_attr), getattr(order, order_attr)):
-                return False, None, u'This voucher {} is not valid'.format(voucher.code)
+            if getattr(self, criteria_attr):
+                if not method(getattr(self, criteria_attr), getattr(order, order_attr)):
+                    return False, None, u'This voucher {} is not valid'.format(voucher.code)
 
         return True, {'total': order.matching_criteria_total, 'item_id_list': item_id_list}, None
 

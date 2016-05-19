@@ -2624,7 +2624,7 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(data.get('success'), response.data)
         self.assertTrue(len(data.get('benefits')) == 1, response.data)
-        self.assertTrue(data.get('benefits')[0]['items'] == ["3", "2"], response.data)
+        self.assertTrue(data.get('benefits')[0]['items'] == ["3", "2"] or data.get('benefits')[0]['items'] == [ "2", "3"], response.data)
 
     def test_update_to_date_backward_compatible(self):
         # All the freebies created are of overlapping ranges, but at a time only one will be active
