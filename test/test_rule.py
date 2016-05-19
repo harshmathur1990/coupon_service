@@ -1,5 +1,3 @@
-import binascii
-import copy
 import datetime
 import json
 import unittest
@@ -88,7 +86,8 @@ class CreateRule(unittest.TestCase):
                         len(data.get('data', dict()).get('success_list', list())) is 2, response.data)
         test1code1_voucher = Vouchers.find_one('TEST1CODE1')
         voucher_rule_list = test1code1_voucher.get_rule()
-        rule_list = create_rule_list(rule_create_data)
+        from api.v1.utils import get_criteria_kwargs
+        rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
                 test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
@@ -713,7 +712,8 @@ class CreateRule(unittest.TestCase):
                         len(data.get('data', dict()).get('success_list', list())) is 2, response.data)
         test1code1_voucher = Vouchers.find_one('TEST1CODE1')
         voucher_rule_list = test1code1_voucher.get_rule()
-        rule_list = create_rule_list(rule_create_data)
+        from api.v1.utils import get_criteria_kwargs
+        rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
                 test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
@@ -768,12 +768,12 @@ class CreateRule(unittest.TestCase):
                                     headers=headers, content_type='application/json')
         data = json.loads(response.data)
         order_data = {
-            "area_id": 29557,
+            "area_id": "29557",
             "customer_id": "1234",
             "channel": 0,
             "products": [
                 {
-                    "item_id": 1,
+                    "item_id": "1",
                     "quantity": 1
                 },
             ]
@@ -833,13 +833,13 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
                                     content_type='application/json')
         order_data = {
-            "area_id": 29557,
+            "area_id": "29557",
             "order_id": "32323",
             "customer_id": "1234",
             "channel": 0,
             "products": [
                 {
-                    "item_id": 1,
+                    "item_id": "1",
                     "quantity": 1
                 },
             ],
@@ -1511,18 +1511,19 @@ class CreateRule(unittest.TestCase):
                         len(data.get('data', dict()).get('success_list', list())) is 1, response.data)
         test1code1_voucher = Vouchers.find_one('TEST1CODE1')
         voucher_rule_list = test1code1_voucher.get_rule()
-        rule_list = create_rule_list(rule_create_data)
+        from api.v1.utils import get_criteria_kwargs
+        rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
                 test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
                     rule_create_data, test_rule.__dict__))
         order_data = {
-            "area_id": 29557,
+            "area_id": "29557",
             "customer_id": "1234",
             "channel": 0,
             "products": [
                 {
-                    "item_id": 1,
+                    "item_id": "1",
                     "quantity": 1
                 },
             ],
@@ -1536,12 +1537,12 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(data.get('success'), response.data)
         self.assertTrue(len(data.get('benefits')) == 2, response.data)
         order_data = {
-            "area_id": 29557,
+            "area_id": "29557",
             "customer_id": "1234",
             "channel": 0,
             "products": [
                 {
-                    "item_id": 1,
+                    "item_id": "1",
                     "quantity": 1
                 },
             ],
@@ -1557,13 +1558,13 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(len(data.get('benefits')) == 2, response.data)
         self.assertTrue(data.get('error', dict()).get('error') == u'The voucher INVALIDCOUPON does not exist', response.data)
         order_data = {
-            "area_id": 29557,
+            "area_id": "29557",
             "customer_id": "1234",
             "channel": 0,
             "products": [
                 {
-                    "item_id": 1,
-                    "quantity": 1
+                    "item_id": "1",
+                    "quantity": "1"
                 },
             ],
             "coupon_codes": ["TEST1CODE1", "INVALIDCOUPON", "TEST1CODE67"],
@@ -1770,12 +1771,12 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
                                     content_type='application/json')
         order_data = {
-            "area_id": 29557,
+            "area_id": "29557",
             "customer_id": "9831314343",
             "channel": 0,
             "products": [
                 {
-                    "item_id": 1,
+                    "item_id": "1",
                     "quantity": 3
                 },
             ],
@@ -1788,16 +1789,16 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(data.get('benefits')[0]['prorated_discount'] < data.get('benefits')[0]['max_discount'], response.data)
         self.assertTrue(data.get('products')[0]['discount'] == data.get('benefits')[0]['prorated_discount'], response.data)
         order_data = {
-            "area_id": 29557,
+            "area_id": "29557",
             "customer_id": "9831314343",
             "channel": 0,
             "products": [
                 {
-                    "item_id": 1,
+                    "item_id": "1",
                     "quantity": 10
                 },
                  {
-                    "item_id": 2,
+                    "item_id": "2",
                     "quantity": 10
                 },
             ],
@@ -1859,16 +1860,16 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
                                     content_type='application/json')
         order_data = {
-            "area_id": 29557,
+            "area_id": "29557",
             "customer_id": "9831314343",
             "channel": 0,
             "products": [
                 {
-                    "item_id": 1,
+                    "item_id": "1",
                     "quantity": 10
                 },
                  {
-                    "item_id": 2,
+                    "item_id": "2",
                     "quantity": 10
                 },
             ],
@@ -1881,16 +1882,16 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(data.get('benefits')[0]['flat_discount'] == 300, response.data)
         order_data = {
             "order_id": "AGTEST",
-            "area_id": 29557,
+            "area_id": "29557",
             "customer_id": "9831314343",
             "channel": 0,
             "products": [
                 {
-                    "item_id": 1,
+                    "item_id": "1",
                     "quantity": 10
                 },
                  {
-                    "item_id": 2,
+                    "item_id": "2",
                     "quantity": 10
                 },
             ],
@@ -1995,12 +1996,12 @@ class CreateRule(unittest.TestCase):
                                     content_type='application/json')
         #print response.data
         order_data = {
-            "area_id": 29557,
+            "area_id": "29557",
             "customer_id": "1234",
             "channel": 0,
             "products": [
                 {
-                    "item_id": 1,
+                    "item_id": "1",
                     "quantity": 3
                 },
             ],
@@ -2083,12 +2084,12 @@ class CreateRule(unittest.TestCase):
                                     content_type='application/json')
         #print response.data
         order_data = {
-            "area_id": 29557,
+            "area_id": "29557",
             "customer_id": "1234",
             "channel": 0,
             "products": [
                 {
-                    "item_id": 1,
+                    "item_id": "1",
                     "quantity": 3
                 },
             ],
@@ -2595,24 +2596,24 @@ class CreateRule(unittest.TestCase):
                                     content_type='application/json')
         self.assertTrue(response.status_code == 200, response.data)
         order_data = {
-            "area_id": 29557,
+            "area_id": "29557",
             "customer_id": "1234",
             "channel": 0,
             "products": [
                 {
-                    "item_id": 2,
+                    "item_id": "2",
                     "quantity": 5
                 },
                 {
-                    "item_id": 3,
+                    "item_id": "3",
                     "quantity": 5
                 },
                 {
-                    "item_id": 4,
+                    "item_id": "4",
                     "quantity": 5
                 },
                 {
-                    "item_id": 5,
+                    "item_id": "5",
                     "quantity": 5
                 },
             ],
@@ -2623,7 +2624,7 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(data.get('success'), response.data)
         self.assertTrue(len(data.get('benefits')) == 1, response.data)
-        self.assertTrue(data.get('benefits')[0]['items'] == [2,3], response.data)
+        self.assertTrue(data.get('benefits')[0]['items'] == ["3", "2"], response.data)
 
     def test_update_to_date_backward_compatible(self):
         # All the freebies created are of overlapping ranges, but at a time only one will be active

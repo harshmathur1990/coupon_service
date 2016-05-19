@@ -9,12 +9,14 @@ import sqlalchemy
 from rule import Rule
 from src.enums import VoucherTransactionStatus, VoucherType
 from src.sqlalchemydb import CouponsAlchemyDB
+from config import method_dict
 
 
 logger = logging.getLogger()
 
 
 class Vouchers(object):
+
     def __init__(self, **kwargs):
         # instantiate this class with a helper function
         id = kwargs.get('id')  # id should be uuid.uuid1().hex
@@ -109,7 +111,16 @@ class Vouchers(object):
         else:
             return Vouchers.get_active_voucher(code, db)
 
-    def update_to_date_single(self, to_date, db, validity_period_exclusive_for_benefit_voucher_callback=None):
+    def update_to_date_single(self, to_date, db):
+        validity_period_exclusive_for_benefit_voucher_callback = getattr(
+            importlib.import_module(
+                method_dict.get('check_auto_benefit_exclusivity')['package']),
+            method_dict.get('check_auto_benefit_exclusivity')['attribute'])
+        save_auto_benefits_from_voucher = getattr(
+            importlib.import_module(
+                method_dict.get(
+                    'save_auto_benefits_from_voucher')['package']),
+            method_dict.get('save_auto_benefits_from_voucher')['attribute'])
         now = datetime.datetime.utcnow()
         from src.rules.utils import is_auto_benefit_voucher
         if self.to_date < now < to_date:
@@ -121,21 +132,15 @@ class Vouchers(object):
             # else insert rows in both the tables while updating all_vouchers
             self.to_date = to_date
             if is_auto_benefit_voucher(self.type):
-                if validity_period_exclusive_for_benefit_voucher_callback:
-                    success, error_list = validity_period_exclusive_for_benefit_voucher_callback(self, db)
-                    if not success:
-                        return False, error_list
+                success, error_list = validity_period_exclusive_for_benefit_voucher_callback(self, db)
+                if not success:
+                    return False, error_list
                 # insert values in auto freebie table
                 # first cyclic import of the code!!!
                 auto_freebie_dict = db.find_one("auto_benefits", **{'voucher_id': self.id_bin})
                 if auto_freebie_dict:
                     db.update_row("auto_benefits", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
                 else:
-                    from config import method_dict
-                    save_auto_benefits_from_voucher = getattr(
-                        importlib.import_module(
-                            method_dict.get('save_auto_benefits_from_voucher')['package']),
-                        method_dict.get('save_auto_benefits_from_voucher')['attribute'])
                     save_auto_benefits_from_voucher(self, db)
             voucher_dict = db.find_one("vouchers", **{'id': self.id_bin})
             if voucher_dict:
@@ -149,10 +154,9 @@ class Vouchers(object):
             # Hence just update all_vouchers and in case of freebies, update there as well
             self.to_date = to_date
             if is_auto_benefit_voucher(self.type):
-                if validity_period_exclusive_for_benefit_voucher_callback:
-                    success, error_list = validity_period_exclusive_for_benefit_voucher_callback(self, db)
-                    if not success:
-                        return False, error_list
+                success, error_list = validity_period_exclusive_for_benefit_voucher_callback(self, db)
+                if not success:
+                    return False, error_list
             db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
             db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
             if self.type is not VoucherType.regular_coupon.value:
@@ -180,7 +184,7 @@ class Vouchers(object):
             return False, [u'Unknown Error, Please contact tech support']
         return True, None
 
-    def update_to_date(self, to_date, db, validity_period_exclusive_for_benefit_voucher_callback=None):
+    def update_to_date(self, to_date, db):
         now = datetime.datetime.now()
         if now < to_date <= self.from_date:
             return False, [u'to date cannot be less than from date']
@@ -198,12 +202,12 @@ class Vouchers(object):
             if to_date >= existing_voucher.from_date:
                 # overlapping intervals
                 return False, [u'Voucher to_date clashes with another voucher with same code']
-        return self.update_to_date_single(to_date, db, validity_period_exclusive_for_benefit_voucher_callback)
+        return self.update_to_date_single(to_date, db)
 
-    def update(self, update_dict, db, callback=None):
+    def update(self, update_dict, db):
         update_dict['id'] = self.id_bin
         if 'to' in update_dict:
-            success, error_list = self.update_to_date(update_dict.get('to'), db, callback)
+            success, error_list = self.update_to_date(update_dict.get('to'), db)
             if not success:
                 return False, error_list
             del update_dict['to']

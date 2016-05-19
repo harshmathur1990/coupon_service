@@ -21,7 +21,7 @@ class OrderData(object):
         self.city = kwargs.get('city')  # treated as list for same reason above
         self.area = kwargs.get('area')
         self.zone = kwargs.get('zone')  # list
-        self.channel = kwargs.get('channels')
+        self.channel = kwargs.get('channel')
         self.items = kwargs.get('items')  # list of instances of VerificationItemData
         self.source = kwargs.get('source')
         self.total_price = 0.0

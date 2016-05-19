@@ -1,5 +1,4 @@
 import datetime
-import importlib
 import json
 import logging
 import uuid
@@ -147,15 +146,9 @@ def save_vouchers(args, rule_id_list):
     return success_list, error_list
 
 
-def create_rule_object(data, user_id=None):
+def create_rule_object(data, user_id=None, get_criteria_kwargs=None):
     description = data.get('description')
-    from config import method_dict
-    get_rule_criteria_blacklist_criteria_and_benefits = getattr(
-        importlib.import_module(
-            method_dict.get('get_rule_criteria_blacklist_criteria_and_benefits')['package']),
-        method_dict.get('get_rule_criteria_blacklist_criteria_and_benefits')['attribute'])
-
-    rule_criteria, rule_blacklist_criteria, benefits = get_rule_criteria_blacklist_criteria_and_benefits(data)
+    rule_criteria, rule_blacklist_criteria, benefits = get_criteria_kwargs(data)
     id = uuid.uuid1().hex
     rule = Rule(id=id, description=description, blacklist_criteria_json=rule_blacklist_criteria.canonical_json(),
                 criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
@@ -163,15 +156,15 @@ def create_rule_object(data, user_id=None):
     return rule
 
 
-def create_rule_list(args):
+def create_rule_list(args, get_criteria_kwargs):
     rule_list = list()
     for rule in args.get('rules', list()):
-        rule_list.append(create_rule_object(rule, args.get('user_id')))
+        rule_list.append(create_rule_object(rule, args.get('user_id'), get_criteria_kwargs))
     return rule_list
 
 
-def create_and_save_rule_list(args):
-    rule_list = create_rule_list(args)
+def create_and_save_rule_list(args, get_criteria_kwargs):
+    rule_list = create_rule_list(args, get_criteria_kwargs)
     return save_rule_list(rule_list), rule_list
 
 
@@ -219,12 +212,7 @@ def update_coupon(coupon, update_dict):
         if not success:
             db.rollback()
             return False, error
-        from config import method_dict
-        callback = getattr(
-            importlib.import_module(
-                method_dict.get('check_auto_benefit_exclusivity')['package']),
-            method_dict.get('check_auto_benefit_exclusivity')['attribute'])
-        success, error_list = voucher.update(update_dict, db, callback)
+        success, error_list = voucher.update(update_dict, db)
         if not success:
             db.rollback()
             return False, u','.join(error_list)

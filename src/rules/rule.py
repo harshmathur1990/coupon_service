@@ -9,9 +9,34 @@ from config import method_dict
 logger = logging.getLogger()
 
 
+class Benefits(object):
+    def __init__(self, **kwargs):
+        self.max_discount = kwargs.get('max_discount', kwargs.get('maximum_discount', None))
+        self.data = kwargs.get('data', list())
+        self.data.sort()
+
+    def __eq__(self, other) :
+        return self.__dict__ == other.__dict__
+
+    def canonical_json(self):
+        return canonicaljson.encode_canonical_json(self.__dict__)
+
+
+class BenefitsData(object):
+    def __init__(self, **kwargs):
+        self.type = kwargs.get('type')
+        self.value = kwargs.get('value')
+        if self.type == BenefitType.freebie.value:
+            self.value.sort()
+
+
 class Rule(object):
 
     def __init__(self, **kwargs):
+        rule_criteria_class = getattr(
+            importlib.import_module(
+                method_dict.get('criteria_class')['package']),
+            method_dict.get('criteria_class')['attribute'])
         # instantiate this class with a helper function
         id = kwargs.get('id')  # id should be uuid.uuid1().hex
         self.id = id
@@ -33,16 +58,10 @@ class Rule(object):
         self.updated_at = kwargs.get('updated_at')
         if not self.criteria_obj:
             criteria_dict = canonicaljson.json.loads(self.criteria_json)
-            self.criteria_obj = getattr(
-                importlib.import_module(
-                    method_dict.get('criteria_class')['package']),
-                method_dict.get('criteria_class')['attribute'])(**criteria_dict)
+            self.criteria_obj = rule_criteria_class(**criteria_dict)
         if not self.blacklist_criteria_obj and self.blacklist_criteria_json is not None:
             blacklist_criteria_dict = canonicaljson.json.loads(self.blacklist_criteria_json)
-            self.blacklist_criteria_obj = getattr(
-                importlib.import_module(
-                    method_dict.get('criteria_class')['package']),
-                method_dict.get('criteria_class')['attribute'])(**blacklist_criteria_dict)
+            self.blacklist_criteria_obj = rule_criteria_class(**blacklist_criteria_dict)
         if not self.benefits_obj:
             benefits_dict = canonicaljson.json.loads(self.benefits_json)
             self.benefits_obj = Benefits(**benefits_dict)
@@ -142,24 +161,3 @@ class Rule(object):
         self.blacklist_items(order, voucher.code)
 
         return self.criteria_obj.match(order, voucher)
-
-
-class Benefits(object):
-    def __init__(self, **kwargs):
-        self.max_discount = kwargs.get('max_discount', kwargs.get('maximum_discount', None))
-        self.data = kwargs.get('data', list())
-        self.data.sort()
-
-    def __eq__(self, other) :
-        return self.__dict__ == other.__dict__
-
-    def canonical_json(self):
-        return canonicaljson.encode_canonical_json(self.__dict__)
-
-
-class BenefitsData(object):
-    def __init__(self, **kwargs):
-        self.type = kwargs.get('type')
-        self.value = kwargs.get('value')
-        if self.type == BenefitType.freebie.value:
-            self.value.sort()

@@ -498,13 +498,13 @@ def apply_coupon_v2():
 
         'customer_id': fields.Str(required=True, location='json'),
 
-        'area_id': fields.Int(required=True, location='json'),
+        'area_id': fields.Str(required=True, location='json'),
 
         'products': fields.List(
             fields.Nested(
                 {
-                    'subscription_id': fields.Int(required=False),
-                    'item_id': fields.Int(validate=validate.Range(min=1), required=True),
+                    'subscription_id': fields.Str(required=False),
+                    'item_id': fields.Str(validate=validate.Range(min=1), required=True),
                     'quantity': fields.Int(validate=validate.Range(min=1), required=True),
                     'coupon_codes': fields.List(
                         fields.Str(),
@@ -627,13 +627,13 @@ def check_coupon_v2():
 
         'customer_id': fields.Str(required=True, location='json'),
 
-        'area_id': fields.Int(required=True, location='json'),
+        'area_id': fields.Str(required=True, location='json'),
 
         'products': fields.List(
             fields.Nested(
                 {
-                    'subscription_id': fields.Int(required=False),
-                    'item_id': fields.Int(validate=validate.Range(min=0), required=True),
+                    'subscription_id': fields.Str(required=False),
+                    'item_id': fields.Str(required=True),
                     'quantity': fields.Int(validate=validate.Range(min=1), required=True),
                     'coupon_codes': fields.List(
                         fields.Str(),
