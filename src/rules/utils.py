@@ -287,12 +287,6 @@ def is_validity_period_exclusive_for_voucher_code(voucher, db=None):
     return True, None
 
 
-def is_auto_benefit_voucher(type):
-    if type is VoucherType.auto_freebie.value or type is VoucherType.regular_freebie.value:
-        return True
-    return False
-
-
 def make_transaction_log_entry(args):
     success, error = VoucherTransactionLog.make_transaction_log_entry(args)
     if not success:

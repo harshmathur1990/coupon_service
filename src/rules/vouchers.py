@@ -122,7 +122,6 @@ class Vouchers(object):
                     'save_auto_benefits_from_voucher')['package']),
             method_dict.get('save_auto_benefits_from_voucher')['attribute'])
         now = datetime.datetime.utcnow()
-        from src.rules.utils import is_auto_benefit_voucher
         if self.to_date < now < to_date:
             # voucher has expired and I am setting date of future,
             # i.e. re-enabling the voucher
@@ -131,7 +130,7 @@ class Vouchers(object):
             # or auto_benefits table
             # else insert rows in both the tables while updating all_vouchers
             self.to_date = to_date
-            if is_auto_benefit_voucher(self.type):
+            if self.is_auto_benefit_voucher():
                 success, error_list = validity_period_exclusive_for_benefit_voucher_callback(self, db)
                 if not success:
                     return False, error_list
@@ -153,7 +152,7 @@ class Vouchers(object):
             # voucher has not expired and the request is to extend the end date further
             # Hence just update all_vouchers and in case of freebies, update there as well
             self.to_date = to_date
-            if is_auto_benefit_voucher(self.type):
+            if self.is_auto_benefit_voucher():
                 success, error_list = validity_period_exclusive_for_benefit_voucher_callback(self, db)
                 if not success:
                     return False, error_list
@@ -360,10 +359,10 @@ class Vouchers(object):
         voucher = Vouchers(**voucher_dict)
         return voucher
 
-    # def update_cache(self):
-    #     voucher = Vouchers.find_one(self.id)
-    #     voucher_key = VOUCHERS_KEY + self.code
-    #     cache.set(voucher_key, voucher)
+    def is_auto_benefit_voucher(self):
+        if self.type is VoucherType.auto_freebie.value or self.type is VoucherType.regular_freebie.value:
+            return True
+        return False
 
 
 class VoucherTransactionLog(object):
