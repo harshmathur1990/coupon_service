@@ -1,5 +1,6 @@
 class VerificationItemData(object):
     def __init__(self, **kwargs):
+        self.item_id = kwargs.get('item_id')
         self.brand = kwargs.get('brand')
         self.category = kwargs.get('category') # will be a list
         self.product = kwargs.get('product')
@@ -30,3 +31,4 @@ class OrderData(object):
         self.existing_vouchers = list()
         self.can_accommodate_new_vouchers = True
         self.failed_vouchers = list()
+        self.matching_criteria_total = 0.0

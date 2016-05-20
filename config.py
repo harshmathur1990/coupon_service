@@ -1,13 +1,17 @@
 import os
 import yaml
+import importlib
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+client = os.getenv('CLIENT') or 'grocery'
+if client not in ['pay', 'grocery']:
+    assert False, u'Client is not provided'
 env = os.getenv('HOSTENV') or 'development'
 if env not in ['development', 'staging', 'test', 'production']:
     assert False, 'Only development, staging and test environments are supported. Found HOSTENV = '.format(env)
 
-config_file = basedir + '/config/' + env + '.yml'
+config_file = basedir + '/config/' + client + '/' + env + '.yml'
 
 with open(config_file, 'r') as f:
     CONFIG = yaml.safe_load(f)
@@ -27,3 +31,7 @@ LOCATIONURL = CONFIG["informationhosturl"] + CONFIG["locationendpoint"]
 USERINFOURL = CONFIG["informationhosturl"] + CONFIG["userendpoint"]
 USERFROMMOBILEURL = CONFIG["informationhosturl"]+CONFIG["userfromphoneendpoint"]
 TOKEN = CONFIG["token"]
+
+module_name = 'client_method_dict' + '.' + client
+module = importlib.import_module(module_name)
+method_dict = getattr(module, 'method_dict')

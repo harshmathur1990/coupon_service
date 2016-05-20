@@ -1,20 +1,22 @@
 import binascii
-import logging
-import uuid
 import copy
 import datetime
-import sqlalchemy
 import json
-from data import OrderData
+import logging
+import importlib
+import uuid
+import sqlalchemy
 from rule import Rule
 from src.enums import VoucherTransactionStatus, VoucherType
 from src.sqlalchemydb import CouponsAlchemyDB
+from config import method_dict
 
 
 logger = logging.getLogger()
 
 
 class Vouchers(object):
+
     def __init__(self, **kwargs):
         # instantiate this class with a helper function
         id = kwargs.get('id')  # id should be uuid.uuid1().hex
@@ -39,7 +41,7 @@ class Vouchers(object):
         rule_id_list = self.rules.split(',')
         rules_list = list()
         for rule_id in rule_id_list:
-            rule = Rule.find_one(rule_id, db=None)
+            rule = Rule.find_one(rule_id, db)
             rules_list.append(rule)
         self.rules_list = rules_list
         return rules_list
@@ -110,28 +112,35 @@ class Vouchers(object):
             return Vouchers.get_active_voucher(code, db)
 
     def update_to_date_single(self, to_date, db):
+        validity_period_exclusive_for_benefit_voucher_callback = getattr(
+            importlib.import_module(
+                method_dict.get('check_auto_benefit_exclusivity')['package']),
+            method_dict.get('check_auto_benefit_exclusivity')['attribute'])
+        save_auto_benefits_from_voucher = getattr(
+            importlib.import_module(
+                method_dict.get(
+                    'save_auto_benefits_from_voucher')['package']),
+            method_dict.get('save_auto_benefits_from_voucher')['attribute'])
         now = datetime.datetime.utcnow()
         if self.to_date < now < to_date:
             # voucher has expired and I am setting date of future,
             # i.e. re-enabling the voucher
             # need to check if the freebie clashes with some existing.
             # Also update if the voucher already exists in voucher table
-            # or auto_freebie_search table
+            # or auto_benefits table
             # else insert rows in both the tables while updating all_vouchers
             self.to_date = to_date
-            if self.type is not VoucherType.regular_coupon.value:
-                from src.rules.utils import is_validity_period_exclusive_for_freebie_vouchers
-                success, error_list = is_validity_period_exclusive_for_freebie_vouchers(self, db)
+            if self.is_auto_benefit_voucher():
+                success, error_list = validity_period_exclusive_for_benefit_voucher_callback(self, db)
                 if not success:
                     return False, error_list
                 # insert values in auto freebie table
                 # first cyclic import of the code!!!
-                auto_freebie_dict = db.find_one("auto_freebie_search", **{'voucher_id': self.id_bin})
+                auto_freebie_dict = db.find_one("auto_benefits", **{'voucher_id': self.id_bin})
                 if auto_freebie_dict:
-                    db.update_row("auto_freebie_search", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
+                    db.update_row("auto_benefits", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
                 else:
-                    from utils import save_auto_freebie_from_voucher
-                    save_auto_freebie_from_voucher(self, db)
+                    save_auto_benefits_from_voucher(self, db)
             voucher_dict = db.find_one("vouchers", **{'id': self.id_bin})
             if voucher_dict:
                 db.update_row("vouchers", "id", id=self.id_bin, to=self.to_date)
@@ -143,19 +152,18 @@ class Vouchers(object):
             # voucher has not expired and the request is to extend the end date further
             # Hence just update all_vouchers and in case of freebies, update there as well
             self.to_date = to_date
-            if self.type is not VoucherType.regular_coupon.value:
-                from src.rules.utils import is_validity_period_exclusive_for_freebie_vouchers
-                success, error_list = is_validity_period_exclusive_for_freebie_vouchers(self, db)
+            if self.is_auto_benefit_voucher():
+                success, error_list = validity_period_exclusive_for_benefit_voucher_callback(self, db)
                 if not success:
                     return False, error_list
             db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
             db.update_row("vouchers", "id", to=self.to_date, id=self.id_bin)
             if self.type is not VoucherType.regular_coupon.value:
-                db.update_row("auto_freebie_search", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
+                db.update_row("auto_benefits", "voucher_id", voucher_id=self.id_bin, to_date=self.to_date)
             Vouchers.fetch_active_voucher(self.code, db)
         elif to_date < now < self.to_date:
             # The voucher has not expired but request wants to expire the voucher
-            # Go ahead delete rows from vouchers and auto_freebie_search
+            # Go ahead delete rows from vouchers and auto_benefits
             # and update to=now in all_vouchers
             # expire request
             self.delete(db)
@@ -166,7 +174,7 @@ class Vouchers(object):
             Vouchers.fetch_active_voucher(self.code, db)
         elif to_date < now and self.to_date < now:
             # Its a request to expire a voucher which has already expired.
-            # go ahead and delete it if it exists in vouchers and auto_freebie_search table
+            # go ahead and delete it if it exists in vouchers and auto_benefits table
             self.delete(db)
             Vouchers.fetch_active_voucher(self.code, db)
         else:
@@ -264,7 +272,6 @@ class Vouchers(object):
         return False
 
     def match(self, order):
-        assert isinstance(order, OrderData)
         rules = self.get_rule()
         if not self.is_coupon_valid_with_existing_coupon(order):
             failed_dict = {
@@ -277,18 +284,7 @@ class Vouchers(object):
         voucher_match = False
         failed_rule_list = list()
         for rule in rules:
-            status = rule.check_usage(order.customer_id, self.id_bin)
-            if not status.get('success', False):
-                failed_voucher = copy.deepcopy(self)
-                failed_voucher.rules_list = [rule]
-                failed_dict = {
-                    'voucher': failed_voucher,
-                    'error': u'Voucher {} has expired'.format(self.code)
-                }
-                failed_rule_list.append(failed_dict)
-                # continue
-                break
-            success, data, error = rule.match(order, self.code)
+            success, data, error = rule.match(order, self)
             if not success:
                 failed_voucher = copy.deepcopy(self)
                 failed_voucher.rules_list = [rule]
@@ -303,7 +299,7 @@ class Vouchers(object):
             success_dict = {
                 'voucher': effectiveVoucher,
                 'total': data.get('total'),
-                'subscription_id_list': data.get('subscription_id_list')
+                'item_id_list': data.get('item_id_list')
             }
             order.existing_vouchers.append(success_dict)
             voucher_match = True
@@ -351,7 +347,7 @@ class Vouchers(object):
             db = CouponsAlchemyDB()
         db.delete_row_in_transaction("vouchers", **{'id': self.id_bin})
         if self.type is not VoucherType.regular_coupon.value:
-            db.delete_row_in_transaction("auto_freebie_search", **{'voucher_id': self.id_bin})
+            db.delete_row_in_transaction("auto_benefits", **{'voucher_id': self.id_bin})
 
     @staticmethod
     def from_dict(voucher_dict):
@@ -363,10 +359,10 @@ class Vouchers(object):
         voucher = Vouchers(**voucher_dict)
         return voucher
 
-    # def update_cache(self):
-    #     voucher = Vouchers.find_one(self.id)
-    #     voucher_key = VOUCHERS_KEY + self.code
-    #     cache.set(voucher_key, voucher)
+    def is_auto_benefit_voucher(self):
+        if self.type is VoucherType.auto_freebie.value or self.type is VoucherType.regular_freebie.value:
+            return True
+        return False
 
 
 class VoucherTransactionLog(object):
@@ -475,7 +471,5 @@ class VoucherTransactionLog(object):
             db.rollback()
             success = False
             error = u'Unknown error'
-        # else:
-        #     db.commit()
 
         return success, error

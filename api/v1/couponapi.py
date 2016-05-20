@@ -3,20 +3,18 @@ import logging
 import werkzeug
 from flask import request
 from lib.decorator import jsonify, check_login
-from lib.utils import length_validator, get_utc_timezone_unaware_date_object, create_error_response,\
+from lib.utils import length_validator, create_error_response,\
     create_success_response, is_valid_schedule_object, is_valid_duration_string, handle_unprocessable_entity
-from src.enums import *
-from src.rules.vouchers import VoucherTransactionLog, Vouchers
-from src.rules.utils import apply_benefits, create_and_save_rule_list, update_keys_in_input_list,\
-    save_vouchers, fetch_auto_benefits, fetch_order_response, get_benefits_new
-from src.rules.validate import validate_coupon, validate_for_create_coupon,\
-    validate_for_create_voucher
+from src.enums import VoucherType, Channels, SchedulerType
+from src.rules.utils import apply_benefits, update_keys_in_input_list,\
+    fetch_order_response, get_benefits_new, make_transaction_log_entry
+from api.v1.utils import fetch_auto_benefits, fetch_order_detail, create_regular_coupon, fetch_coupon
+from src.rules.validate import validate_coupon
 from webargs import fields, validate
 from webargs.flaskparser import parser
 from api import voucher_api, voucher_api_v_1_1
 from validate import validate_for_create_api_v1, validate_for_update
-from utils import create_freebie_coupon
-from src.rules.rule import RuleCriteria, Benefits
+from utils import create_freebie_coupon, create_failed_api_response
 
 logger = logging.getLogger(__name__)
 
@@ -410,30 +408,14 @@ def create_voucher():
     if not success:
         return create_error_response(400, error)
 
-    # general validations
-    success, error = validate_for_create_coupon(args)
-
-    if not success:
-        return create_error_response(400, error)
+    # # general validations
+    # success, error = validate_for_create_coupon(args)
+    #
+    # if not success:
+    #     return create_error_response(400, error)
 
     if args.get('type') is VoucherType.regular_coupon.value:
-        rule_id_list, rule_list = create_and_save_rule_list(args)
-        assert(len(rule_list) == len(rule_id_list))
-        if not rule_id_list:
-            return create_error_response(400, u'Unknown Exception')
-
-        args['from'] = get_utc_timezone_unaware_date_object(args.get('from'))
-        args['to'] = get_utc_timezone_unaware_date_object(args.get('to'))
-
-        success, error = validate_for_create_voucher(args)
-        if not success:
-            return create_error_response(400, error)
-
-        success_list, error_list = save_vouchers(args, rule_id_list)
-
-        for s in success_list:
-            del s['id']
-        return create_success_response(success_list, error_list)
+        return create_regular_coupon(args)
     else:
         success, data, error = create_freebie_coupon(args)
         if not success:
@@ -455,12 +437,7 @@ def confirm_order():
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
-    success, error = VoucherTransactionLog.make_transaction_log_entry(args)
-    if not success:
-        rv = create_error_response(400, error)
-    else:
-        rv = {'success': success}
-    return rv
+    return make_transaction_log_entry(args)
 
 
 @voucher_api.route('/update', methods=['PUT', 'POST'])
@@ -508,86 +485,7 @@ def get_coupon():
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
-    success_list = list()
-    error_list = list()
-    coupon_codes = args.get('coupon_codes')
-    for coupon_code in coupon_codes:
-        voucher_list = Vouchers.find_all_by_code(coupon_code)
-        if not voucher_list:
-            error_dict = {
-                'code': coupon_code,
-                'error': u'Voucher code {} not found'.format(coupon_code)
-            }
-            error_list.append(error_dict)
-            continue
-        for voucher in voucher_list:
-            # voucher = Vouchers.find_one(coupon_code)
-            # if not voucher:
-            #     error_dict = {
-            #         'code': coupon_code,
-            #         'error': u'Voucher code {} not found'.format(coupon_code)
-            #     }
-            #     error_list.append(error_dict)
-            #     continue
-            voucher_dict = dict()
-            rules = list()
-            voucher.get_rule()
-            for rule in voucher.rules_list:
-                criteria_obj = rule.criteria_obj
-                assert isinstance(criteria_obj, RuleCriteria)
-                rule_dict = dict()
-                criteria = dict()
-                benefits = dict()
-                location_dict = dict()
-                rule_dict['description'] = rule.description
-                criteria['no_of_uses_allowed_per_user'] = criteria_obj.usage['no_of_uses_allowed_per_user']
-                criteria['no_of_total_uses_allowed'] = criteria_obj.usage['no_of_total_uses_allowed']
-                criteria['range_min'] = criteria_obj.range_min
-                criteria['range_max'] = criteria_obj.range_max
-                criteria['cart_range_min'] = criteria_obj.cart_range_min
-                criteria['cart_range_max'] = criteria_obj.cart_range_max
-                criteria['channels'] = criteria_obj.channels
-                criteria['brands'] = criteria_obj.brands
-                criteria['products'] = criteria_obj.products
-                criteria['categories'] = criteria_obj.categories
-                criteria['storefronts'] = criteria_obj.storefronts
-                criteria['variants'] = criteria_obj.variants
-                criteria['sellers'] = criteria_obj.sellers
-                location_dict['country'] = criteria_obj.country
-                location_dict['state'] = criteria_obj.state
-                location_dict['city'] = criteria_obj.city
-                location_dict['area'] = criteria_obj.area
-                location_dict['zone'] = criteria_obj.zone
-                criteria['location'] = location_dict
-                criteria['valid_on_order_no'] = criteria_obj.valid_on_order_no
-                criteria['payment_modes'] = criteria_obj.payment_modes
-                benefits_obj = rule.benefits_obj
-                assert isinstance(benefits_obj, Benefits)
-                benefits['max_discount'] = benefits_obj.max_discount
-                for data in benefits_obj.data:
-                    type = BenefitType(data.get('type'))
-                    if type is BenefitType.amount:
-                        benefits['amount'] = data.get('value')
-                    elif type is BenefitType.percentage:
-                        benefits['percentage'] = data.get('value')
-                    else:
-                        benefits['freebies'] = [data.get('value')]
-                if not benefits.get('freebies'):
-                    benefits['freebies'] = [[]]
-                rule_dict['criteria'] = criteria
-                rule_dict['benefits'] = benefits
-                rules.append(rule_dict)
-            voucher_dict['rules'] = rules
-            voucher_dict['description'] = voucher.description
-            voucher_dict['from'] = voucher.from_date.isoformat()
-            voucher_dict['to'] = voucher.to_date.isoformat()
-            voucher_dict['code'] = voucher.code
-            voucher_dict['user_id'] = voucher.created_by
-            voucher_dict['type'] = voucher.type
-            voucher_dict['custom'] = voucher.custom
-            voucher_dict['schedule'] = voucher.schedule
-            success_list.append(voucher_dict)
-    return create_success_response(success_list, error_list)
+    return fetch_coupon(args)
 
 
 @voucher_api_v_1_1.route('/apply', methods=['POST'])
@@ -600,12 +498,13 @@ def apply_coupon_v2():
 
         'customer_id': fields.Str(required=True, location='json'),
 
-        'area_id': fields.Int(required=True, location='json'),
+        'area_id': fields.Str(required=True, location='json'),
 
         'products': fields.List(
             fields.Nested(
                 {
-                    'item_id': fields.Int(validate=validate.Range(min=0), required=True),
+                    'subscription_id': fields.Str(validate=validate.Length(min=1), required=False),
+                    'item_id': fields.Str(validate=validate.Length(min=1), required=True),
                     'quantity': fields.Int(validate=validate.Range(min=1), required=True),
                     'coupon_codes': fields.List(
                         fields.Str(),
@@ -657,57 +556,65 @@ def apply_coupon_v2():
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
+    for product in args.get('products'):
+        product['subscription_id'] = product['item_id']
+
     order_exists, benefits_given = fetch_order_response(args)
     if order_exists:
         return benefits_given
-    success, order, error = validate_coupon(args, validate_for_apply=True)
-    if success:
-        if order.failed_vouchers:
-            voucher_success = False
-        else:
-            voucher_success = True
-        # coupon is valid, try applying it
-        benefits = get_benefits_new(order)
-        benefits['success'] = voucher_success
-        benefits['errors'] = error
-        if not voucher_success:
-            benefits['error'] = {
-                'code': 400,
-                'error': ','.join(error)
-            }
-        else:
-            benefits_applied, http_code, error = apply_benefits(args, order, benefits)
-            if not benefits_applied:
-                # hopefully it will never happen,
-                # if it happens then only I will know what went wrong
-                benefits['error'] = {
-                    'code': http_code,
-                    'error': error
-                }
-                benefits['errors'] = [error]
-                benefits['success'] = False
-        return benefits
-    products = list()
-    for product in args.get('products'):
-        product_dict = dict()
-        product_dict['itemid'] = product.get('item_id')
-        product_dict['quantity'] = product.get('quantity')
-        product_dict['discount'] = 0.0
-        products.append(product_dict)
-    else:
-        return {
+
+    success, order, error_list = fetch_order_detail(args)
+
+    if not success:
+        products = list()
+        for product in args.get('products'):
+            product_dict = dict()
+            product_dict['itemid'] = product.get('item_id')
+            product_dict['quantity'] = product.get('quantity')
+            product_dict['discount'] = 0.0
+            products.append(product_dict)
+        rv = {
             'success': False,
             'error': {
                 'code': 503,
-                'error': ','.join(error)
+                'error': ','.join(error_list)
             },
             'products': products,
             'freebies': [],
             'totalDiscount': 0.0,
             'channel': [],
             'paymentModes': [],
-            'errors': error
+            'errors': error_list
         }
+        return rv
+
+    success, error_list = validate_coupon(args.get('coupon_codes', list()), order, validate_for_apply=True)
+
+    if order.failed_vouchers:
+        voucher_success = False
+    else:
+        voucher_success = True
+    # coupon is valid, try applying it
+    benefits = get_benefits_new(order)
+    benefits['success'] = voucher_success
+    benefits['errors'] = error_list
+    if not voucher_success:
+        benefits['error'] = {
+            'code': 400,
+            'error': ','.join(error_list)
+        }
+    else:
+        benefits_applied, http_code, error = apply_benefits(args, order, benefits)
+        if not benefits_applied:
+            # hopefully it will never happen,
+            # if it happens then only I will know what went wrong
+            benefits['error'] = {
+                'code': http_code,
+                'error': error
+            }
+            benefits['errors'] = [error]
+            benefits['success'] = False
+    return benefits
 
 
 @voucher_api_v_1_1.route('/check', methods=['POST'])
@@ -720,12 +627,13 @@ def check_coupon_v2():
 
         'customer_id': fields.Str(required=True, location='json'),
 
-        'area_id': fields.Int(required=True, location='json'),
+        'area_id': fields.Str(required=True, location='json'),
 
         'products': fields.List(
             fields.Nested(
                 {
-                    'item_id': fields.Int(validate=validate.Range(min=0), required=True),
+                    'subscription_id': fields.Str(validate=validate.Length(min=1), required=False),
+                    'item_id': fields.Str(validate=validate.Length(min=1), required=True),
                     'quantity': fields.Int(validate=validate.Range(min=1), required=True),
                     'coupon_codes': fields.List(
                         fields.Str(),
@@ -779,42 +687,31 @@ def check_coupon_v2():
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
-    success, order, error = validate_coupon(args)
-
-    if success:
-        if order.failed_vouchers:
-            voucher_success = False
-        else:
-            voucher_success = True
-        # coupon is valid, try applying it
-        fetch_auto_benefits(order, VoucherType.regular_freebie)
-        fetch_auto_benefits(order, VoucherType.auto_freebie)
-        benefits = get_benefits_new(order)
-        benefits['success'] = voucher_success
-        benefits['errors'] = error
-        if not voucher_success:
-            benefits['error'] = {
-                'code': 400,
-                'error': ','.join(error)
-            }
-        return benefits
-    products = list()
     for product in args.get('products'):
-        product_dict = dict()
-        product_dict['itemid'] = product.get('item_id')
-        product_dict['quantity'] = product.get('quantity')
-        product_dict['discount'] = 0.0
-        products.append(product_dict)
-    return {
-        'success': False,
-        'error': {
-            'code': 503,
-            'error': ','.join(error)
-        },
-        'products': products,
-        'freebies': [],
-        'totalDiscount': 0.0,
-        'channel': [],
-        'paymentModes': [],
-        'errors': error
-    }
+        product['subscription_id'] = product['item_id']
+
+    success, order, error_list = fetch_order_detail(args)
+
+    if not success:
+        return create_failed_api_response(args, error_list)
+
+    success, error_list = validate_coupon(args.get('coupon_codes', list()), order)
+    if not success:
+        return create_failed_api_response(args, error_list)
+
+    if order.failed_vouchers:
+        voucher_success = False
+    else:
+        voucher_success = True
+
+    fetch_auto_benefits(order, VoucherType.regular_freebie)
+    fetch_auto_benefits(order, VoucherType.auto_freebie)
+    benefits = get_benefits_new(order)
+    benefits['success'] = voucher_success
+    benefits['errors'] = error_list
+    if not voucher_success:
+        benefits['error'] = {
+            'code': 400,
+            'error': ','.join(error_list)
+        }
+    return benefits
