@@ -114,11 +114,15 @@ class RuleCriteria(object):
 
         for criteria_attr, item_attr, method, callback in self.item_attributes:
             if method is match_in_not_in:
-                if getattr(self, criteria_attr)['in'] or getattr(self, criteria_attr)['not_in']:
-                    if method(getattr(self, criteria_attr), getattr(item, item_attr)):
-                        found_matching = True
-                    else:
-                        return MatchStatus.found_not_matching
+                # This method must check if the in component is present than criteria must satisfy the in component
+                # and if the not in criteria is present, the value must not match not in criteria, it should set
+                # found_matching as true if above happens, rest all cases
+                # it should return MatchStatus.found_not_matching
+                status = method(getattr(self, criteria_attr), getattr(item, item_attr))
+                if status is MatchStatus.found_not_matching:
+                    return MatchStatus.found_not_matching
+                elif status is MatchStatus.found_matching:
+                    found_matching = True
             else:
                 if getattr(self, criteria_attr):
                     if method(getattr(self, criteria_attr), getattr(item, item_attr)):

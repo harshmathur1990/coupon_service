@@ -1,6 +1,6 @@
 from lib.utils import get_intersection_of_lists
 from lib.exceptions import UserNotFoundException
-
+from src.enums import MatchStatus
 
 # All match methods accept first arguments as rule criteria and second as value to match
 # (can be a order object in case of callback), Other optional argument can be a callback function
@@ -48,11 +48,21 @@ def match_user_order_no(valid_on_order_no, order, fetch_user_order_detail_callba
 
 
 def match_in_not_in(criteria, value):
-    if (criteria['in'] and get_intersection_of_lists(criteria['in'], value)) \
-            or (criteria['not_in'] and not get_intersection_of_lists(criteria['not_in'], value)):
-        return True
-    else:
-        return False
+    found_matching = MatchStatus.not_found
+
+    if criteria['in']:
+        if get_intersection_of_lists(criteria['in'], value):
+            found_matching = MatchStatus.found_matching
+        else:
+            return MatchStatus.found_not_matching
+    if criteria['not_in']:
+        if get_intersection_of_lists(criteria['not_in'], value):
+            return MatchStatus.found_not_matching
+        else:
+            found_matching = MatchStatus.found_matching
+
+    return found_matching
+
 
 def match_greater_than(criteria, value):
     if value > criteria:

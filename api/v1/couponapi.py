@@ -503,8 +503,8 @@ def apply_coupon_v2():
         'products': fields.List(
             fields.Nested(
                 {
-                    'subscription_id': fields.Str(required=False),
-                    'item_id': fields.Str(validate=validate.Range(min=1), required=True),
+                    'subscription_id': fields.Str(validate=validate.Length(min=1), required=False),
+                    'item_id': fields.Str(validate=validate.Length(min=1), required=True),
                     'quantity': fields.Int(validate=validate.Range(min=1), required=True),
                     'coupon_codes': fields.List(
                         fields.Str(),
@@ -632,8 +632,8 @@ def check_coupon_v2():
         'products': fields.List(
             fields.Nested(
                 {
-                    'subscription_id': fields.Str(required=False),
-                    'item_id': fields.Str(required=True),
+                    'subscription_id': fields.Str(validate=validate.Length(min=1), required=False),
+                    'item_id': fields.Str(validate=validate.Length(min=1), required=True),
                     'quantity': fields.Int(validate=validate.Range(min=1), required=True),
                     'coupon_codes': fields.List(
                         fields.Str(),
