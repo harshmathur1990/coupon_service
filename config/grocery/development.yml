@@ -15,6 +15,9 @@ ruleredis:
     port: 6379
     db: 0
 
+kafka:
+  host: localhost:9092
+
 informationhosturl: http://uatadmin.api.askmegrocery.com
 
 subscriptionendpoint: /item/
