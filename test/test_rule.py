@@ -716,8 +716,8 @@ class CreateRule(unittest.TestCase):
         rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
-                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
-                    rule_create_data, test_rule.__dict__))
+                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {}'.format(
+                    test_rule.criteria_obj.__dict__,  test_rule.benefits_obj.__dict__, created_rule.criteria_obj.__dict__,  created_rule.benefits_obj.__dict__))
 
     def test_check_auto_freebie(self):
         values = {

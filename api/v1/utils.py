@@ -340,17 +340,25 @@ def get_criteria_kwargs(data):
         freebie_dict['type'] = BenefitType.freebie.value
         freebie_dict['value'] = freebie
         freebie_benefit_list.append(freebie_dict)
-    amount_benefit = {
-        'type': BenefitType.amount.value,
-        'value': benefits.get('amount')
-    }
-    percentage_benefit = {
-        'type': BenefitType.percentage.value,
-        'value': benefits.get('percentage')
-    }
     benefit_list = freebie_benefit_list
-    benefit_list.append(amount_benefit)
-    benefit_list.append(percentage_benefit)
+    if benefits.get('amount') == 0:
+        cashback_benefit = {
+            'type': BenefitType.cashback.value,
+            'value': '?'
+        }
+        benefit_list.append(cashback_benefit)
+    if benefits.get('amount'):
+        amount_benefit = {
+            'type': BenefitType.amount.value,
+            'value': benefits.get('amount')
+        }
+        benefit_list.append(amount_benefit)
+    if benefits.get('percentage'):
+        percentage_benefit = {
+            'type': BenefitType.percentage.value,
+            'value': benefits.get('percentage')
+        }
+        benefit_list.append(percentage_benefit)
     benefit_criteria_kwargs = {
         'max_discount': benefits.get('max_discount'),
         'data': benefit_list

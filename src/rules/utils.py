@@ -331,6 +331,8 @@ def get_benefits_new(order):
                 else:
                     if benefit_type is BenefitType.amount and benefit['value']:
                         flat_discount = benefit['value']
+                    if benefit_type is BenefitType.cashback and benefit['value']:
+                        flat_discount = 0 if benefit['value'] == '?' else benefit['value']
                     elif benefit_type is BenefitType.percentage and benefit['value']:
                         percentage = benefit['value']
                         percentage_discount = percentage * total / 100

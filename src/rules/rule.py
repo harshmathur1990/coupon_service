@@ -6,6 +6,8 @@ import canonicaljson
 from src.enums import BenefitType, MatchStatus
 from src.sqlalchemydb import CouponsAlchemyDB
 from config import method_dict
+import copy
+
 logger = logging.getLogger()
 
 
@@ -19,6 +21,8 @@ class Benefits(object):
         return self.__dict__ == other.__dict__
 
     def canonical_json(self):
+        self_dict = copy.deepcopy(self.__dict__)
+
         return canonicaljson.encode_canonical_json(self.__dict__)
 
 
@@ -125,6 +129,7 @@ class Rule(object):
     def __eq__(self, other):
         if self.criteria_obj == other.criteria_obj and \
                 self.benefits_obj == other.benefits_obj:
+
             return True
         return False
 
