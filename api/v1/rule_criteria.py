@@ -1,8 +1,8 @@
 import canonicaljson
-from api.v1.data import VerificationItemData
+from data import VerificationItemData
 from src.enums import UseType, MatchStatus
 from src.sqlalchemydb import CouponsAlchemyDB
-from api.v1.utils import fetch_user_details
+from utils import fetch_user_details
 from src.rules.match_utils import match_list_intersection_atleast_one_common, \
     match_value_in_list, match_user_order_no, match_in_not_in, match_greater_than, \
     match_less_than, match_greater_than_equal_to, match_less_than_equal_to

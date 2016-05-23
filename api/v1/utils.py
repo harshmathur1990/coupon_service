@@ -3,17 +3,17 @@ import datetime
 import json
 import logging
 
-from api.v1.data import VerificationItemData, OrderData
+from constants import GROCERY_ITEM_KEY, GROCERY_CACHE_TTL, GROCERY_LOCATION_KEY
 from config import SUBSCRIPTIONURL, TOKEN, LOCATIONURL, USERFROMMOBILEURL
+from data import VerificationItemData, OrderData
 from lib import cache
+from lib.utils import make_api_call, create_success_response, create_error_response, get_utc_timezone_unaware_date_object
 from src.enums import VoucherType, BenefitType
-from src.rules.constants import GROCERY_ITEM_KEY, GROCERY_CACHE_TTL, GROCERY_LOCATION_KEY
 from src.rules.rule import Benefits
 from src.rules.utils import create_rule_object, save_vouchers, create_and_save_rule_list
 from src.rules.validate import validate_for_create_voucher
 from src.rules.vouchers import Vouchers
 from src.sqlalchemydb import CouponsAlchemyDB
-from lib.utils import make_api_call, create_success_response, create_error_response, get_utc_timezone_unaware_date_object
 
 logger = logging.getLogger(__name__)
 
@@ -331,7 +331,7 @@ def get_criteria_kwargs(data):
             rule_criteria_kwargs[keys[0]] = criteria.get(keys[0])
             if blacklist_criteria.get(keys[0]):
                 rule_blacklist_criteria_kwargs[keys[0]] = blacklist_criteria.get(keys[0])
-    from api.v1.rule_criteria import RuleCriteria
+    from rule_criteria import RuleCriteria
     rule_criteria = RuleCriteria(**rule_criteria_kwargs)
     rule_blacklist_criteria = RuleCriteria(**rule_blacklist_criteria_kwargs)
     freebie_benefit_list = list()
