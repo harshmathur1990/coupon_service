@@ -31,6 +31,7 @@ LOCATIONURL = CONFIG["informationhosturl"] + CONFIG["locationendpoint"]
 USERINFOURL = CONFIG["informationhosturl"] + CONFIG["userendpoint"]
 USERFROMMOBILEURL = CONFIG["informationhosturl"]+CONFIG["userfromphoneendpoint"]
 TOKEN = CONFIG["token"]
+MIGRATIONS_DIRECTORY = CONFIG["migrationsdirectory"]
 
 module_name = 'client_method_dict' + '.' + client
 module = importlib.import_module(module_name)
