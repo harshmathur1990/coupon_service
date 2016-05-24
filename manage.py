@@ -8,7 +8,7 @@ from flask_migrate import Migrate, MigrateCommand
 from src.sqlalchemydb import CouponsAlchemyDB
 
 if config.env and config.env in ['production', 'staging']:
-    newrelic_cfg_file = os.path.join(os.getcwd(), "conf", u'newrelic-{}.ini'.format(config.env))
+    newrelic_cfg_file = os.path.join(os.getcwd(), "conf", u'newrelic-{}-{}.ini'.format(config.env, config.client))
     newrelic.agent.initialize(newrelic_cfg_file)
 
 app = create_app()
