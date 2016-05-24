@@ -12,7 +12,7 @@ def create_app():
     app.url_map.converters['hex'] = HexConverter
     app.url_map.converters['list'] = ListConverter
     if client == 'new_grocery':
-        app.register_blueprint(grocery_voucher_api, url_prefix='/vouchers/grocery')
+        app.register_blueprint(grocery_voucher_api, url_prefix='/vouchers/grocery/v1')
     else:
         app.register_blueprint(rule_api, url_prefix='/rules')
         app.register_blueprint(voucher_api, url_prefix='/vouchers/v1')

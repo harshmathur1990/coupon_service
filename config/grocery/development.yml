@@ -4,7 +4,6 @@ mysql:
     connection: mysql+pymysql://root:root@localhost/coupons
 
 logfile:
-    foldername: couponlogs
     logfilename: CouponService.out
     errorlogfilename: CouponServiceError.log
 

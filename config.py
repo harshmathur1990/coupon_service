@@ -4,7 +4,7 @@ import importlib
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-client = os.getenv('CLIENT') or 'grocery'
+client = os.getenv('CLIENT')
 if client not in ['pay', 'grocery', 'new_grocery']:
     assert False, u'Client is not provided'
 env = os.getenv('HOSTENV') or 'development'
@@ -15,14 +15,14 @@ config_file = basedir + '/config/' + client + '/' + env + '.yml'
 
 with open(config_file, 'r') as f:
     CONFIG = yaml.safe_load(f)
-APP_NAME = 'grocery_coupon_service'
-BASE_DIR = '/var/log'
+APP_NAME = client+'_coupon_service'
+BASE_DIR = '/var/log/couponlogs'
 if env == 'development':
     BASE_DIR = '/tmp'
 DATABASE_URL = CONFIG["mysql"]["connection"]
-LOG_DIR = BASE_DIR + os.sep + client + os.sep + CONFIG["logfile"]["foldername"]
-LOG_FILE = LOG_DIR + os.sep + client + os.sep + CONFIG["logfile"]["logfilename"]
-LOG_FILE_ERROR = BASE_DIR + os.sep + CONFIG["logfile"]["foldername"] + os.sep + client + os.sep + CONFIG["logfile"]["errorlogfilename"]
+LOG_DIR = BASE_DIR + os.sep + client
+LOG_FILE = LOG_DIR + os.sep + CONFIG["logfile"]["logfilename"]
+LOG_FILE_ERROR = LOG_DIR + os.sep + CONFIG["logfile"]["errorlogfilename"]
 RULESREDISHOST = CONFIG["ruleredis"]["host"]
 RULESREDISPORT = CONFIG["ruleredis"]["port"]
 RULESREDISDB = CONFIG["ruleredis"]["db"]

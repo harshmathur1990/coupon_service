@@ -176,11 +176,11 @@ def create_voucher():
 
                             'location': fields.Nested(
                                 {
-                                    'country': fields.List(
-                                        fields.Int(
-                                            validate=validate.Range(min=0)
-                                        ), required=False, missing=list()
-                                    ),
+                                    # 'country': fields.List(
+                                    #     fields.Int(
+                                    #         validate=validate.Range(min=0)
+                                    #     ), required=False, missing=list()
+                                    # ),
                                     'state': fields.List(
                                         fields.Int(
                                             validate=validate.Range(min=0)
@@ -313,11 +313,11 @@ def create_voucher():
 
                             'location': fields.Nested(
                                 {
-                                    'country': fields.List(
-                                        fields.Int(
-                                            validate=validate.Range(min=0)
-                                        ), required=False, missing=list()
-                                    ),
+                                    # 'country': fields.List(
+                                    #     fields.Int(
+                                    #         validate=validate.Range(min=0)
+                                    #     ), required=False, missing=list()
+                                    # ),
                                     'state': fields.List(
                                         fields.Int(
                                             validate=validate.Range(min=0)
@@ -485,7 +485,7 @@ def get_coupon():
 @voucher_api.route('/apply', methods=['POST'])
 @jsonify
 @check_login
-def apply_coupon_v2():
+def apply_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     apply_coupon_args = {
         'order_id': fields.Str(required=True, location='json'),
@@ -614,7 +614,7 @@ def apply_coupon_v2():
 @voucher_api.route('/check', methods=['POST'])
 @jsonify
 @check_login
-def check_coupon_v2():
+def check_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     check_coupon_args = {
         'order_id': fields.Str(required=False, location='json'),
