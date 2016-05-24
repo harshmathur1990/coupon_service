@@ -118,10 +118,9 @@ class RuleCriteria(object):
                 # and if the not in criteria is present, the value must not match not in criteria, it should set
                 # found_matching as true if above happens, rest all cases
                 # it should return MatchStatus.found_not_matching
-                try:
-                    status = method(getattr(self, criteria_attr), getattr(item, item_attr))
-                except Exception as e:
-                    import ipdb; ipdb.set_trace()
+
+                status = method(getattr(self, criteria_attr), getattr(item, item_attr))
+
                 if status is MatchStatus.found_not_matching:
                     return MatchStatus.found_not_matching
                 elif status is MatchStatus.found_matching:

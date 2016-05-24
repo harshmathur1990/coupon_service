@@ -214,18 +214,15 @@ def fetch_items(subscription_id_list, item_map):
             data['storefront'] = storefront_list
             key = GROCERY_ITEM_KEY + u'{}'.format(raw_data.get('id'))
             cache.set(key, data, ex=GROCERY_CACHE_TTL)
-            try:
-                for item in item_map.get(u'{}'.format(raw_data.get('id'))):
-                    item_id = item.get('item_id')
-                    quantity = item.get('quantity')
-                    item_dict = copy.deepcopy(data)
-                    item_dict['quantity'] = quantity
-                    item_dict['subscription_id'] = raw_data.get('id')
-                    item_dict['item_id'] = item_id
-                    item_obj = VerificationItemData(**item_dict)
-                    item_list.append(item_obj)
-            except Exception as e:
-                import ipdb;ipdb.set_trace()
+            for item in item_map.get(u'{}'.format(raw_data.get('id'))):
+                item_id = item.get('item_id')
+                quantity = item.get('quantity')
+                item_dict = copy.deepcopy(data)
+                item_dict['quantity'] = quantity
+                item_dict['subscription_id'] = raw_data.get('id')
+                item_dict['item_id'] = item_id
+                item_obj = VerificationItemData(**item_dict)
+                item_list.append(item_obj)
 
     return True, item_list, None
 
@@ -296,11 +293,11 @@ def fetch_order_detail(args):
 
     success, items, error = fetch_items(list(subscription_id_set), item_map)
     if not success:
-        return False, None, error
+        return False, None, [error]
 
     success, location_dict, error = fetch_location_dict(area_id)
     if not success:
-        return False, None, error
+        return False, None, [error]
 
     order_data_dict = dict()
     order_data_dict.update(location_dict)
