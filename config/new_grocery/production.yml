@@ -1,7 +1,7 @@
 port: 8000
 
 mysql:
-    connection: mysql+pymysql://grocery:grocery1234@grocery.c0wj8qdslqom.ap-southeast-1.rds.amazonaws.com:3306/grocery
+    connection: mysql+pymysql://grocery:grocery1234@grocery.c0wj8qdslqom.ap-southeast-1.rds.amazonaws.com:3306/new_grocery_coupons
 
 logfile:
     logfilename: CouponService.out
