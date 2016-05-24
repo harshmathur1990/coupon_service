@@ -5,7 +5,7 @@ import importlib
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 client = os.getenv('CLIENT') or 'grocery'
-if client not in ['pay', 'grocery']:
+if client not in ['pay', 'grocery', 'new_grocery']:
     assert False, u'Client is not provided'
 env = os.getenv('HOSTENV') or 'development'
 if env not in ['development', 'staging', 'test', 'production']:
@@ -20,18 +20,26 @@ BASE_DIR = '/var/log'
 if env == 'development':
     BASE_DIR = '/tmp'
 DATABASE_URL = CONFIG["mysql"]["connection"]
-LOG_DIR = BASE_DIR + os.sep + CONFIG["logfile"]["foldername"]
-LOG_FILE = LOG_DIR + os.sep + CONFIG["logfile"]["logfilename"]
-LOG_FILE_ERROR = BASE_DIR + os.sep + CONFIG["logfile"]["foldername"] + os.sep + CONFIG["logfile"]["errorlogfilename"]
+LOG_DIR = BASE_DIR + os.sep + client + os.sep + CONFIG["logfile"]["foldername"]
+LOG_FILE = LOG_DIR + os.sep + client + os.sep + CONFIG["logfile"]["logfilename"]
+LOG_FILE_ERROR = BASE_DIR + os.sep + CONFIG["logfile"]["foldername"] + os.sep + client + os.sep + CONFIG["logfile"]["errorlogfilename"]
 RULESREDISHOST = CONFIG["ruleredis"]["host"]
 RULESREDISPORT = CONFIG["ruleredis"]["port"]
 RULESREDISDB = CONFIG["ruleredis"]["db"]
-SUBSCRIPTIONURL = CONFIG["informationhosturl"] + CONFIG["subscriptionendpoint"]
-LOCATIONURL = CONFIG["informationhosturl"] + CONFIG["locationendpoint"]
-USERINFOURL = CONFIG["informationhosturl"] + CONFIG["userendpoint"]
-USERFROMMOBILEURL = CONFIG["informationhosturl"]+CONFIG["userfromphoneendpoint"]
-TOKEN = CONFIG["token"]
 MIGRATIONS_DIRECTORY = CONFIG["migrationsdirectory"]
+
+if client == 'grocery':
+    SUBSCRIPTIONURL = CONFIG["informationhosturl"] + CONFIG["subscriptionendpoint"]
+    LOCATIONURL = CONFIG["informationhosturl"] + CONFIG["locationendpoint"]
+    USERINFOURL = CONFIG["informationhosturl"] + CONFIG["userendpoint"]
+    USERFROMMOBILEURL = CONFIG["informationhosturl"]+CONFIG["userfromphoneendpoint"]
+    TOKEN = CONFIG["token"]
+
+if client == 'new_grocery':
+    SUBSCRIPTIONURL = CONFIG["subscriptionendpoint"]
+    SUBSCRIPTIONHEADERS = CONFIG["subscriptionheaders"]
+    LOCATIONURL = CONFIG["locationendpoint"]
+    USERINFOURL = CONFIG["userendpoint"]
 
 module_name = 'client_method_dict' + '.' + client
 module = importlib.import_module(module_name)

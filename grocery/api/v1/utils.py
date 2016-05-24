@@ -2,7 +2,7 @@ import binascii
 import datetime
 import json
 import logging
-
+import copy
 from constants import GROCERY_ITEM_KEY, GROCERY_CACHE_TTL, GROCERY_LOCATION_KEY
 import config
 from data import VerificationItemData, OrderData
@@ -147,10 +147,10 @@ def generate_auto_freebie():
 def get_user_details(response):
     # returns the order no of the user
     try:
-        data_list = json.loads(response.text)
-        if not data_list:
+        data = json.loads(response.text)
+        if not data:
             return False, None, u'User Does not exist'
-        return True, data_list[0]['ordercount'], None
+        return True, data['data']['count'], None
     except Exception as e:
         logger.exception(e)
         return False, None, u'Unable to fetch User details'
@@ -171,14 +171,7 @@ def fetch_items(subscription_id_list, item_map):
             for item in item_map.get(subscription_id):
                 item_id = item.get('item_id')
                 quantity = item.get('quantity')
-                item_dict = dict()
-                item_dict['brand'] = subscription_dict.get('brandid')
-                item_dict['category'] = [subscription_dict.get('categoryid')]
-                item_dict['product'] = [subscription_dict.get('productid')]
-                item_dict['seller'] = subscription_dict.get('sellerid')
-                item_dict['storefront'] = subscription_dict.get('storefront')
-                item_dict['variant'] = subscription_dict.get('variantid')
-                item_dict['price'] = subscription_dict.get('offerprice')
+                item_dict = copy.deepcopy(subscription_dict)
                 item_dict['quantity'] = quantity
                 item_dict['subscription_id'] = subscription_id
                 item_dict['item_id'] = item_id
@@ -188,44 +181,68 @@ def fetch_items(subscription_id_list, item_map):
             to_fetch_subscription_list.append(subscription_id)
 
     if to_fetch_subscription_list:
-        subscription_id_list_str = ','.join(u'{}'.format(v) for v in to_fetch_subscription_list)
+        to_fetch_subscription_list = [int(to_fetch_item_id) for to_fetch_item_id in to_fetch_subscription_list]
 
-        item_url = config.SUBSCRIPTIONURL + subscription_id_list_str + '/'
-
-        headers = {
-            'Authorization': config.TOKEN
+        body = {
+            "query": {
+                "type": ["grocery"],
+                "filters": {
+                    "id": to_fetch_subscription_list
+                },
+                "select": ["sellerId", "variantId", "productId", "categories", "storeFronts", "brandId"]
+            },
+            "count": len(to_fetch_subscription_list),
+            "offset": 0
         }
 
-        response = make_api_call(item_url, headers=headers)
+        response = make_api_call(config.SUBSCRIPTIONURL, method='POST', headers=config.SUBSCRIPTIONHEADERS, body=body)
 
         try:
-            data_list = json.loads(response.text)
+            response_data = json.loads(response.text)
         except Exception as e:
             logger.exception(e)
             return False, None, u'Unable to fetch Items'
 
-        if not isinstance(data_list, list) or len(data_list) != len(to_fetch_subscription_list):
-            return False, None, u'Invalid Item ids provided'
+        try:
+            count = response_data['results'][0]['items'][0]['count']
+            if count != len(to_fetch_subscription_list):
+                return False, None, u'Invalid Subscription Ids provided'
+            raw_data_list = response_data['results'][0]['items'][0]['items']
+        except Exception as e:
+            logger.exception(e)
+            logger.error(u'Invalid Response for items {} recieved {}'.format(to_fetch_subscription_list, response_data))
+            return False, None, u'Unknown Error. Please contact tech support'
 
-        for data in data_list:
-            key = GROCERY_ITEM_KEY + u'{}'.format(data.get('itemid'))
+        for raw_data in raw_data_list:
+            data = {
+                'variant': raw_data['variantId'],
+                'price': raw_data['offerPrice'],
+                'brand': raw_data['brandId'],
+                'product': [raw_data['productId']],
+                'seller': raw_data['sellerId']
+            }
+            category_list = list()
+            for category in raw_data['categories']:
+                category_list.append(category['id'])
+            data['category'] = category_list
+            storefront_list = list()
+            for storefront in raw_data['storeFronts']:
+                storefront_list.append(storefront['id'])
+            data['storefront'] = storefront_list
+            key = GROCERY_ITEM_KEY + u'{}'.format(raw_data.get('id'))
             cache.set(key, data, ex=GROCERY_CACHE_TTL)
-            for item in item_map.get(u'{}'.format(data.get('itemid'))):
-                item_id = item.get('item_id')
-                quantity = item.get('quantity')
-                item_dict = dict()
-                item_dict['brand'] = data.get('brandid')
-                item_dict['category'] = [data.get('categoryid')]
-                item_dict['product'] = [data.get('productid')]
-                item_dict['seller'] = data.get('sellerid')
-                item_dict['storefront'] = data.get('storefront')
-                item_dict['variant'] = data.get('variantid')
-                item_dict['price'] = data.get('offerprice')
-                item_dict['quantity'] = quantity
-                item_dict['subscription_id'] = data.get('itemid')
-                item_dict['item_id'] = item_id
-                item_obj = VerificationItemData(**item_dict)
-                item_list.append(item_obj)
+            try:
+                for item in item_map.get(u'{}'.format(raw_data.get('id'))):
+                    item_id = item.get('item_id')
+                    quantity = item.get('quantity')
+                    item_dict = copy.deepcopy(data)
+                    item_dict['quantity'] = quantity
+                    item_dict['subscription_id'] = raw_data.get('id')
+                    item_dict['item_id'] = item_id
+                    item_obj = VerificationItemData(**item_dict)
+                    item_list.append(item_obj)
+            except Exception as e:
+                import ipdb;ipdb.set_trace()
 
     return True, item_list, None
 
@@ -234,28 +251,43 @@ def fetch_location_dict(area_id):
     key = GROCERY_LOCATION_KEY+u'{}'.format(area_id)
     location_dict = cache.get(key)
     if not location_dict:
-        location_url = config.LOCATIONURL + str(area_id) + '/'
-        headers = {
-            'Authorization': config.TOKEN
-        }
-        response = make_api_call(location_url, headers=headers)
+        location_url = config.LOCATIONURL + str(area_id)
+        response = make_api_call(location_url)
 
         try:
-            data_list = json.loads(response.text)
+            raw_data = json.loads(response.text)
         except Exception as e:
             logger.exception(e)
             return False, None, u'Unable to fetch area details'
 
-        if not data_list:
+        if not raw_data.get('locations'):
             return False, None, u'Area Does not exist'
 
-        data = data_list[0]
-        location_dict = dict()
-        location_dict['area'] = data.get('areaid')
-        location_dict['country'] = [data.get('countryid')]
-        location_dict['state'] = [data.get('stateid')]
-        location_dict['city'] = [data.get('cityid')]
-        location_dict['zone'] = [data.get('zoneid')]
+        locations = raw_data.get('locations')
+
+        data = locations[0]
+
+        types = data['types']
+
+        if 'area' not in types:
+            return False, None, u'Not a valid Area Id'
+
+        location_dict = {
+            'area': area_id,
+            'state': list(),
+            'city': list(),
+            'pincode': list(),
+            'zone': list()
+        }
+        for container in data.get('containers'):
+            if 'state' in container['types']:
+                location_dict['state'].append(container['gid'])
+            if 'city' in container['types']:
+                location_dict['city'].append(container['gid'])
+            if 'zone' in container['types']:
+                location_dict['zone'].append(container['gid'])
+            if 'pincode' in container['types']:
+                location_dict['pincode'].append(container['gid'])
 
         cache.set(key, location_dict, ex=GROCERY_CACHE_TTL)
 
@@ -359,12 +391,8 @@ def get_criteria_kwargs(data):
 
 def fetch_user_details(order):
     customer_id = order.customer_id
-    user_info_url = config.USERFROMMOBILEURL + str(customer_id) + '/'
-    headers = {
-        'Authorization': config.TOKEN
-    }
-    response = make_api_call(user_info_url, headers=headers)
-
+    user_info_url = config.USERINFOURL + str(customer_id)
+    response = make_api_call(user_info_url)
     return get_user_details(response)
 
 

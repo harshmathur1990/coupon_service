@@ -1,0 +1,26 @@
+port: 8001
+
+mysql:
+    connection: mysql+pymysql://root:root@localhost/coupons
+
+logfile:
+    foldername: couponlogs
+    logfilename: CouponService.out
+    errorlogfilename: CouponServiceError.log
+
+debug: True
+
+ruleredis:
+    host: localhost
+    port: 6379
+    db: 0
+
+subscriptionendpoint: http://pyservice01.staging.askme.com:9070/v1/search
+
+subscriptionheaders: {Content-Type: application/json, Cache-Control: no-cache, Postman-Token: 24875de4-5190-db48-247b-79413af1cb94}
+
+locationendpoint: http://pyservice01.staging.askme.com:8080/geo/v2.0/get_by_gid?gids=
+
+userendpoint: http://pyservice01.staging.askme.com:9880/orderapi/v1/user/
+
+migrationsdirectory: new_grocery_migrations

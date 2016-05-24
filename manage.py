@@ -24,7 +24,7 @@ manager.add_command("db", MigrateCommand)
 def test(coverage=False):
     """Run the unit tests."""
     import unittest
-    tests = unittest.TestLoader().discover('test')
+    tests = unittest.TestLoader().discover('test_'+config.client)
     unittest.TextTestRunner(verbosity=2).run(tests)
 
 
