@@ -673,7 +673,9 @@ def check_coupon():
             location='json'
             ),
 
-        'source': fields.Str(required=False, missing=None, location='json')
+        'source': fields.Str(required=False, missing=None, location='json'),
+
+        'payment_mode': fields.Str(required=False, missing=None, location='json')
 
     }
     try:
