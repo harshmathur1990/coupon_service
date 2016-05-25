@@ -25,6 +25,7 @@ class OrderData(object):
         self.items = kwargs.get('items')  # list of instances of VerificationItemData
         self.source = kwargs.get('source')
         self.payment_mode = kwargs.get('payment_mode')
+        self.check_payment_mode = kwargs.get('check_payment_mode')
         self.total_price = 0.0
         for item in self.items:
             self.total_price += item.price * item.quantity

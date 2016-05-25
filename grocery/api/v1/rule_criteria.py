@@ -145,6 +145,8 @@ class RuleCriteria(object):
         for criteria_attr, order_attr, method, callback in self.criteria_attributes:
             if getattr(self, criteria_attr):
                 if not callback:
+                    if criteria_attr == 'payment_modes' and not order.check_payment_mode:
+                        continue
                     if method(getattr(self, criteria_attr), getattr(order, order_attr)):
                         found_matching = True
                     else:

@@ -2846,7 +2846,7 @@ class CreateRule(unittest.TestCase):
         }
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
-        self.assertTrue(response.status_code == 400, response.data)
+        self.assertTrue(response.status_code == 200, response.data)
         order_data = {
             "area_id": "87000",
             "customer_id": "1234",
@@ -2875,3 +2875,58 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         self.assertTrue(response.status_code == 200, response.data)
+        order_data = {
+            "area_id": "87000",
+            "customer_id": "1234",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": "1151594",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2007982",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2050125",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2050126",
+                    "quantity": 5
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"],
+            "payment_mode": "VISA"
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon', check_payment_mode=True), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 200, response.data)
+        order_data = {
+            "area_id": "87000",
+            "customer_id": "1234",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": "1151594",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2007982",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2050125",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2050126",
+                    "quantity": 5
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon', check_payment_mode=True), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 400, response.data)

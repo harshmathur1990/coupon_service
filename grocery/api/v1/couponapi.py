@@ -543,7 +543,11 @@ def apply_coupon():
             location='json'
             ),
 
-        'source': fields.Str(required=False, missing=None, location='json')
+        'source': fields.Str(required=False, missing=None, location='json'),
+
+        'payment_mode': fields.Str(required=False, missing=None, location='json'),
+
+        'check_payment_mode': fields.Bool(location='query', missing=False)
     }
     try:
         args = parser.parse(apply_coupon_args, request)
@@ -675,7 +679,9 @@ def check_coupon():
 
         'source': fields.Str(required=False, missing=None, location='json'),
 
-        'payment_mode': fields.Str(required=False, missing=None, location='json')
+        'payment_mode': fields.Str(required=False, missing=None, location='json'),
+
+        'check_payment_mode': fields.Bool(location='query', missing=False)
 
     }
     try:
