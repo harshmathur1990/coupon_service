@@ -18,6 +18,7 @@ class RuleCriteria(object):
         ('zone', 'zone', match_list_intersection_atleast_one_common, None),
         ('area', 'area', match_value_in_list, None),
         ('source', 'source', match_value_in_list, None),
+        ('payment_modes', 'payment_mode', match_value_in_list, None),
         ('valid_on_order_no', None, match_user_order_no, fetch_user_details)
     ]
 
@@ -144,6 +145,8 @@ class RuleCriteria(object):
         for criteria_attr, order_attr, method, callback in self.criteria_attributes:
             if getattr(self, criteria_attr):
                 if not callback:
+                    if criteria_attr == 'payment_modes' and not order.check_payment_mode:
+                        continue
                     if method(getattr(self, criteria_attr), getattr(order, order_attr)):
                         found_matching = True
                     else:

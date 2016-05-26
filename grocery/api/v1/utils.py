@@ -303,6 +303,8 @@ def fetch_order_detail(args):
     order_data_dict.update(location_dict)
     order_data_dict['channel'] = args.get('channel')
     order_data_dict['source'] = args.get('source')
+    order_data_dict['payment_mode'] = args.get('payment_mode')
+    order_data_dict['check_payment_mode'] = args.get('check_payment_mode')
     order_data_dict['items'] = items
     order_data_dict['customer_id'] = args.get('customer_id')
     order_data = OrderData(**order_data_dict)
