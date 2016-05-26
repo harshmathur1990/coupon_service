@@ -7,7 +7,8 @@ from datetime import timedelta
 import croniter
 from dateutil import parser
 
-from lib.utils import is_between, get_num_from_str, create_error_response, get_intersection_of_lists
+from lib.utils import is_between, get_num_from_str, create_error_response,\
+    get_intersection_of_lists, get_utc_timezone_unaware_date_object, create_success_response
 from rule import Rule
 from src.enums import *
 from src.enums import BenefitType, Channels
@@ -394,3 +395,25 @@ def get_benefits_new(order):
     response_dict['channel'] = channels_list
     response_dict['couponCodes'] = [existing_voucher['voucher'].code for existing_voucher in order.existing_vouchers]
     return response_dict
+
+
+def create_regular_voucher(args, get_criteria_kwargs_callback):
+    rule_id_list, rule_list = create_and_save_rule_list(args, get_criteria_kwargs_callback)
+    assert(len(rule_list) == len(rule_id_list))
+    if not rule_id_list:
+        return create_error_response(400, u'Unknown Exception')
+
+    args['from'] = get_utc_timezone_unaware_date_object(args.get('from'))
+    args['to'] = get_utc_timezone_unaware_date_object(args.get('to'))
+
+    from validate import validate_for_create_voucher
+
+    success, error = validate_for_create_voucher(args)
+    if not success:
+        return create_error_response(400, error)
+
+    success_list, error_list = save_vouchers(args, rule_id_list)
+
+    for s in success_list:
+        del s['id']
+    return create_success_response(success_list, error_list)

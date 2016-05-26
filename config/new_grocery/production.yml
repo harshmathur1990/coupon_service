@@ -1,0 +1,26 @@
+port: 8000
+
+mysql:
+    connection: mysql+pymysql://grocery:grocery1234@grocery.c0wj8qdslqom.ap-southeast-1.rds.amazonaws.com:3306/new_grocery_coupons
+
+logfile:
+    logfilename: CouponService.out
+    errorlogfilename: CouponServiceError.log
+
+debug: True
+
+ruleredis:
+    host: grocery.6h3jqd.0001.apse1.cache.amazonaws.com
+    port: 6379
+    db: 0
+
+
+subscriptionendpoint: http://pyservice01.staging.askme.com:9070/v1/search
+
+subscriptionheaders: {Content-Type: application/json}
+
+locationendpoint: http://pyservice01.staging.askme.com:8080/geo/v2.0/get_by_gid?gids=
+
+userendpoint: http://pyservice01.staging.askme.com:9880/orderapi/v1/user/
+
+migrationsdirectory: new_grocery_migrations

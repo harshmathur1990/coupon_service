@@ -4,7 +4,6 @@ mysql:
     connection: mysql+pymysql://coupon:coupon1234@coupon.c0wj8qdslqom.ap-southeast-1.rds.amazonaws.com/coupon
 
 logfile:
-    foldername: couponlogs
     logfilename: CouponService.out
     errorlogfilename: CouponServiceError.log
 

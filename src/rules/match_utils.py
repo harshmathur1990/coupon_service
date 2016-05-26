@@ -5,6 +5,7 @@ from src.enums import MatchStatus
 # All match methods accept first arguments as rule criteria and second as value to match
 # (can be a order object in case of callback), Other optional argument can be a callback function
 
+
 def match_value_in_list(list_of_elements, element):
     if element in list_of_elements:
         return True

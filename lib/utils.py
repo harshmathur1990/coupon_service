@@ -1,4 +1,4 @@
-import grequests
+import requests
 import logging
 import time
 import pytz
@@ -26,14 +26,19 @@ def get_intersection_of_lists(list1, list2, key=None):
         return [l[key] for l in list1 if l in list2]
 
 
-def make_api_call(urls, headers=dict()):
-    rs = (grequests.get(u, headers=headers) for u in urls)
+def make_api_call(url, method='GET', body=None, headers=dict()):
     start = time.time()
-    response_list = grequests.map(rs)
-    for response, url in zip(response_list, urls):
-        logger.info(u'Url: {}, headers: {}, Status Code: {} Response Body: {} Total Time Taken: {}'.format(
-            url, headers, response.status_code, response.text, time.time() - start))
-    return response_list
+    if method == 'GET':
+        response = requests.get(url=url, headers=headers)
+    elif method == 'POST':
+        response = requests.post(url=url, headers=headers, json=body)
+    elif method == 'PUT':
+        response = requests.post(url=url, headers=headers, json=body)
+    else:
+        raise Exception(u'Method {} not supported'.format(method))
+    logger.error(u'Url: {}, method: {}, headers: {}, Request Body: {} Status Code: {} Response Body: {} Total Time Taken: {}'.format(
+            url, method, headers, body, response.status_code, response.text, time.time() - start))
+    return response
 
 
 def create_success_response(success_list, error_list=list(), success=True):
