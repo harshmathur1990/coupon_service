@@ -4,7 +4,7 @@ from sqlalchemy import Table, MetaData, create_engine, exc, BINARY, ForeignKey,\
     VARCHAR, BOOLEAN, Column, and_, or_, BIGINT, Index
 from sqlalchemy.dialects.mysql import TINYINT, INTEGER, BIGINT, DATETIME
 from sqlalchemy import asc, desc, select, exists
-from config import DATABASE_URL
+from config import DATABASE_URL, client
 from sqlalchemy.sql import text
 logger = logging.getLogger()
 
@@ -140,23 +140,42 @@ class CouponsAlchemyDB:
 
             CouponsAlchemyDB._table["user_voucher_transaction_log"] = CouponsAlchemyDB.user_voucher_transaction_log
 
-            CouponsAlchemyDB.auto_freebie_search = Table(
-                'auto_freebie_search', CouponsAlchemyDB.metadata,
-                Column('id', BIGINT, primary_key=True, autoincrement=True),
-                Column('type', INTEGER, index=True, nullable=False),
-                Column('variants', INTEGER, index=True),
-                Column('zone', INTEGER, index=True, nullable=False),
-                Column('range_min', INTEGER, index=True),
-                Column('range_max', INTEGER, index=True),
-                Column('cart_range_min', INTEGER, index=True),
-                Column('cart_range_max', INTEGER, index=True),
-                Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False, index=True),
-                Column('from', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, index=True),
-                Column('to', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, index=True),
-                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=get_agent_id, nullable=True)
-            )
+            if client is 'grocery':
+                CouponsAlchemyDB.auto_benefits = Table(
+                    'auto_benefits', CouponsAlchemyDB.metadata,
+                    Column('id', BIGINT, primary_key=True, autoincrement=True),
+                    Column('type', INTEGER, index=True, nullable=False),
+                    Column('variants', INTEGER, index=True),
+                    Column('zone', INTEGER, index=True, nullable=False),
+                    Column('range_min', INTEGER, index=True),
+                    Column('range_max', INTEGER, index=True),
+                    Column('cart_range_min', INTEGER, index=True),
+                    Column('cart_range_max', INTEGER, index=True),
+                    Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False, index=True),
+                    Column('from', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, index=True),
+                    Column('to', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, index=True),
+                    Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=get_agent_id, nullable=True)
+                )
 
-            CouponsAlchemyDB._table["auto_freebie_search"] = CouponsAlchemyDB.auto_freebie_search
+                CouponsAlchemyDB._table["auto_benefits"] = CouponsAlchemyDB.auto_benefits
+            elif client is 'pay':
+                CouponsAlchemyDB.auto_benefits = Table(
+                    'auto_benefits', CouponsAlchemyDB.metadata,
+                    Column('id', BIGINT, primary_key=True, autoincrement=True),
+                    Column('type', INTEGER, index=True, nullable=False),
+                    Column('variants', INTEGER, index=True),
+                    Column('zone', INTEGER, index=True, nullable=False),
+                    Column('range_min', INTEGER, index=True),
+                    Column('range_max', INTEGER, index=True),
+                    Column('cart_range_min', INTEGER, index=True),
+                    Column('cart_range_max', INTEGER, index=True),
+                    Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False, index=True),
+                    Column('from', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, index=True),
+                    Column('to', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, index=True),
+                    Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=get_agent_id, nullable=True)
+                )
+
+                CouponsAlchemyDB._table["auto_benefits"] = CouponsAlchemyDB.auto_benefits
             # no need of below statement. DB can be created by upgrade with initial migration script.
             # But if we retain the below statement, then the database gets created before migration can
             # check the difference between metadata model and the actual database,

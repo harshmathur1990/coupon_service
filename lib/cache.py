@@ -24,7 +24,15 @@ def get(key, ctype='rules'):
     pickled_value = r.get(key)
     if pickled_value is None:
         return None
-    result = pickle.loads(pickled_value)
+    try:
+        result = pickle.loads(pickled_value)
+    except ImportError as e:
+        logger.info(e)
+        return None
+    except Exception as e:
+        logger.exception(e)
+        return None
+
     return result
 
 

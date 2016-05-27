@@ -82,7 +82,8 @@ class CheckCoupon(unittest.TestCase):
                         len(data.get('data', dict()).get('success_list', list())) is 2, response.data)
         test1code1_voucher = Vouchers.find_one('TEST1CODE1')
         voucher_rule_list = test1code1_voucher.get_rule()
-        rule_list = create_rule_list(rule_create_data)
+        from api.v1.utils import get_criteria_kwargs
+        rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
                 test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
@@ -122,7 +123,8 @@ class CheckCoupon(unittest.TestCase):
                         len(data.get('data', dict()).get('success_list', list())) is 1, response.data)
         test1code1_voucher = Vouchers.find_one('TEST1CODE3')
         voucher_rule_list = test1code1_voucher.get_rule()
-        rule_list = create_rule_list(rule_create_data)
+        from api.v1.utils import get_criteria_kwargs
+        rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
                 test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
@@ -130,7 +132,7 @@ class CheckCoupon(unittest.TestCase):
 
     def tearDown(self):
         db = CouponsAlchemyDB()
-        db.delete_row("auto_freebie_search")
+        db.delete_row("auto_benefits")
         db.delete_row("voucher_use_tracker")
         db.delete_row("user_voucher_transaction_log")
         db.delete_row("all_vouchers")
@@ -182,13 +184,13 @@ class CheckCoupon(unittest.TestCase):
                                     content_type='application/json')
         self.assertTrue(response.status_code==200, u'{}'.format(response.data))
         order_data = {
-            "area_id": 29557,
+            "area_id": "29557",
             "customer_id": "1234",
             "channel": 0,
             "coupon_codes": ["TEST1CODE3"],
             "products": [
                 {
-                    "item_id": 2,
+                    "item_id": "2",
                     "quantity": 2
                     },
                 ]

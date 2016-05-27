@@ -14,7 +14,7 @@ if config.env and config.env in ['production', 'staging']:
 app = create_app()
 app.config['SQLALCHEMY_DATABASE_URI'] = config.DATABASE_URL
 db = CouponsAlchemyDB()
-migrate = Migrate(app, db)
+migrate = Migrate(app, db, directory=config.MIGRATIONS_DIRECTORY)
 manager = Manager(app)
 manager.add_command("runserver", Server(host="localhost", port=config.CONFIG["port"]))
 manager.add_command("db", MigrateCommand)
