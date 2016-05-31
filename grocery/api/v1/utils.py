@@ -7,7 +7,7 @@ from constants import GROCERY_ITEM_KEY, GROCERY_CACHE_TTL, GROCERY_LOCATION_KEY
 import config
 from data import VerificationItemData, OrderData
 from lib import cache
-from lib.utils import make_api_call, create_success_response, create_error_response, get_utc_timezone_unaware_date_object
+from lib.utils import make_api_call, create_success_response
 from src.enums import VoucherType, BenefitType
 from src.rules.rule import Benefits
 from src.rules.utils import create_rule_object, save_vouchers, create_regular_voucher
@@ -72,12 +72,12 @@ def create_freebie_coupon(args):
             'sellers': [],
             'payment_modes': []
         },
-        'benefits': {
-            'freebies': rule.get('benefits').get('freebies'),
-            'amount': None,
-            'percentage': None,
-            'max_discount': None
-        },
+        'benefits': [
+            {
+                'type': 2,
+                'freebies': rule.get('benefits')[0].get('freebies'),
+            }
+        ],
         'description': rule.get('description')
     }
     if args.get('type') is VoucherType.auto_freebie.value:
@@ -315,7 +315,6 @@ def get_criteria_kwargs(data):
     criteria = data.get('criteria')
     blacklist_criteria = data.get('blacklist_criteria', dict())
     benefits = data.get('benefits')
-    description = data.get('description')
     rule_criteria_kwargs = dict()
     rule_blacklist_criteria_kwargs = dict()
     rule_criteria_keys = [
@@ -346,25 +345,38 @@ def get_criteria_kwargs(data):
     from rule_criteria import RuleCriteria
     rule_criteria = RuleCriteria(**rule_criteria_kwargs)
     rule_blacklist_criteria = RuleCriteria(**rule_blacklist_criteria_kwargs)
-    freebie_benefit_list = list()
-    for freebie in benefits.get('freebies', list()):
-        freebie_dict = dict()
-        freebie_dict['type'] = BenefitType.freebie.value
-        freebie_dict['value'] = freebie
-        freebie_benefit_list.append(freebie_dict)
-    amount_benefit = {
-        'type': BenefitType.amount.value,
-        'value': benefits.get('amount')
-    }
-    percentage_benefit = {
-        'type': BenefitType.percentage.value,
-        'value': benefits.get('percentage')
-    }
-    benefit_list = freebie_benefit_list
-    benefit_list.append(amount_benefit)
-    benefit_list.append(percentage_benefit)
+
+    benefit_list = list()
+
+    try:
+        for benefit in benefits:
+            type = BenefitType(benefit['type'])
+            if type is BenefitType.freebie:
+                freebies = benefit.get('freebies', list())
+                for freebie in freebies:
+                    benefit_dict = dict()
+                    benefit_dict['type'] = type.value
+                    benefit_dict['value'] = freebie
+                    benefit_list.append(benefit_dict)
+            elif type in [
+                BenefitType.amount,
+                BenefitType.cashback_amount,
+                BenefitType.agent_cashback_amount,
+                BenefitType.agent_amount
+            ]:
+                benefit_dict = dict()
+                benefit_dict['type'] = type.value
+                benefit_dict['value'] = benefit['amount']
+                benefit_dict['max_cap'] = benefit.get('max_cap')
+            else:
+                benefit_dict = dict()
+                benefit_dict['type'] = type.value
+                benefit_dict['value'] = benefit['percentage']
+                benefit_dict['max_cap'] = benefit.get('max_cap')
+    except Exception as e:
+        import ipdb;ipdb.set_trace()
+
     benefit_criteria_kwargs = {
-        'max_discount': benefits.get('max_discount'),
         'data': benefit_list
     }
     benefits = Benefits(**benefit_criteria_kwargs)

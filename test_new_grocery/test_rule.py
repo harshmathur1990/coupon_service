@@ -72,9 +72,12 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": ["VISA"],
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "amount": 100,
-                    }
+                    "benefits": [
+                        {
+                            'type': 0,
+                            "amount": 100,
+                        }
+                    ]
                 }
             ]
         }
@@ -119,9 +122,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -155,9 +161,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -190,9 +199,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2, 3]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2, 3]]
+                        }
+                    ]
                 }
             ]
         }
@@ -225,9 +237,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2, 3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2, 3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -258,9 +273,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2, 3, 4, 5]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2, 3, 4, 5]]
+                        }
+                    ]
                 }
             ]
         }
@@ -294,9 +312,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2, 3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2, 3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -327,9 +348,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2, 3, 4, 5]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2, 3, 4, 5]]
+                        }
+                    ]
                 }
             ]
         }
@@ -364,9 +388,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -395,9 +422,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -432,9 +462,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -463,9 +496,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -518,9 +554,12 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": ["VISA"],
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "amount": 100,
-                    }
+                    "benefits": [
+                        {
+                            'type': 0,
+                            "amount": 100,
+                        }
+                    ]
                 }
             ]
         }
@@ -658,10 +697,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": ["VISA"],
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 },
                 {
                     "description": "TEST1RULE1DESCRIPTION1",
@@ -694,10 +736,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": ["VISA"],
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "percentage": 5,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 5,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -754,9 +799,12 @@ class CreateRule(unittest.TestCase):
                             "zone": [188464]
                         }
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -820,9 +868,12 @@ class CreateRule(unittest.TestCase):
                             "zone": [188464]
                         }
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -878,9 +929,12 @@ class CreateRule(unittest.TestCase):
                             "zone": [3]
                         }
                     },
-                    "benefits": {
-                        "freebies": [[2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -932,9 +986,12 @@ class CreateRule(unittest.TestCase):
                             "zone": [3]
                         }
                     },
-                    "benefits": {
-                        "freebies": [[2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -968,9 +1025,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -997,9 +1057,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1029,9 +1092,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1061,9 +1127,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1092,9 +1161,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1123,9 +1195,11 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }]
                 }
             ]
         }
@@ -1155,9 +1229,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1191,9 +1268,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1222,9 +1302,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1256,9 +1339,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1290,9 +1376,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1323,9 +1412,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1356,9 +1448,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1390,9 +1485,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1441,9 +1539,12 @@ class CreateRule(unittest.TestCase):
                             "zone": [188464]
                         }
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1494,10 +1595,13 @@ class CreateRule(unittest.TestCase):
                         "valid_on_order_no": [],
                         "source": ["affiliate", "organic"]
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -1608,9 +1712,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1676,9 +1783,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1758,10 +1868,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -1848,9 +1961,12 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "amount": 300
-                    }
+                    "benefits": [
+                        {
+                            'type': 0,
+                            "amount": 300
+                        }
+                    ]
                 }
             ]
         }
@@ -1983,10 +2099,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2072,9 +2191,12 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "amount": 0
-                    }
+                    "benefits": [
+                        {
+                            'type': 0,
+                            "amount": 0
+                        }
+                    ]
                 }
             ]
         }
@@ -2166,10 +2288,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2221,10 +2346,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2293,10 +2421,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2358,10 +2489,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2456,10 +2590,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2583,10 +2720,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2656,9 +2796,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -2724,9 +2867,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }

@@ -11,7 +11,6 @@ logger = logging.getLogger()
 
 class Benefits(object):
     def __init__(self, **kwargs):
-        self.max_discount = kwargs.get('max_discount', kwargs.get('maximum_discount', None))
         self.data = kwargs.get('data', list())
         self.data.sort()
 
@@ -26,6 +25,7 @@ class BenefitsData(object):
     def __init__(self, **kwargs):
         self.type = kwargs.get('type')
         self.value = kwargs.get('value')
+        self.max_cap = kwargs.get('max_cap')
         if self.type == BenefitType.freebie.value:
             self.value.sort()
 

@@ -3,7 +3,7 @@ import logging
 import time
 import pytz
 import croniter
-from src.enums import SchedulerType
+from src.enums import SchedulerType, BenefitType
 from src.rules.user import User
 from src.sqlalchemydb import CouponsAlchemyDB
 from flask import request
@@ -215,3 +215,33 @@ def get_num_from_str(str):
             return int(str)
     except Exception as exp:
         return 0
+
+
+def is_benefits_valid(benefits):
+    if not benefits:
+        return False
+    for benefit in benefits:
+        benefit_type = BenefitType(benefit['type'])
+        if benefit_type in [
+            BenefitType.amount,
+            BenefitType.cashback_amount,
+            BenefitType.agent_amount,
+            BenefitType.agent_cashback_amount
+        ]:
+            amount = benefit.get('amount')
+            if not amount:
+                return False
+        if benefit_type in [
+            BenefitType.percentage,
+            BenefitType.cashback_percentage,
+            BenefitType.agent_percentage,
+            BenefitType.agent_cashback_percentage
+        ]:
+            percentage = benefit.get('percentage')
+            if not percentage:
+                return False
+        if benefit_type in [BenefitType.freebie]:
+            freebies = benefit.get('freebies')
+            if not freebies:
+                return False
+    return True

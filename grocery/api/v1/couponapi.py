@@ -3,9 +3,9 @@ import logging
 import werkzeug
 from flask import request
 from lib.decorator import jsonify, check_login
-from lib.utils import length_validator, create_error_response,\
+from lib.utils import length_validator, create_error_response, is_benefits_valid,\
     create_success_response, is_valid_schedule_object, is_valid_duration_string, handle_unprocessable_entity
-from src.enums import VoucherType, Channels, SchedulerType
+from src.enums import VoucherType, Channels, SchedulerType, BenefitType
 from src.rules.utils import apply_benefits, update_keys_in_input_list,\
     fetch_order_response, get_benefits_new, make_transaction_log_entry
 from utils import fetch_auto_benefits, fetch_order_detail, create_regular_coupon, fetch_coupon
@@ -358,38 +358,29 @@ def create_voucher():
                         missing=dict()
                     ),
 
-                    'benefits': fields.Nested(
-                        {
-                            'freebies': fields.List(
-                                fields.List(
-                                    fields.Int(
-                                        validate=validate.Range(min=0)
-                                    ),
+                    'benefits': fields.List(
+                        fields.Nested(
+                            {
+                                'type': fields.Int(
+                                    required=True,
+                                    validate=validate.OneOf(
+                                        [l.value for l in list(BenefitType)],
+                                        [l.name for l in list(BenefitType)]
+                                    )
                                 ),
-                                required=False,
-                                missing=list()
-                            ),
-
-                            'amount': fields.Int(
-                                required=False, missing=None, validate=validate.Range(min=0)
-                            ),
-
-                            'percentage': fields.Int(
-                                required=False, missing=None, validate=validate.Range(min=0, max=100)
-                            ),
-
-                            'max_discount': fields.Int(
-                                required=False, validate=validate.Range(min=0)
-                            )
-                        },
-                        required=False,
-                        missing={
-                            'freebies': [[]],
-                            'amount': None,
-                            'percentage': None,
-                            'max_discount': None
-                        },
-                        validate=lambda val: length_validator(val, 1000)
+                                'amount': fields.Float(required=False, validate=validate.Range(min=0)),
+                                'percentage': fields.Float(required=False, validate=validate.Range(min=0)),
+                                'freebies': fields.List(
+                                    fields.List(
+                                        fields.Int(required=False, validate=validate.Range(min=1)),
+                                        required=True
+                                    ),
+                                    required=False
+                                ),
+                                'max_cap': fields.Int(required=False, validate=validate.Range(min=1))
+                            }
+                        ),
+                        validate=[lambda val: length_validator(val, 1000), is_benefits_valid],
                     )
                 }
             ),
