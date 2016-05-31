@@ -220,7 +220,7 @@ def fetch_items(subscription_id_list, item_map):
                 item_dict['category'] = [data.get('categoryid')]
                 item_dict['product'] = [data.get('productid')]
                 item_dict['seller'] = data.get('sellerid')
-                item_dict['storefront'] = data.get('storefront')
+                item_dict['storefront'] = data.get('storefront_id')
                 item_dict['variant'] = data.get('variantid')
                 item_dict['price'] = data.get('offerprice')
                 item_dict['quantity'] = quantity
