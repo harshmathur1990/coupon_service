@@ -264,16 +264,18 @@ def fetch_order_detail(args):
 
     success, items, error = fetch_items(list(subscription_id_set), item_map)
     if not success:
-        return False, None, error
+        return False, None, [error]
 
     success, location_dict, error = fetch_location_dict(area_id)
     if not success:
-        return False, None, error
+        return False, None, [error]
 
     order_data_dict = dict()
     order_data_dict.update(location_dict)
     order_data_dict['channel'] = args.get('channel')
     order_data_dict['source'] = args.get('source')
+    order_data_dict['payment_mode'] = args.get('payment_mode')
+    order_data_dict['check_payment_mode'] = args.get('check_payment_mode')
     order_data_dict['items'] = items
     order_data_dict['customer_id'] = args.get('customer_id')
     order_data = OrderData(**order_data_dict)
@@ -322,7 +324,7 @@ def get_criteria_kwargs(data):
         benefit_dict = dict()
         benefit_dict['type'] = BenefitType.freebie.value
         benefit_dict['value'] = freebie
-        benefit_dict['max_cap'] = freebie
+        benefit_dict['max_cap'] = None
         benefit_list.append(benefit_dict)
 
     if benefits.get('amount'):
@@ -345,6 +347,7 @@ def get_criteria_kwargs(data):
         'data': benefit_list
     }
     benefits = Benefits(**benefit_criteria_kwargs)
+
     return rule_criteria, rule_blacklist_criteria, benefits
 
 

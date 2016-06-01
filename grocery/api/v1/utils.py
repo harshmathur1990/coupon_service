@@ -277,6 +277,7 @@ def fetch_location_dict(area_id):
 def fetch_order_detail(args):
     # custom implementation for askmegrocery, this method has to be
     # re-written to integrate with other sites' services
+    # This
     area_id = args.get('area_id')
     subscription_id_set = set()
     item_map = dict()

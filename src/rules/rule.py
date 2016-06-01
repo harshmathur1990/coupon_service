@@ -11,10 +11,17 @@ logger = logging.getLogger()
 
 class Benefits(object):
     def __init__(self, **kwargs):
-        self.data = kwargs.get('data', list())
+        max_discount = kwargs.get('max_discount', kwargs.get('maximum_discount', None))
+        self.data = kwargs.get('data')
         self.data.sort()
+        for data in self.data:
+            if 'max_cap' not in data \
+                    and data['type'] is BenefitType.percentage.value \
+                    and max_discount:
+                data['max_cap'] = max_discount
 
-    def __eq__(self, other) :
+
+    def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
     def canonical_json(self):

@@ -817,7 +817,8 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ]
@@ -886,7 +887,8 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ],
@@ -1624,7 +1626,8 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ],
@@ -1643,7 +1646,8 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ],
@@ -1663,8 +1667,9 @@ class CreateRule(unittest.TestCase):
             "customer_id": "1234",
             "channel": 0,
             "products": [
-                {
-                    "item_id": "1151594",
+                 {
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ],
@@ -1886,7 +1891,8 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ],
@@ -1904,11 +1910,13 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 10
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 100
                 },
             ],
@@ -1978,11 +1986,13 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 10
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 100
                 },
             ],
@@ -2001,11 +2011,13 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 10
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 100
                 },
             ],
@@ -2120,7 +2132,8 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ],
@@ -2743,19 +2756,23 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050125",
+                    "item_id": "3",
+                    "subscription_id": "2050125",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050126",
+                    "item_id": "4",
+                    "subscription_id": "2050126",
                     "quantity": 5
                 },
             ],
@@ -2766,7 +2783,7 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(data.get('success'), response.data)
         self.assertTrue(len(data.get('benefits')) == 1, response.data)
-        self.assertTrue("2050126" in data.get('benefits')[0]['items'] and "2050125" in data.get('benefits')[0]['items'] and "2007982" not in data.get('benefits')[0]['items'] and "1151594" in data.get('benefits')[0]['items'], response.data)
+        self.assertTrue("4" in data.get('benefits')[0]['items'] and "3" in data.get('benefits')[0]['items'] and "2" not in data.get('benefits')[0]['items'] and "1" in data.get('benefits')[0]['items'], response.data)
 
     def test_update_to_date_backward_compatible(self):
         # All the freebies created are of overlapping ranges, but at a time only one will be active
@@ -2964,7 +2981,7 @@ class CreateRule(unittest.TestCase):
                         {
                             'type': 1,
                             "percentage": 10,
-                            "max_discount": 250
+                            "max_cap": 250
                         }
                     ]
                 }
@@ -2979,19 +2996,23 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050125",
+                    "item_id": "3",
+                    "subscription_id": "2050125",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050126",
+                    "item_id": "4",
+                    "subscription_id": "2050126",
                     "quantity": 5
                 },
             ],
@@ -3006,19 +3027,23 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050125",
+                    "item_id": "3",
+                    "subscription_id": "2050125",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050126",
+                    "item_id": "4",
+                    "subscription_id": "2050126",
                     "quantity": 5
                 },
             ],
@@ -3035,19 +3060,23 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050125",
+                    "item_id": "3",
+                    "subscription_id": "2050125",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050126",
+                    "item_id": "4",
+                    "subscription_id": "2050126",
                     "quantity": 5
                 },
             ],
@@ -3063,19 +3092,23 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050125",
+                    "item_id": "3",
+                    "subscription_id": "2050125",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050126",
+                    "item_id": "4",
+                    "subscription_id": "2050126",
                     "quantity": 5
                 },
             ],

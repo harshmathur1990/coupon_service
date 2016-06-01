@@ -488,7 +488,7 @@ def apply_coupon():
         'products': fields.List(
             fields.Nested(
                 {
-                    'subscription_id': fields.Str(validate=validate.Length(min=1), required=False),
+                    'subscription_id': fields.Str(validate=validate.Length(min=1), required=True),
                     'item_id': fields.Str(validate=validate.Length(min=1), required=True),
                     'quantity': fields.Int(validate=validate.Range(min=1), required=True),
                     'coupon_codes': fields.List(
@@ -544,9 +544,6 @@ def apply_coupon():
         args = parser.parse(apply_coupon_args, request)
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
-
-    for product in args.get('products'):
-        product['subscription_id'] = product['item_id']
 
     order_exists, benefits_given = fetch_order_response(args)
     if order_exists:
@@ -621,7 +618,7 @@ def check_coupon():
         'products': fields.List(
             fields.Nested(
                 {
-                    'subscription_id': fields.Str(validate=validate.Length(min=1), required=False),
+                    'subscription_id': fields.Str(validate=validate.Length(min=1), required=True),
                     'item_id': fields.Str(validate=validate.Length(min=1), required=True),
                     'quantity': fields.Int(validate=validate.Range(min=1), required=True),
                     'coupon_codes': fields.List(
@@ -680,8 +677,8 @@ def check_coupon():
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
-    for product in args.get('products'):
-        product['subscription_id'] = product['item_id']
+    # for product in args.get('products'):
+    #     product['subscription_id'] = product['item_id']
 
     success, order, error_list = fetch_order_detail(args)
 
