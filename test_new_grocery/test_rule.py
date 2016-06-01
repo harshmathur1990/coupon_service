@@ -1990,6 +1990,7 @@ class CreateRule(unittest.TestCase):
         }
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
+        #print response.data
         data = json.loads(response.data)
         self.assertTrue(not data.get('benefits')[0]['max_discount'], response.data)
         self.assertTrue(data.get('benefits')[0]['flat_discount'] == 300, response.data)
@@ -3027,6 +3028,7 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         self.assertTrue(response.status_code == 200, response.data)
+        #print response.data
         order_data = {
             "area_id": "87000",
             "customer_id": "1234",

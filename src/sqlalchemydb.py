@@ -9,7 +9,6 @@ from sqlalchemy.sql import text
 logger = logging.getLogger()
 
 
-
 class CouponsAlchemyDB:
     engine = None
     _table = dict()

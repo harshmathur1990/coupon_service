@@ -245,3 +245,43 @@ def is_benefits_valid(benefits):
             if not freebies:
                 return False
     return True
+
+
+def is_old_benefit_dict_valid(benefit_dict):
+
+    freebie_present = False
+    amount_present = False
+    percentage_present = False
+    cashback_present = False
+
+    if not benefit_dict:
+        return False
+
+    freebies = benefit_dict.get('freebies')
+
+    if freebies:
+        for freebie in freebies:
+            if freebie:
+                freebie_present = True
+                break
+
+    amount = benefit_dict.get('amount')
+
+    if amount:
+        amount_present = True
+
+    percentage = benefit_dict.get('percentage')
+
+    if percentage:
+        percentage_present = True
+
+    cashback = benefit_dict.get('cashback')
+
+    if cashback:
+        cashback_present = True
+
+    if not freebie_present and not amount_present \
+            and not percentage_present and not cashback_present:
+        return False
+
+    return True

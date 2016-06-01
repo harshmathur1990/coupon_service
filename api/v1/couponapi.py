@@ -3,7 +3,7 @@ import logging
 import werkzeug
 from flask import request
 from lib.decorator import jsonify, check_login
-from lib.utils import length_validator, create_error_response,\
+from lib.utils import length_validator, create_error_response, is_old_benefit_dict_valid,\
     create_success_response, is_valid_schedule_object, is_valid_duration_string, handle_unprocessable_entity
 from src.enums import VoucherType, Channels, SchedulerType
 from src.rules.utils import apply_benefits, update_keys_in_input_list,\
@@ -363,7 +363,7 @@ def create_voucher():
                             'freebies': fields.List(
                                 fields.List(
                                     fields.Int(
-                                        validate=validate.Range(min=0)
+                                        validate=validate.Range(min=1)
                                     ),
                                 ),
                                 required=False,
@@ -380,16 +380,14 @@ def create_voucher():
 
                             'max_discount': fields.Int(
                                 required=False, validate=validate.Range(min=0)
+                            ),
+
+                            'cashback': fields.Int(
+                                required=False, missing=None, validate=validate.Range(min=0)
                             )
                         },
                         required=False,
-                        missing={
-                            'freebies': [[]],
-                            'amount': None,
-                            'percentage': None,
-                            'max_discount': None
-                        },
-                        validate=lambda val: length_validator(val, 1000)
+                        validate=[lambda val: length_validator(val, 1000), is_old_benefit_dict_valid]
                     )
                 }
             ),
@@ -549,7 +547,11 @@ def apply_coupon_v2():
             location='json'
             ),
 
-        'source': fields.Str(required=False, missing=None, location='json')
+        'source': fields.Str(required=False, missing=None, location='json'),
+
+        'payment_mode': fields.Str(required=False, missing=None, location='json'),
+
+        'check_payment_mode': fields.Bool(location='query', missing=False)
     }
     try:
         args = parser.parse(apply_coupon_args, request)
@@ -679,7 +681,11 @@ def check_coupon_v2():
             location='json'
             ),
 
-        'source': fields.Str(required=False, missing=None, location='json')
+        'source': fields.Str(required=False, missing=None, location='json'),
+
+        'payment_mode': fields.Str(required=False, missing=None, location='json'),
+
+        'check_payment_mode': fields.Bool(location='query', missing=False)
 
     }
     try:

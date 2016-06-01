@@ -315,25 +315,33 @@ def get_criteria_kwargs(data):
     from rule_criteria import RuleCriteria
     rule_criteria = RuleCriteria(**rule_criteria_kwargs)
     rule_blacklist_criteria = RuleCriteria(**rule_blacklist_criteria_kwargs)
-    freebie_benefit_list = list()
+
+    benefit_list = list()
+
     for freebie in benefits.get('freebies', list()):
-        freebie_dict = dict()
-        freebie_dict['type'] = BenefitType.freebie.value
-        freebie_dict['value'] = freebie
-        freebie_benefit_list.append(freebie_dict)
-    amount_benefit = {
-        'type': BenefitType.amount.value,
-        'value': benefits.get('amount')
-    }
-    percentage_benefit = {
-        'type': BenefitType.percentage.value,
-        'value': benefits.get('percentage')
-    }
-    benefit_list = freebie_benefit_list
-    benefit_list.append(amount_benefit)
-    benefit_list.append(percentage_benefit)
+        benefit_dict = dict()
+        benefit_dict['type'] = BenefitType.freebie.value
+        benefit_dict['value'] = freebie
+        benefit_dict['max_cap'] = freebie
+        benefit_list.append(benefit_dict)
+
+    if benefits.get('amount'):
+        amount_benefit = {
+            'type': BenefitType.amount.value,
+            'value': benefits.get('amount'),
+            'max_cap': None
+        }
+        benefit_list.append(amount_benefit)
+
+    if benefits.get('percentage'):
+        percentage_benefit = {
+            'type': BenefitType.percentage.value,
+            'value': benefits.get('percentage'),
+            'max_cap': benefits.get('max_discount')
+        }
+        benefit_list.append(percentage_benefit)
+
     benefit_criteria_kwargs = {
-        'max_discount': benefits.get('max_discount'),
         'data': benefit_list
     }
     benefits = Benefits(**benefit_criteria_kwargs)

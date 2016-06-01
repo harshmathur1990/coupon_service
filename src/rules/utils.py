@@ -436,6 +436,9 @@ def get_benefits_new(order):
 
                 benefit_dict['couponCode'] = existing_voucher['voucher'].code
                 benefit_dict['flat_discount'] = flat_discount
+                benefit_dict['flat_agent_discount'] = flat_agent_discount
+                benefit_dict['flat_cashback'] = flat_cashback
+                benefit_dict['flat_agent_cashback'] = flat_agent_cashback
                 benefit_dict['prorated_discount'] = percentage_discount
                 benefit_dict['prorated_discount_actual'] = percentage_discount_actual
                 benefit_dict['prorated_agent_discount'] = percentage_agent_discount
