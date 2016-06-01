@@ -318,8 +318,9 @@ def get_benefits_new(order):
             benefit_list = benefits.data
             total = existing_voucher['total']
             item_id_list = existing_voucher['item_id_list']
-            benefit_dict = dict()
             for benefit in benefit_list:
+                benefit_dict = dict()
+                benefit_dict['max_discount'] = None
                 if benefit['value'] is 0 and benefit['type'] == BenefitType.amount.value and existing_voucher['voucher'].custom:
                     pass
                 elif not benefit['value']:
@@ -338,7 +339,6 @@ def get_benefits_new(order):
                 percentage_agent_cashback_actual = 0.0
                 freebie_list = list()
                 benefit_type = BenefitType(benefit['type'])
-                max_cap = None
                 if benefit_type is BenefitType.freebie:
                     freebie_list.append(benefit['value'])
                 else:
@@ -350,6 +350,7 @@ def get_benefits_new(order):
                         percentage_discount = percentage * total / 100
                         percentage_discount_actual = percentage_discount
                         max_cap = benefit.get('max_cap')
+                        benefit_dict['max_discount'] = max_cap
                         if max_cap and percentage_discount > max_cap:
                             percentage_discount = max_cap
 
@@ -361,6 +362,7 @@ def get_benefits_new(order):
                         percentage_agent_discount = percentage * total / 100
                         percentage_agent_discount_actual = percentage_agent_discount
                         max_cap = benefit.get('max_cap')
+                        benefit_dict['max_discount'] = max_cap
                         if max_cap and percentage_agent_discount > max_cap:
                             percentage_agent_discount = max_cap
 
@@ -372,6 +374,7 @@ def get_benefits_new(order):
                         percentage_cashback = percentage * total / 100
                         percentage_cashback_actual = percentage_cashback
                         max_cap = benefit.get('max_cap')
+                        benefit_dict['max_discount'] = max_cap
                         if max_cap and percentage_cashback > max_cap:
                             percentage_cashback = max_cap
 
@@ -383,6 +386,7 @@ def get_benefits_new(order):
                         percentage_agent_cashback = percentage * total / 100
                         percentage_agent_cashback_actual = percentage_agent_cashback
                         max_cap = benefit.get('max_cap')
+                        benefit_dict['max_discount'] = max_cap
                         if max_cap and percentage_agent_cashback > max_cap:
                             percentage_agent_cashback = max_cap
 
@@ -446,10 +450,10 @@ def get_benefits_new(order):
                 benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
                 benefit_dict['channel'] = [Channels(c).value for c in rule.criteria_obj.channels]
                 benefit_dict['custom'] = existing_voucher['voucher'].custom
-                if max_cap:
-                    benefit_dict['max_discount'] = max_cap
-                else:
-                    benefit_dict['max_discount'] = None
+                # if max_cap:
+                #     benefit_dict['max_discount'] = max_cap
+                # else:
+                #     benefit_dict['max_discount'] = None
                 benefits_list.append(benefit_dict)
                 if not payment_modes_list:
                     payment_modes_list = benefit_dict['paymentMode']

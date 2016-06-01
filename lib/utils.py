@@ -36,7 +36,7 @@ def make_api_call(url, method='GET', body=None, headers=dict()):
         response = requests.post(url=url, headers=headers, json=body)
     else:
         raise Exception(u'Method {} not supported'.format(method))
-    logger.error(u'Url: {}, method: {}, headers: {}, Request Body: {} Status Code: {} Response Body: {} Total Time Taken: {}'.format(
+    logger.info(u'Url: {}, method: {}, headers: {}, Request Body: {} Status Code: {} Response Body: {} Total Time Taken: {}'.format(
             url, method, headers, body, response.status_code, response.text, time.time() - start))
     return response
 
