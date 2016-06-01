@@ -315,8 +315,8 @@ def get_benefits_new(order):
             total = existing_voucher['total']
             item_id_list = existing_voucher['item_id_list']
             max_discount = benefits.max_discount
-            benefit_dict = dict()
             for benefit in benefit_list:
+                benefit_dict = dict()
                 if benefit['value'] is 0 and benefit['type'] == BenefitType.amount.value and existing_voucher['voucher'].custom:
                     pass
                 elif not benefit['value']:
