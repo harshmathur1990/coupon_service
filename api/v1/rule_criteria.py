@@ -27,7 +27,7 @@ class RuleCriteria(object):
         ('categories', 'category', match_in_not_in, None),
         ('products', 'product', match_in_not_in, None),
         ('sellers', 'seller', match_value_in_list, None),
-        ('storefronts', 'storefront', match_value_in_list, None),
+        ('storefronts', 'storefront', match_list_intersection_atleast_one_common, None),
         ('variants', 'variant', match_value_in_list, None)
     ]
 

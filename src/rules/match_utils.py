@@ -37,7 +37,7 @@ def match_user_order_no(valid_on_order_no, order, fetch_user_order_detail_callba
         if min_order_no and min_order_no is 1:
             return True
         else:
-            success, order_no = fetch_user_order_detail_callback(order)
+            success, order_no, error_msg = fetch_user_order_detail_callback(order)
             if not success:
                 raise UserNotFoundException()
             order_no += 1
