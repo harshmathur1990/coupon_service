@@ -202,9 +202,9 @@ class CouponsAlchemyDB:
                 Column('id', BIGINT, primary_key=True, autoincrement=True),
                 Column('url', VARCHAR(250), nullable=False),
                 Column('params', VARCHAR(100), nullable=True),
-                Column('body', VARCHAR(1000), nullable=False),
-                Column('prod_response', VARCHAR(1000), nullable=False),
-                Column('staging_response', VARCHAR(1000), nullable=False),
+                Column('body', VARCHAR(5000), nullable=False),
+                Column('prod_response', VARCHAR(5000), nullable=False),
+                Column('staging_response', VARCHAR(5000), nullable=False),
                 Column('match', TINYINT(unsigned=True), nullable=False),
                 Column('updated_on', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
             )

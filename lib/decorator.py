@@ -6,7 +6,8 @@ from flask import Response
 from flask import request
 from utils import unauthenticated, is_logged_in
 from kafka_lib import send_message_to_kafka
-from config import TEST_USER, TEST_TOPIC_KAFKA, PUSHTOKAFKA
+import config
+from config import TEST_USER, TEST_TOPIC_KAFKA
 logger = logging.getLogger(__name__)
 
 
@@ -71,12 +72,9 @@ def push_to_kafka_for_testing(method):
     @functools.wraps(method)
     def wrapper(*args, **kwargs):
         rv = method(*args, **kwargs)
-        try:
-            agent_name = request.user.agent_name
-        except:
-            agent_name = None
+        agent_name = request.headers.get('X-API-USER', None)
 
-        if agent_name != TEST_USER and PUSHTOKAFKA:
+        if agent_name != TEST_USER and config.PUSHTOKAFKA:
             data = {
                 'url': u'{}'.format(request.url_rule),
                 'body': request.get_data(),
