@@ -30,18 +30,21 @@ def replay_test(group_no):
                 for product in body_data.get('products', list()):
                     product['subscription_id'] = product.get('item_id')
                 body = json.dumps(body_data)
+            params = data['query']
             response = data['response']
-            url = get_url_from_end_point(end_point)
+            url = HOST + end_point
             headers = {
                 'X-API-USER': TEST_USER,
                 'X-API-TOKEN': TEST_TOKEN
             }
-            response_on_staging_obj = make_api_call(url=url, body=json.loads(body), method='POST', headers=headers)
+            response_on_staging_obj = make_api_call(
+                url=url, body=json.loads(body), method='POST', headers=headers, params=params)
             response_on_staging = response_on_staging_obj.text
 
             data = {
                 'url': end_point,
                 'body': body,
+                'params': params,
                 'prod_response': response,
                 'staging_response': response_on_staging,
                 'match': response_on_staging == response

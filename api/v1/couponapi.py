@@ -15,6 +15,7 @@ from webargs.flaskparser import parser
 from api import voucher_api, voucher_api_v_1_1
 from validate import validate_for_create_api_v1, validate_for_update
 from utils import create_freebie_coupon, create_failed_api_response
+import config
 
 logger = logging.getLogger(__name__)
 
@@ -721,3 +722,22 @@ def check_coupon_v2():
             'error': ','.join(error_list)
         }
     return benefits
+
+
+@voucher_api.route('/start_testing', methods=['POST'])
+@jsonify
+def start_testing():
+    start_testing_args = {
+        'test': fields.Bool(location='json', required=True)
+    }
+    try:
+        args = parser.parse(start_testing_args, request)
+    except werkzeug.exceptions.UnprocessableEntity as e:
+        return handle_unprocessable_entity(e)
+
+    config.PUSHTOKAFKA = args['test']
+
+    rv = {
+        'success': True
+    }
+    return rv

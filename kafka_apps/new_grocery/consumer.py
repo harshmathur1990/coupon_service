@@ -27,18 +27,21 @@ def replay_test(group_no):
             end_point = data['url']
             body = data['body']
             response = data['response']
+            params = data['query']
             url = HOST + end_point
             headers = {
                 'X-API-USER': TEST_USER,
                 'X-API-TOKEN': TEST_TOKEN
             }
-            response_on_staging_obj = make_api_call(url=url, body=json.loads(body), method='POST', headers=headers)
+            response_on_staging_obj = make_api_call(
+                url=url, body=json.loads(body), method='POST', headers=headers, params=params)
             response_on_staging = response_on_staging_obj.text
 
             data = {
                 'url': end_point,
                 'body': body,
                 'prod_response': response,
+                'params': params,
                 'staging_response': response_on_staging,
                 'match': response_on_staging == response
             }

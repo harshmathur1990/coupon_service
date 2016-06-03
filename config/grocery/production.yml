@@ -15,7 +15,7 @@ ruleredis:
     db: 0
 
 kafka:
-  host: localhost:9092
+  host: dc1.staging.askme.com:9092
 
 informationhosturl: http://admin.api.askmegrocery.com
 
@@ -34,6 +34,6 @@ migrationsdirectory: old_grocery_migrations
 testtoken:
   user: autotest
   token: autotest
-  kafkatopic: new_grocery_prod_replay
-  hosttohit: http://pyservice01.staging.askme.com:8823
-  pushtokafka: no
+  kafkatopic: coupons_grocery_preprod_testing
+  hosttohit: http://pyservice01.staging.askme.com:9933
+  pushtokafka: yes

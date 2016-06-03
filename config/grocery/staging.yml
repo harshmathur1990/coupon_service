@@ -35,5 +35,5 @@ testtoken:
   user: autotest
   token: autotest
   kafkatopic: grocery_staging_replay
-  hosttohit: http://pyservice01.staging.askme.com:8823
-  pushtokafka: yes
+  hosttohit: http://pyservice01.staging.askme.com:9933
+  pushtokafka: no

@@ -34,6 +34,6 @@ migrationsdirectory: old_grocery_migrations
 testtoken:
   user: autotest
   token: autotest
-  kafkatopic: new_grocery_prod_replay
+  kafkatopic: grocery_dev_topic
   hosttohit: http://localhost:8001
   pushtokafka: no

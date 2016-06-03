@@ -80,6 +80,7 @@ def push_to_kafka_for_testing(method):
             data = {
                 'url': u'{}'.format(request.url_rule),
                 'body': request.get_data(),
+                'query': request.args.to_dict(),
                 'response': json.dumps(rv)
             }
             send_message_to_kafka(TEST_TOPIC_KAFKA, 1, data)

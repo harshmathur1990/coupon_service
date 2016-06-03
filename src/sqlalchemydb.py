@@ -201,6 +201,7 @@ class CouponsAlchemyDB:
                 'auto_tester', CouponsAlchemyDB.metadata,
                 Column('id', BIGINT, primary_key=True, autoincrement=True),
                 Column('url', VARCHAR(250), nullable=False),
+                Column('params', VARCHAR(100), nullable=True),
                 Column('body', VARCHAR(1000), nullable=False),
                 Column('prod_response', VARCHAR(1000), nullable=False),
                 Column('staging_response', VARCHAR(1000), nullable=False),
