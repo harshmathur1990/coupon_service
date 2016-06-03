@@ -27,6 +27,7 @@ def get_intersection_of_lists(list1, list2, key=None):
 
 
 def make_api_call(url, method='GET', body=None, headers=dict()):
+    # body must be a json serializable dict
     start = time.time()
     if method == 'GET':
         response = requests.get(url=url, headers=headers)
@@ -36,7 +37,7 @@ def make_api_call(url, method='GET', body=None, headers=dict()):
         response = requests.post(url=url, headers=headers, json=body)
     else:
         raise Exception(u'Method {} not supported'.format(method))
-    logger.error(u'Url: {}, method: {}, headers: {}, Request Body: {} Status Code: {} Response Body: {} Total Time Taken: {}'.format(
+    logger.info(u'Url: {}, method: {}, headers: {}, Request Body: {} Status Code: {} Response Body: {} Total Time Taken: {}'.format(
             url, method, headers, body, response.status_code, response.text, time.time() - start))
     return response
 

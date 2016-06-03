@@ -1,10 +1,13 @@
 import simplejson as json
 from kafka import KafkaProducer
-from kafka.client import KafkaClient
+from kafka.errors import KafkaTimeoutError
+
 from config import KAFKAHOST
+import logging
 
+logger = logging.getLogger(__name__)
 
-kafka_producer = KafkaProducer(bootstrap_servers=KAFKAHOST)
+kafka_producer = KafkaProducer(bootstrap_servers=KAFKAHOST, acks=0)
 
 
 def send_message_to_kafka(topic, key, message):
@@ -15,4 +18,11 @@ def send_message_to_kafka(topic, key, message):
     :return:
     """
     data = json.dumps(message)
-    kafka_producer.send(topic, key=str(key), value=data)
+    try:
+        kafka_producer.send(topic, key=str(key), value=data)
+    except KafkaTimeoutError as e:
+        logger.info(e)
+        pass
+    except Exception as e:
+        logger.exception(e)
+        pass

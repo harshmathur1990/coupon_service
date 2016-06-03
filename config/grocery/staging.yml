@@ -14,6 +14,9 @@ ruleredis:
     port: 6379
     db: 0
 
+kafka:
+  host: dc1.staging.askme.com:9092
+
 informationhosturl: http://uatadmin.api.askmegrocery.com
 
 subscriptionendpoint: /item/
@@ -27,3 +30,10 @@ userfromphoneendpoint: /user/mobile/
 token: Z3IwY2VyeTpncjBjZXJ5QDIx
 
 migrationsdirectory: old_grocery_migrations
+
+testtoken:
+  user: autotest
+  token: autotest
+  kafkatopic: grocery_staging_replay
+  hosttohit: http://pyservice01.staging.askme.com:8823
+  pushtokafka: yes

@@ -6,8 +6,9 @@ from flask_script import Server
 import config
 from flask_migrate import Migrate, MigrateCommand
 from src.sqlalchemydb import CouponsAlchemyDB
-from kafka_apps.pay.consumer import kafka_consumer
-from flask_script import Command
+from kafka_apps.new_grocery.consumer import KafkaTestingConsumerCommand as new_grocery_kafka_consumer
+from kafka_apps.grocery.consumer import KafkaTestingConsumerCommand as grocery_kafka_consumer
+
 
 if config.env and config.env in ['production', 'staging']:
     newrelic_cfg_file = os.path.join(os.getcwd(), "conf", u'newrelic-{}-{}.ini'.format(config.env, config.client))
@@ -20,7 +21,10 @@ migrate = Migrate(app, db, directory=config.MIGRATIONS_DIRECTORY)
 manager = Manager(app)
 manager.add_command("runserver", Server(host="localhost", port=config.CONFIG["port"]))
 manager.add_command("db", MigrateCommand)
-manager.add_command("kafka_consumer", Command(kafka_consumer))
+if config.client == 'new_grocery':
+    manager.add_command("kafka", new_grocery_kafka_consumer)
+elif config.client == 'grocery':
+    manager.add_command("kafka", grocery_kafka_consumer)
 
 
 @manager.command
