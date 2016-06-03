@@ -196,6 +196,20 @@ class CouponsAlchemyDB:
                 )
 
                 CouponsAlchemyDB._table["auto_benefits"] = CouponsAlchemyDB.auto_benefits
+
+            CouponsAlchemyDB.auto_tester = Table(
+                'auto_tester', CouponsAlchemyDB.metadata,
+                Column('id', BIGINT, primary_key=True, autoincrement=True),
+                Column('url', VARCHAR(250), nullable=False),
+                Column('params', VARCHAR(100), nullable=True),
+                Column('body', VARCHAR(1000), nullable=False),
+                Column('prod_response', VARCHAR(1000), nullable=False),
+                Column('staging_response', VARCHAR(1000), nullable=False),
+                Column('match', TINYINT(unsigned=True), nullable=False),
+                Column('updated_on', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
+            )
+
+            CouponsAlchemyDB._table["auto_tester"] = CouponsAlchemyDB.auto_tester
             # no need of below statement. DB can be created by upgrade with initial migration script.
             # But if we retain the below statement, then the database gets created before migration can
             # check the difference between metadata model and the actual database,

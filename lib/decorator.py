@@ -5,6 +5,8 @@ import json
 from flask import Response
 from flask import request
 from utils import unauthenticated, is_logged_in
+from kafka_lib import send_message_to_kafka
+from config import TEST_USER, TEST_TOPIC_KAFKA, PUSHTOKAFKA
 logger = logging.getLogger(__name__)
 
 
@@ -39,6 +41,7 @@ def jsonify(f):
             mimetype="application/json")
         logger.info(u'URL: {} Arguments: {} Keyword Arguments: {} Body: {} Returned: {} Total time taken: {}'.format(
             request.url_rule, args, kwargs, request.get_data(), rv, time.time() - start))
+
         return resp
     return wrapped
 
@@ -61,4 +64,25 @@ def check_login(method):
             return method(*args, **kwargs)
         else:
             return unauthenticated()
+    return wrapper
+
+
+def push_to_kafka_for_testing(method):
+    @functools.wraps(method)
+    def wrapper(*args, **kwargs):
+        rv = method(*args, **kwargs)
+        try:
+            agent_name = request.user.agent_name
+        except:
+            agent_name = None
+
+        if agent_name != TEST_USER and PUSHTOKAFKA:
+            data = {
+                'url': u'{}'.format(request.url_rule),
+                'body': request.get_data(),
+                'query': request.args.to_dict(),
+                'response': json.dumps(rv)
+            }
+            send_message_to_kafka(TEST_TOPIC_KAFKA, 1, data)
+        return rv
     return wrapper

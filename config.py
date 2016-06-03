@@ -27,6 +27,12 @@ RULESREDISHOST = CONFIG["ruleredis"]["host"]
 RULESREDISPORT = CONFIG["ruleredis"]["port"]
 RULESREDISDB = CONFIG["ruleredis"]["db"]
 MIGRATIONS_DIRECTORY = CONFIG["migrationsdirectory"]
+KAFKAHOST = CONFIG["kafka"]["host"]
+TEST_USER = CONFIG["testtoken"]["user"]
+TEST_TOKEN = CONFIG["testtoken"]["token"]
+TEST_TOPIC_KAFKA = CONFIG["testtoken"]["kafkatopic"]
+HOST = CONFIG["testtoken"]["hosttohit"]
+PUSHTOKAFKA = CONFIG["testtoken"]["pushtokafka"]
 
 if client == 'grocery':
     SUBSCRIPTIONURL = CONFIG["informationhosturl"] + CONFIG["subscriptionendpoint"]
@@ -40,6 +46,7 @@ if client == 'new_grocery':
     SUBSCRIPTIONHEADERS = CONFIG["subscriptionheaders"]
     LOCATIONURL = CONFIG["locationendpoint"]
     USERINFOURL = CONFIG["userendpoint"]
+
 
 module_name = 'client_method_dict' + '.' + client
 module = importlib.import_module(module_name)
