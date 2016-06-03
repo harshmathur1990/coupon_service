@@ -377,7 +377,7 @@ def create_voucher():
                                     ),
                                     required=False
                                 ),
-                                'max_cap': fields.Int(required=False, validate=validate.Range(min=1))
+                                'max_cap': fields.Float(required=False, validate=validate.Range(min=1))
                             }
                         ),
                         validate=[lambda val: length_validator(val, 1000), is_benefits_valid],

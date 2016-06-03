@@ -1901,9 +1901,8 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         data = json.loads(response.data)
-        self.assertTrue(data.get('benefits')[0]['max_discount'] == 250, response.data)
-        self.assertTrue(data.get('benefits')[0]['prorated_discount'] < data.get('benefits')[0]['max_discount'], response.data)
-        self.assertTrue(data.get('products')[0]['discount'] == data.get('benefits')[0]['prorated_discount'], response.data)
+        self.assertTrue(data.get('benefits')[0]['max_cap'] == 250, response.data)
+        self.assertTrue(data.get('benefits')[0]['amount'] < data.get('benefits')[0]['max_cap'], response.data)
         order_data = {
             "area_id": "87000",
             "customer_id": "9831314343",
@@ -1925,9 +1924,8 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         data = json.loads(response.data)
-        self.assertTrue(data.get('benefits')[0]['max_discount'] == 250, response.data)
-        self.assertTrue(data.get('benefits')[0]['prorated_discount'] > data.get('benefits')[0]['max_discount'], response.data)
-        self.assertTrue(data.get('products')[0]['discount'] < data.get('benefits')[0]['prorated_discount'], response.data)
+        self.assertTrue(data.get('benefits')[0]['max_cap'] == 250, response.data)
+        self.assertTrue(data.get('benefits')[0]['amount'] > data.get('benefits')[0]['max_cap'], response.data)
         rule_create_data = {
             "name": "test_rule_1",
             "description": "test_some_description_1",
@@ -2002,8 +2000,8 @@ class CreateRule(unittest.TestCase):
                                     content_type='application/json', headers=headers)
         #print response.data
         data = json.loads(response.data)
-        self.assertTrue(not data.get('benefits')[0]['max_discount'], response.data)
-        self.assertTrue(data.get('benefits')[0]['flat_discount'] == 300, response.data)
+        self.assertTrue(not data.get('benefits')[0]['max_cap'], response.data)
+        self.assertTrue(data.get('benefits')[0]['amount'] == 300, response.data)
         order_data = {
             "order_id": "AGTEST",
             "area_id": "87000",
