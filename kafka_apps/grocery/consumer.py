@@ -35,8 +35,10 @@ def replay_test(group_no):
             url = HOST + end_point
             headers = {
                 'X-API-USER': TEST_USER,
-                'X-API-TOKEN': TEST_TOKEN
+                'X-API-TOKEN': TEST_TOKEN,
+                'Content-Type': 'Application/Json'
             }
+
             response_on_staging_obj = make_api_call(
                 url=url, body=json.loads(body), method='POST', headers=headers, params=params)
             response_on_staging = response_on_staging_obj.text
@@ -44,7 +46,7 @@ def replay_test(group_no):
             data = {
                 'url': end_point,
                 'body': body,
-                'params': params,
+                'params': json.dumps(params),
                 'prod_response': response,
                 'staging_response': response_on_staging,
                 'match': response_on_staging == response
