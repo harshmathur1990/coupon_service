@@ -9,6 +9,9 @@ from src.sqlalchemydb import CouponsAlchemyDB
 from flask import request
 from dateutil import parser
 import json
+import cache
+from . import KAFTATESTINGKEY
+import config
 
 logger = logging.getLogger(__name__)
 
@@ -216,3 +219,10 @@ def get_num_from_str(str):
             return int(str)
     except Exception as exp:
         return 0
+
+
+def can_push_to_kafka():
+    PUSHTOKAFKA = cache.get(KAFTATESTINGKEY)
+    if PUSHTOKAFKA is None:
+        return config.PUSHTOKAFKA
+    return PUSHTOKAFKA
