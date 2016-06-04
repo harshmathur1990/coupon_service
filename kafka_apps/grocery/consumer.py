@@ -1,4 +1,5 @@
 import logging
+import sqlalchemy
 import simplejson as json
 from kafka import KafkaConsumer
 from config import KAFKAHOST, HOST

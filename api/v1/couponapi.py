@@ -2,6 +2,7 @@ import json
 import logging
 import werkzeug
 from flask import request
+from lib import KAFTATESTINGKEY, cache
 from lib.decorator import jsonify, check_login, push_to_kafka_for_testing
 from lib.utils import length_validator, create_error_response,\
     create_success_response, is_valid_schedule_object, is_valid_duration_string, handle_unprocessable_entity
@@ -728,14 +729,15 @@ def check_coupon_v2():
 @jsonify
 def start_testing():
     start_testing_args = {
-        'test': fields.Bool(location='json', required=True)
+        'test': fields.Bool(location='json', required=True),
+        'seconds': fields.Int(location='json', required=False, missing=3600)
     }
     try:
         args = parser.parse(start_testing_args, request)
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
-    config.PUSHTOKAFKA = args['test']
+    cache.set(KAFTATESTINGKEY, args['test'], ex=args['seconds'])
 
     rv = {
         'success': True
