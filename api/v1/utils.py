@@ -190,7 +190,7 @@ def fetch_items(subscription_id_list, item_map):
     if to_fetch_subscription_list:
         subscription_id_list_str = ','.join(u'{}'.format(v) for v in to_fetch_subscription_list)
 
-        item_url = SUBSCRIPTIONURL + subscription_id_list_str + '/'
+        item_url = SUBSCRIPTIONURL + subscription_id_list_str
 
         headers = {
             'Authorization': TOKEN
