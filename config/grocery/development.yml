@@ -17,7 +17,7 @@ ruleredis:
 
 informationhosturl: http://uatadmin.api.askmegrocery.com
 
-subscriptionendpoint: /item/
+subscriptionendpoint: /services.ashx?method=getitembyid&itemid=
 
 locationendpoint: /area/
 

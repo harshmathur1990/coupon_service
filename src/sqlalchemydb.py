@@ -140,7 +140,7 @@ class CouponsAlchemyDB:
 
             CouponsAlchemyDB._table["user_voucher_transaction_log"] = CouponsAlchemyDB.user_voucher_transaction_log
 
-            if client is 'grocery':
+            if client == 'grocery':
                 CouponsAlchemyDB.auto_benefits = Table(
                     'auto_benefits', CouponsAlchemyDB.metadata,
                     Column('id', BIGINT, primary_key=True, autoincrement=True),
@@ -158,7 +158,7 @@ class CouponsAlchemyDB:
                 )
 
                 CouponsAlchemyDB._table["auto_benefits"] = CouponsAlchemyDB.auto_benefits
-            elif client is 'pay':
+            elif client == 'pay':
                 CouponsAlchemyDB.auto_benefits = Table(
                     'auto_benefits', CouponsAlchemyDB.metadata,
                     Column('id', BIGINT, primary_key=True, autoincrement=True),

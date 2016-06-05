@@ -2236,7 +2236,7 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(not data.get('data',dict()).get('error_list') and
                         len(data.get('data', dict()).get('success_list', list())) is 1, response.data)
         voucher = Vouchers.find_one('TEST1CODE1')
-        self.assertTrue(voucher.to_date == datetime.datetime.combine(tomorrow, datetime.datetime.min.time()))
+        self.assertTrue(voucher.to_date == datetime.datetime.combine(tomorrow, datetime.datetime.min.time()), u'{} - {} - {}'.format(voucher.to_date, tomorrow, datetime.datetime.min.time()))
         yesterday = today - timedelta(days=4)
         expire_args = [
             {
