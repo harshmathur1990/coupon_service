@@ -16,6 +16,7 @@ ruleredis:
 
 kafka:
   host: localhost:9092
+  zookeeper: localhost:2181
 
 informationhosturl: http://uatadmin.api.askmegrocery.com
 

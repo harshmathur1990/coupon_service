@@ -15,7 +15,8 @@ ruleredis:
     db: 0
 
 kafka:
-  host: dc1.staging.askme.com:9092
+  host: 'kafka01.production.askmebazaar.com:9092,kafka02.production.askmebazaar.com:9092,kafka03.production.askmebazaar.com:9092'
+  zookeeper: 'kafka01.production.askmebazaar.com:2181,kafka02.production.askmebazaar.com:2181,kafka03.production.askmebazaar.com:2181'
 
 informationhosturl: http://uatadmin.api.askmegrocery.com
 

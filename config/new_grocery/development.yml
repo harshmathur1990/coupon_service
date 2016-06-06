@@ -16,6 +16,7 @@ ruleredis:
 
 kafka:
   host: localhost:9092
+  zookeeper: localhost:2181
 
 subscriptionendpoint: http://pyservice01.staging.askme.com:9070/v1/search
 
