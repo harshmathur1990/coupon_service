@@ -403,6 +403,8 @@ def create_voucher():
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
+    error = u'Coupon Creation has been deactivated for some period of time'
+    return create_error_response(400, error)
     # api specific validation
     success, error = validate_for_create_api_v1(args)
     if not success:
