@@ -460,6 +460,9 @@ def update_coupon():
         }
         return rv
 
+    error = u'Coupon Update has been deactivated for some period of time'
+    return create_error_response(400, error)
+
     success, error = validate_for_update(data_list)
     if not success:
         return create_error_response(400, error)
