@@ -15,11 +15,11 @@ ruleredis:
     db: 0
 
 
-subscriptionendpoint: http://pyservice01.staging.askme.com:9070/v1/search
+subscriptionendpoint: http://api-internal.askme.com/unified/v1/search
 
 subscriptionheaders: {Content-Type: application/json}
 
-locationendpoint: http://pyservice01.staging.askme.com:8080/geo/v2.0/get_by_gid?gids=
+locationendpoint: http://api-internal.askme.com/geo/v2.0/get_by_gid?gids=
 
 userendpoint: http://pyservice01.staging.askme.com:9880/orderapi/v1/user/
 
