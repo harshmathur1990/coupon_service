@@ -163,9 +163,10 @@ class RuleCriteria(object):
             return MatchStatus.not_found, None
 
     def match(self, order, voucher):
-        success, error = self.check_usage(order.customer_id, voucher.id_bin)
-        if not success:
-            return False, None, u'Coupon {} has expired'.format(voucher.code)
+        if order.validate:
+            success, error = self.check_usage(order.customer_id, voucher.id_bin, order.order_id)
+            if not success:
+                return False, None, u'Coupon {} has expired'.format(voucher.code)
 
         status, error = self.match_criteria(order, voucher.code)
         if status is MatchStatus.found_not_matching:
@@ -191,17 +192,17 @@ class RuleCriteria(object):
 
         return True, {'total': order.matching_criteria_total, 'item_id_list': item_id_list}, None
 
-    def check_usage(self, user_id, voucher_id, db=None):
+    def check_usage(self, user_id, voucher_id, order_id, db=None):
         use_type = self.usage['use_type']
         rv = {
             'success': True,
             'msg': None
         }
         if use_type is UseType.both.value:
-            is_voucher_exhausted = self.is_voucher_exhausted(voucher_id, db)
+            is_voucher_exhausted = self.is_voucher_exhausted(voucher_id, order_id, db)
             if not is_voucher_exhausted:
                 is_voucher_exhausted_for_this_user = self.is_voucher_exhausted_for_this_user(
-                    user_id, voucher_id, db)
+                    user_id, voucher_id, order_id, db)
                 if is_voucher_exhausted_for_this_user:
                     rv['success'] = False
                     rv['msg'] = 'This voucher has expired'
@@ -210,31 +211,31 @@ class RuleCriteria(object):
                 rv['msg'] = 'This voucher has expired'
         elif use_type is UseType.per_user.value:
             is_voucher_exhausted_for_this_user = self.is_voucher_exhausted_for_this_user(
-                user_id, voucher_id, db)
+                user_id, voucher_id, order_id, db)
             if is_voucher_exhausted_for_this_user:
                 rv['success'] = False
                 rv['msg'] = 'This voucher has expired'
         elif use_type is UseType.global_use.value:
-            is_voucher_exhausted = self.is_voucher_exhausted(voucher_id, db)
+            is_voucher_exhausted = self.is_voucher_exhausted(voucher_id, order_id, db)
             if is_voucher_exhausted:
                 rv['success'] = False
                 rv['msg'] = 'This voucher has expired'
         return rv['success'], rv['msg']
 
-    def is_voucher_exhausted(self, voucher_id, db=None):
+    def is_voucher_exhausted(self, voucher_id, order_id, db=None):
         if not db:
             db = CouponsAlchemyDB()
         total_allowed_uses = self.usage['no_of_total_uses_allowed']
-        count = db.count("voucher_use_tracker", **{'voucher_id': voucher_id})
+        count = db.count("voucher_use_tracker", **{'voucher_id': voucher_id, 'not_args': {'order_id': order_id}})
         if count >= total_allowed_uses:
             return True
         return False
 
-    def is_voucher_exhausted_for_this_user(self, user_id, voucher_id, db=None):
+    def is_voucher_exhausted_for_this_user(self, user_id, voucher_id, order_id, db=None):
         if not db:
             db = CouponsAlchemyDB()
         total_per_user_allowed_uses = self.usage['no_of_uses_allowed_per_user']
-        count = db.count("voucher_use_tracker", **{'voucher_id': voucher_id, 'user_id': user_id})
+        count = db.count("voucher_use_tracker", **{'voucher_id': voucher_id, 'user_id': user_id, 'not_args': {'order_id': order_id}})
         if count >= total_per_user_allowed_uses:
             return True
         return False

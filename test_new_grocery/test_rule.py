@@ -3115,3 +3115,151 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon', check_payment_mode=True), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         self.assertTrue(response.status_code == 400, response.data)
+
+    def test_apply_when_same_order_id(self):
+        # 1. To check that when an order is given with same order id, it should reevaluate and update
+        #    voucher_use_tracker and add entry in voucher_use_transaction_log. Also check if the user id
+        #    has changed, then the same must have been updated in voucher_use_tracker.
+        # 2. When a date is provided check that voucher which was valid on that particular date is picked
+        #    and reevaluate the coupon and check that voucher_use_tracker is up to date.
+        # 3. When validate=False is given as query parameter, see if the usage check is bypassed.
+        values = {
+            'token': u'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy',
+            'agent_id': 1,
+            'agent_name': u'askmegrocery',
+            'created_at': datetime.datetime.utcnow(),
+            'last_accessed_at': datetime.datetime.utcnow()
+        }
+        db = CouponsAlchemyDB()
+        db.insert_row("tokens", **values)
+        headers= {
+            'X-API-USER': 'askmegrocery',
+            'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
+        }
+        today = datetime.datetime.utcnow()
+        hour = today.hour
+        hour -= 1
+        today = today.date()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "custom": "ICICI CASHBACK 500",
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": None,
+                        "range_max": None,
+                        "cart_range_min": 100,
+                        "cart_range_max": None,
+                        "channels": [],
+                        "brands": [],
+                        "products": {
+                            'in':[],
+                            'not_in': []
+                        },
+                        "categories": {
+                            "in": [],
+                            "not_in": []
+                        },
+                        "storefronts": [],
+                        "variants": [],
+                        "sellers": [],
+                        "location": {
+                            "country":[],
+                            "state": [],
+                            "city": [],
+                            "area": [],
+                            "zone": []
+                        },
+                        "payment_modes": [],
+                        "valid_on_order_no": []
+                    },
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
+                }
+            ]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+        order_data = {
+            "area_id": "87000",
+            "customer_id": "1234",
+            "order_id": "12345",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": "1",
+                    "subscription_id": "1151594",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2",
+                    "subscription_id": "2007982",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "3",
+                    "subscription_id": "2050125",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "4",
+                    "subscription_id": "2050126",
+                    "quantity": 5
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 200, response.data)
+        order_data = {
+            "area_id": "87000",
+            "customer_id": "4321",
+            "order_id": "12345",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": "1",
+                    "subscription_id": "1151594",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2",
+                    "subscription_id": "2007982",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "3",
+                    "subscription_id": "2050125",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "4",
+                    "subscription_id": "2050126",
+                    "quantity": 5
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 200, response.data)
+        use_dict = db.find("voucher_use_tracker")[0]
+        self.assertTrue(use_dict['user_id'] == "4321")
+        pass

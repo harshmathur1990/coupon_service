@@ -228,13 +228,18 @@ class CouponsAlchemyDB:
         self.trans.rollback()
 
     @staticmethod
-    def args_to_where(table, args):
+    def args_to_where(table, args, not_args=dict()):
         clause = []
         for k, v in args.items():
             if isinstance(v, (list, tuple)):
                 clause.append(table.c[k].in_(v))
             else:
                 clause.append(table.c[k] == v)
+        for k, v in not_args.items():
+            if isinstance(v, (list, tuple)):
+                clause.append(table.c[k].notin_(v))
+            else:
+                clause.append(table.c[k] != v)
         return and_(*clause)
 
     @staticmethod
@@ -412,9 +417,12 @@ class CouponsAlchemyDB:
         return or_(*or_list)
 
     def count(self, table_name, **where):
+        not_args = dict()
+        if 'not_args' in where:
+            not_args = where.pop('not_args')
         table = CouponsAlchemyDB.get_table(table_name)
         try:
-            sel = select([table.c.id]).where(CouponsAlchemyDB.args_to_where(table, where))
+            sel = select([table.c.id]).where(CouponsAlchemyDB.args_to_where(table, where, not_args=not_args))
             row = self.conn.execute(sel)
             count = row.rowcount
             return count

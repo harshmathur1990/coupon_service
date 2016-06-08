@@ -18,7 +18,12 @@ from vouchers import Vouchers, VoucherTransactionLog
 logger = logging.getLogger(__name__)
 
 
-def get_voucher(voucher_code):
+def get_voucher(voucher_code, order_date=None):
+    if order_date:
+        voucher = Vouchers.find_voucher_at_the_date(voucher_code, order_date)
+        if not voucher:
+            return None, u'No Voucher found with code {} on {}'.format(voucher_code, order_date)
+        return voucher, None
     voucher = Vouchers.find_one(voucher_code)
     now = datetime.datetime.utcnow()
     if voucher and voucher.from_date <= now <= voucher.to_date:
@@ -73,16 +78,20 @@ def apply_benefits(args, order, benefits):
     db = CouponsAlchemyDB()
     db.begin()
     try:
+        rows_with_order_id = db.find("voucher_use_tracker", **{'order_id': order_id})
+        if rows_with_order_id:
+            db.delete_row_in_transaction("voucher_use_tracker", **{'order_id': order_id})
         for existing_voucher in order.existing_vouchers:
             voucher_id = existing_voucher['voucher'].id
             if voucher_id in voucher_id_list:
                 continue
             voucher_id_list.append(voucher_id)
             rule = existing_voucher['voucher'].rules_list[0]
-            success, error = rule.criteria_obj.check_usage(order.customer_id, existing_voucher['voucher'].id_bin, db)
-            if not success:
-                db.rollback()
-                return False, 400, u'Voucher {} has expired'.format(existing_voucher['voucher'].code)
+            if order.validate:
+                success, error = rule.criteria_obj.check_usage(order.customer_id, existing_voucher['voucher'].id_bin, order_id, db)
+                if not success:
+                    db.rollback()
+                    return False, 400, u'Voucher {} has expired'.format(existing_voucher['voucher'].code)
             transaction_log = VoucherTransactionLog(**{
                 'id': uuid.uuid1().hex,
                 'user_id': user_id,

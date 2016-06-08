@@ -538,43 +538,31 @@ def apply_coupon():
 
         'payment_mode': fields.Str(required=False, missing=None, location='json'),
 
-        'check_payment_mode': fields.Bool(location='query', missing=False)
+        'check_payment_mode': fields.Bool(location='query', missing=False),
+
+        'validate': fields.Bool(location='query', missing=True),
+
+        'order_date': fields.DateTime(location='json', required=False, missing=None)
     }
     try:
         args = parser.parse(apply_coupon_args, request)
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
-    order_exists, benefits_given = fetch_order_response(args)
-    if order_exists:
-        return benefits_given
+    # order_exists, benefits_given = fetch_order_response(args)
+    # if order_exists:
+    #     return benefits_given
 
     success, order, error_list = fetch_order_detail(args)
 
     if not success:
-        products = list()
-        for product in args.get('products'):
-            product_dict = dict()
-            product_dict['itemid'] = product.get('item_id')
-            product_dict['quantity'] = product.get('quantity')
-            product_dict['discount'] = 0.0
-            products.append(product_dict)
-        rv = {
-            'success': False,
-            'error': {
-                'code': 503,
-                'error': ','.join(error_list)
-            },
-            'products': products,
-            'freebies': [],
-            'totalDiscount': 0.0,
-            'channel': [],
-            'paymentModes': [],
-            'errors': error_list
-        }
-        return rv
+        return create_failed_api_response(args, error_list)
 
     success, error_list = validate_coupon(args.get('coupon_codes', list()), order, validate_for_apply=True)
+
+    # If user does not exist
+    if not success:
+        return create_failed_api_response(args, error_list)
 
     if order.failed_vouchers:
         voucher_success = False
@@ -686,6 +674,8 @@ def check_coupon():
         return create_failed_api_response(args, error_list)
 
     success, error_list = validate_coupon(args.get('coupon_codes', list()), order)
+
+    # If user does not exist
     if not success:
         return create_failed_api_response(args, error_list)
 

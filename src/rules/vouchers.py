@@ -241,6 +241,21 @@ class Vouchers(object):
         return False
 
     @staticmethod
+    def find_voucher_at_the_date(code, date, db=None):
+        if not db:
+            db = CouponsAlchemyDB()
+        query = 'select * from all_vouchers where code=:code and `from` <= :date and `to >= :date`'
+        args = {
+            'code': code,
+            'date': date
+        }
+        voucher_dict = db.execute_raw_sql(query, args)
+        if voucher_dict:
+            voucher = Vouchers.from_dict(voucher_dict[0])
+            return voucher
+        return False
+
+    @staticmethod
     def find_one_all_vouchers(code, from_date, db=None):
         # from_date must be a timezone unaware UTC datetime object
         if not db:
