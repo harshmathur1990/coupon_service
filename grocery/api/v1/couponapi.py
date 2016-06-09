@@ -15,6 +15,9 @@ from webargs.flaskparser import parser
 from grocery import grocery_voucher_api as voucher_api
 from validate import validate_for_create_api_v1, validate_for_update
 from utils import create_freebie_coupon, create_failed_api_response
+from lib import cache
+from lib import KAFTATESTINGKEY
+from lib.kafka_lib import CouponsKafkaProducer
 
 logger = logging.getLogger(__name__)
 
@@ -456,6 +459,7 @@ def update_coupon():
     if not success:
         return create_error_response(400, error)
 
+
     success_list, error_list = update_keys_in_input_list(data_list)
     return {
         'success': True,
@@ -717,3 +721,28 @@ def check_coupon():
             'error': ','.join(error_list)
         }
     return benefits
+
+
+@voucher_api.route('/start_testing', methods=['POST'])
+@jsonify
+def start_testing():
+    start_testing_args = {
+        'test': fields.Bool(location='json', required=True),
+        'seconds': fields.Int(location='json', required=False, missing=3600)
+    }
+    try:
+        args = parser.parse(start_testing_args, request)
+    except werkzeug.exceptions.UnprocessableEntity as e:
+        return handle_unprocessable_entity(e)
+
+    cache.set(KAFTATESTINGKEY, args['test'], ex=args['seconds'])
+
+    if not args['test']:
+        CouponsKafkaProducer.destroy_instance()
+    else:
+        CouponsKafkaProducer.create_kafka_producer()
+
+    rv = {
+        'success': True
+    }
+    return rv
