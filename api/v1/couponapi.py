@@ -4,11 +4,11 @@ import werkzeug
 from flask import request
 from lib import KAFTATESTINGKEY, cache
 from lib.decorator import jsonify, check_login, push_to_kafka_for_testing
-from lib.utils import length_validator, create_error_response,\
+from lib.utils import length_validator, create_error_response, is_old_benefit_dict_valid,\
     create_success_response, is_valid_schedule_object, is_valid_duration_string, handle_unprocessable_entity
 from src.enums import VoucherType, Channels, SchedulerType
 from src.rules.utils import apply_benefits, update_keys_in_input_list,\
-    fetch_order_response, get_benefits_new, make_transaction_log_entry
+    fetch_order_response, make_transaction_log_entry
 from utils import fetch_auto_benefits, fetch_order_detail, create_regular_coupon, fetch_coupon
 from src.rules.validate import validate_coupon
 from src.enums import Permission
@@ -16,7 +16,7 @@ from webargs import fields, validate
 from webargs.flaskparser import parser
 from api import voucher_api, voucher_api_v_1_1
 from validate import validate_for_create_api_v1, validate_for_update
-from utils import create_freebie_coupon, create_failed_api_response
+from utils import create_freebie_coupon, create_failed_api_response, refactor_benefits
 from lib.kafka_lib import CouponsKafkaProducer
 
 logger = logging.getLogger(__name__)
@@ -367,7 +367,7 @@ def create_voucher():
                             'freebies': fields.List(
                                 fields.List(
                                     fields.Int(
-                                        validate=validate.Range(min=0)
+                                        validate=validate.Range(min=1)
                                     ),
                                 ),
                                 required=False,
@@ -384,16 +384,14 @@ def create_voucher():
 
                             'max_discount': fields.Int(
                                 required=False, validate=validate.Range(min=0)
+                            ),
+
+                            'cashback': fields.Int(
+                                required=False, missing=None, validate=validate.Range(min=0)
                             )
                         },
                         required=False,
-                        missing={
-                            'freebies': [[]],
-                            'amount': None,
-                            'percentage': None,
-                            'max_discount': None
-                        },
-                        validate=lambda val: length_validator(val, 1000)
+                        validate=[lambda val: length_validator(val, 1000), is_old_benefit_dict_valid]
                     )
                 }
             ),
@@ -557,7 +555,11 @@ def apply_coupon_v2():
             location='json'
             ),
 
-        'source': fields.Str(required=False, missing=None, location='json')
+        'source': fields.Str(required=False, missing=None, location='json'),
+
+        'payment_mode': fields.Str(required=False, missing=None, location='json'),
+
+        'check_payment_mode': fields.Bool(location='query', missing=False)
     }
     try:
         args = parser.parse(apply_coupon_args, request)
@@ -603,7 +605,7 @@ def apply_coupon_v2():
     else:
         voucher_success = True
     # coupon is valid, try applying it
-    benefits = get_benefits_new(order)
+    benefits = refactor_benefits(order)
     benefits['success'] = voucher_success
     benefits['errors'] = error_list
     if not voucher_success:
@@ -688,7 +690,11 @@ def check_coupon_v2():
             location='json'
             ),
 
-        'source': fields.Str(required=False, missing=None, location='json')
+        'source': fields.Str(required=False, missing=None, location='json'),
+
+        'payment_mode': fields.Str(required=False, missing=None, location='json'),
+
+        'check_payment_mode': fields.Bool(location='query', missing=False)
 
     }
     try:
@@ -715,7 +721,7 @@ def check_coupon_v2():
 
     fetch_auto_benefits(order, VoucherType.regular_freebie)
     fetch_auto_benefits(order, VoucherType.auto_freebie)
-    benefits = get_benefits_new(order)
+    benefits = refactor_benefits(order)
     benefits['success'] = voucher_success
     benefits['errors'] = error_list
     if not voucher_success:

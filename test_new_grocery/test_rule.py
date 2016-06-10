@@ -1,5 +1,5 @@
 import datetime
-import simplejson as json
+import json
 import unittest
 from src.sqlalchemydb import CouponsAlchemyDB
 from src.rules.utils import create_rule_list
@@ -24,7 +24,6 @@ class CreateRule(unittest.TestCase):
         db.delete_row("all_vouchers")
         db.delete_row("vouchers")
         db.delete_row("rule")
-        # db.delete_row("tokens")
         db.delete_row("all_vouchers_log")
         self.app_context.pop()
 
@@ -73,9 +72,12 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": ["VISA"],
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "amount": 100,
-                    }
+                    "benefits": [
+                        {
+                            'type': 0,
+                            "amount": 100,
+                        }
+                    ]
                 }
             ]
         }
@@ -120,9 +122,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -156,9 +161,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -191,9 +199,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2, 3]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2, 3]]
+                        }
+                    ]
                 }
             ]
         }
@@ -226,9 +237,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2, 3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2, 3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -259,9 +273,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2, 3, 4, 5]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2, 3, 4, 5]]
+                        }
+                    ]
                 }
             ]
         }
@@ -295,9 +312,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2, 3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2, 3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -328,9 +348,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2, 3, 4, 5]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2, 3, 4, 5]]
+                        }
+                    ]
                 }
             ]
         }
@@ -365,9 +388,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -396,9 +422,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -433,9 +462,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -464,9 +496,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -519,9 +554,12 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": ["VISA"],
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "amount": 100,
-                    }
+                    "benefits": [
+                        {
+                            'type': 0,
+                            "amount": 100,
+                        }
+                    ]
                 }
             ]
         }
@@ -659,10 +697,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": ["VISA"],
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 },
                 {
                     "description": "TEST1RULE1DESCRIPTION1",
@@ -695,10 +736,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": ["VISA"],
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "percentage": 5,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 5,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -725,7 +769,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        # # db.insert_row("tokens", **values)
+        # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -755,23 +799,26 @@ class CreateRule(unittest.TestCase):
                             "zone": [188464]
                         }
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
         response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
                                     headers=headers, content_type='application/json')
         data = json.loads(response.data)
-        self.assertTrue(response.status_code ==200, response.data)
         order_data = {
             "area_id": "87000",
             "customer_id": "1234",
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ]
@@ -792,7 +839,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        # # db.insert_row("tokens", **values)
+        # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -822,9 +869,12 @@ class CreateRule(unittest.TestCase):
                             "zone": [188464]
                         }
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -837,7 +887,8 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ],
@@ -880,9 +931,12 @@ class CreateRule(unittest.TestCase):
                             "zone": [3]
                         }
                     },
-                    "benefits": {
-                        "freebies": [[2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -934,9 +988,12 @@ class CreateRule(unittest.TestCase):
                             "zone": [3]
                         }
                     },
-                    "benefits": {
-                        "freebies": [[2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -970,9 +1027,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -999,9 +1059,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1031,9 +1094,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1063,9 +1129,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1094,9 +1163,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1125,9 +1197,11 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }]
                 }
             ]
         }
@@ -1157,9 +1231,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1193,9 +1270,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1224,9 +1304,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1258,9 +1341,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1292,9 +1378,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1325,9 +1414,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1358,9 +1450,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1392,9 +1487,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[3, 4]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[3, 4]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1413,7 +1511,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        # # db.insert_row("tokens", **values)
+        # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -1443,9 +1541,12 @@ class CreateRule(unittest.TestCase):
                             "zone": [188464]
                         }
                     },
-                    "benefits": {
-                        "freebies": [[1]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1496,10 +1597,13 @@ class CreateRule(unittest.TestCase):
                         "valid_on_order_no": [],
                         "source": ["affiliate", "organic"]
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -1510,7 +1614,7 @@ class CreateRule(unittest.TestCase):
                         len(data.get('data', dict()).get('success_list', list())) is 1, response.data)
         test1code1_voucher = Vouchers.find_one('TEST1CODE1')
         voucher_rule_list = test1code1_voucher.get_rule()
-        from api.v1.utils import get_criteria_kwargs
+        from grocery.api.v1.utils import get_criteria_kwargs
         rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
@@ -1522,7 +1626,8 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ],
@@ -1541,7 +1646,8 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ],
@@ -1561,8 +1667,9 @@ class CreateRule(unittest.TestCase):
             "customer_id": "1234",
             "channel": 0,
             "products": [
-                {
-                    "item_id": "1151594",
+                 {
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ],
@@ -1610,9 +1717,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1678,9 +1788,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -1712,7 +1825,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        # # db.insert_row("tokens", **values)
+        # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -1760,10 +1873,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -1775,7 +1891,8 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ],
@@ -1784,20 +1901,21 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         data = json.loads(response.data)
-        self.assertTrue(data.get('benefits')[0]['max_discount'] == 250, response.data)
-        self.assertTrue(data.get('benefits')[0]['prorated_discount'] < data.get('benefits')[0]['max_discount'], response.data)
-        self.assertTrue(data.get('products')[0]['discount'] == data.get('benefits')[0]['prorated_discount'], response.data)
+        self.assertTrue(data.get('benefits')[0]['max_cap'] == 250, response.data)
+        self.assertTrue(data.get('benefits')[0]['amount'] < data.get('benefits')[0]['max_cap'], response.data)
         order_data = {
             "area_id": "87000",
             "customer_id": "9831314343",
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 10
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 100
                 },
             ],
@@ -1806,9 +1924,8 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         data = json.loads(response.data)
-        self.assertTrue(data.get('benefits')[0]['max_discount'] == 250, response.data)
-        self.assertTrue(data.get('benefits')[0]['prorated_discount'] > data.get('benefits')[0]['max_discount'], response.data)
-        self.assertTrue(data.get('products')[0]['discount'] < data.get('benefits')[0]['prorated_discount'], response.data)
+        self.assertTrue(data.get('benefits')[0]['max_cap'] == 250, response.data)
+        self.assertTrue(data.get('benefits')[0]['amount'] > data.get('benefits')[0]['max_cap'], response.data)
         rule_create_data = {
             "name": "test_rule_1",
             "description": "test_some_description_1",
@@ -1850,9 +1967,12 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "amount": 300
-                    }
+                    "benefits": [
+                        {
+                            'type': 0,
+                            "amount": 300
+                        }
+                    ]
                 }
             ]
         }
@@ -1864,11 +1984,13 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 10
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 100
                 },
             ],
@@ -1876,9 +1998,10 @@ class CreateRule(unittest.TestCase):
         }
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
+        #print response.data
         data = json.loads(response.data)
-        self.assertTrue(not data.get('benefits')[0]['max_discount'], response.data)
-        self.assertTrue(data.get('benefits')[0]['flat_discount'] == 300, response.data)
+        self.assertTrue(not data.get('benefits')[0]['max_cap'], response.data)
+        self.assertTrue(data.get('benefits')[0]['amount'] == 300, response.data)
         order_data = {
             "order_id": "AGTEST",
             "area_id": "87000",
@@ -1886,11 +2009,13 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 10
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 100
                 },
             ],
@@ -1924,7 +2049,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        # # db.insert_row("tokens", **values)
+        # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -1985,15 +2110,19 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
         response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
                                     content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
         #print response.data
         order_data = {
             "area_id": "87000",
@@ -2001,7 +2130,8 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 4
                 },
             ],
@@ -2014,92 +2144,97 @@ class CreateRule(unittest.TestCase):
         self.assertTrue(len(data.get('benefits')) == 1, response.data)
 
     def test_custom_benefit(self):
-        values = {
-            'token': u'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy',
-            'agent_id': 1,
-            'agent_name': u'askmegrocery',
-            'created_at': datetime.datetime.utcnow(),
-            'last_accessed_at': datetime.datetime.utcnow()
-        }
-        db = CouponsAlchemyDB()
+        # deprecating the custom cashback feature in favour of benefit tyoe cashback
+        pass
+        # values = {
+        #     'token': u'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy',
+        #     'agent_id': 1,
+        #     'agent_name': u'askmegrocery',
+        #     'created_at': datetime.datetime.utcnow(),
+        #     'last_accessed_at': datetime.datetime.utcnow()
+        # }
+        # db = CouponsAlchemyDB()
         # # db.insert_row("tokens", **values)
-        headers= {
-            'X-API-USER': 'askmegrocery',
-            'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
-        }
-        today = datetime.datetime.utcnow()
-        hour = today.hour
-        hour -= 1
-        today = today.date()
-        tomorrow = today+timedelta(days=2)
-        rule_create_data = {
-            "name": "test_rule_1",
-            "description": "test_some_description_1",
-            "type": 2,
-            "user_id": "1000",
-            "code": ["TEST1CODE1"],
-            "from": today.isoformat(),
-            "to": tomorrow.isoformat(),
-            "custom": "ICICI CASHBACK 500",
-            "rules": [
-                {
-                    "description": "TEST1RULE1DESCRIPTION1",
-                    "criteria": {
-                        "no_of_uses_allowed_per_user": 1,
-                        "no_of_total_uses_allowed": 100,
-                        "range_min": None,
-                        "range_max": None,
-                        "cart_range_min": 100,
-                        "cart_range_max": None,
-                        "channels": [],
-                        "brands": [],
-                        "products": {
-                            'in':[],
-                            'not_in': []
-                        },
-                        "categories": {
-                            "in": [],
-                            "not_in": []
-                        },
-                        "storefronts": [],
-                        "variants": [],
-                        "sellers": [],
-                        "location": {
-                            "country":[],
-                            "state": [],
-                            "city": [],
-                            "area": [],
-                            "zone": []
-                        },
-                        "payment_modes": [],
-                        "valid_on_order_no": []
-                    },
-                    "benefits": {
-                        "amount": 0
-                    }
-                }
-            ]
-        }
-        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
-                                    content_type='application/json')
-        #print response.data
-        order_data = {
-            "area_id": "87000",
-            "customer_id": "1234",
-            "channel": 0,
-            "products": [
-                {
-                    "item_id": "1151594",
-                    "quantity": 4
-                },
-            ],
-            "coupon_codes": ["TEST1CODE1"]
-        }
-        response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
-                                    content_type='application/json', headers=headers)
-        data = json.loads(response.data)
-        self.assertTrue(data.get('success'), response.data)
-        self.assertTrue(len(data.get('benefits')) == 1, response.data)
+        # headers = {
+        #     'X-API-USER': 'askmegrocery',
+        #     'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
+        # }
+        # today = datetime.datetime.utcnow()
+        # hour = today.hour
+        # hour -= 1
+        # today = today.date()
+        # tomorrow = today+timedelta(days=2)
+        # rule_create_data = {
+        #     "name": "test_rule_1",
+        #     "description": "test_some_description_1",
+        #     "type": 2,
+        #     "user_id": "1000",
+        #     "code": ["TEST1CODE1"],
+        #     "from": today.isoformat(),
+        #     "to": tomorrow.isoformat(),
+        #     "custom": "ICICI CASHBACK 500",
+        #     "rules": [
+        #         {
+        #             "description": "TEST1RULE1DESCRIPTION1",
+        #             "criteria": {
+        #                 "no_of_uses_allowed_per_user": 1,
+        #                 "no_of_total_uses_allowed": 100,
+        #                 "range_min": None,
+        #                 "range_max": None,
+        #                 "cart_range_min": 100,
+        #                 "cart_range_max": None,
+        #                 "channels": [],
+        #                 "brands": [],
+        #                 "products": {
+        #                     'in':[],
+        #                     'not_in': []
+        #                 },
+        #                 "categories": {
+        #                     "in": [],
+        #                     "not_in": []
+        #                 },
+        #                 "storefronts": [],
+        #                 "variants": [],
+        #                 "sellers": [],
+        #                 "location": {
+        #                     "country":[],
+        #                     "state": [],
+        #                     "city": [],
+        #                     "area": [],
+        #                     "zone": []
+        #                 },
+        #                 "payment_modes": [],
+        #                 "valid_on_order_no": []
+        #             },
+        #             "benefits": [
+        #                 {
+        #                     'type': 0,
+        #                     "amount": 0
+        #                 }
+        #             ]
+        #         }
+        #     ]
+        # }
+        # response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+        #                             content_type='application/json')
+        # self.assertTrue(response.status_code == 200, response.data)
+        # order_data = {
+        #     "area_id": "87000",
+        #     "customer_id": "1234",
+        #     "channel": 0,
+        #     "products": [
+        #         {
+        #             "item_id": "1151594",
+        #             "quantity": 4
+        #         },
+        #     ],
+        #     "coupon_codes": ["TEST1CODE1"]
+        # }
+        # response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
+        #                             content_type='application/json', headers=headers)
+        # data = json.loads(response.data)
+        # self.assertTrue(data.get('success'), response.data)
+        # self.assertTrue(len(data.get('benefits')) == 1, response.data)
 
     def test_update_to_date(self):
         # 1. To verify that we can successfully update an expired coupon
@@ -2118,7 +2253,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        # # # db.insert_row("tokens", **values)
+        # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -2168,10 +2303,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2223,10 +2361,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2295,10 +2436,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2360,10 +2504,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2407,7 +2554,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        # # db.insert_row("tokens", **values)
+        # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -2458,10 +2605,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2505,7 +2655,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        # # db.insert_row("tokens", **values)
+        # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -2585,10 +2735,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": [],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2601,19 +2754,23 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050125",
+                    "item_id": "3",
+                    "subscription_id": "2050125",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050126",
+                    "item_id": "4",
+                    "subscription_id": "2050126",
                     "quantity": 5
                 },
             ],
@@ -2624,7 +2781,7 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(data.get('success'), response.data)
         self.assertTrue(len(data.get('benefits')) == 1, response.data)
-        self.assertTrue("2050126" in data.get('benefits')[0]['items'] and "2050125" in data.get('benefits')[0]['items'] and "2007982" not in data.get('benefits')[0]['items'] and "1151594" in data.get('benefits')[0]['items'], response.data)
+        self.assertTrue("4" in data.get('benefits')[0]['items'] and "3" in data.get('benefits')[0]['items'] and "2" not in data.get('benefits')[0]['items'] and "1" in data.get('benefits')[0]['items'], response.data)
 
     def test_update_to_date_backward_compatible(self):
         # All the freebies created are of overlapping ranges, but at a time only one will be active
@@ -2658,9 +2815,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -2726,9 +2886,12 @@ class CreateRule(unittest.TestCase):
                         },
                         "valid_on_order_no": ["1+"]
                     },
-                    "benefits": {
-                        "freebies": [[1, 2]]
-                    }
+                    "benefits": [
+                        {
+                            'type': 2,
+                            "freebies": [[1, 2]]
+                        }
+                    ]
                 }
             ]
         }
@@ -2760,7 +2923,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        # # db.insert_row("tokens", **values)
+        # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -2812,10 +2975,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": ["VISA"],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -2828,19 +2994,23 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050125",
+                    "item_id": "3",
+                    "subscription_id": "2050125",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050126",
+                    "item_id": "4",
+                    "subscription_id": "2050126",
                     "quantity": 5
                 },
             ],
@@ -2855,19 +3025,23 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050125",
+                    "item_id": "3",
+                    "subscription_id": "2050125",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050126",
+                    "item_id": "4",
+                    "subscription_id": "2050126",
                     "quantity": 5
                 },
             ],
@@ -2877,25 +3051,30 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         self.assertTrue(response.status_code == 200, response.data)
+        #print response.data
         order_data = {
             "area_id": "87000",
             "customer_id": "1234",
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050125",
+                    "item_id": "3",
+                    "subscription_id": "2050125",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050126",
+                    "item_id": "4",
+                    "subscription_id": "2050126",
                     "quantity": 5
                 },
             ],
@@ -2911,19 +3090,23 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050125",
+                    "item_id": "3",
+                    "subscription_id": "2050125",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050126",
+                    "item_id": "4",
+                    "subscription_id": "2050126",
                     "quantity": 5
                 },
             ],
@@ -2932,6 +3115,221 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon', check_payment_mode=True), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         self.assertTrue(response.status_code == 400, response.data)
+
+    def test_apply_when_same_order_id(self):
+        # 1. To check that when an order is given with same order id, it should reevaluate and update
+        #    voucher_use_tracker and add entry in voucher_use_transaction_log. Also check if the user id
+        #    has changed, then the same must have been updated in voucher_use_tracker.
+        # 2. When a date is provided check that voucher which was valid on that particular date is picked
+        #    and reevaluate the coupon and check that voucher_use_tracker is up to date.
+        # 3. When validate=False is given as query parameter, see if the usage check is bypassed.
+        values = {
+            'token': u'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy',
+            'agent_id': 1,
+            'agent_name': u'askmegrocery',
+            'created_at': datetime.datetime.utcnow(),
+            'last_accessed_at': datetime.datetime.utcnow()
+        }
+        db = CouponsAlchemyDB()
+        # db.insert_row("tokens", **values)
+        headers= {
+            'X-API-USER': 'askmegrocery',
+            'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
+        }
+        today = datetime.datetime.utcnow()
+        hour = today.hour
+        hour -= 1
+        today = today.date()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "custom": "ICICI CASHBACK 500",
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 1,
+                        "range_min": None,
+                        "range_max": None,
+                        "cart_range_min": 100,
+                        "cart_range_max": None,
+                        "channels": [],
+                        "brands": [],
+                        "products": {
+                            'in':[],
+                            'not_in': []
+                        },
+                        "categories": {
+                            "in": [],
+                            "not_in": []
+                        },
+                        "storefronts": [],
+                        "variants": [],
+                        "sellers": [],
+                        "location": {
+                            "country":[],
+                            "state": [],
+                            "city": [],
+                            "area": [],
+                            "zone": []
+                        },
+                        "payment_modes": [],
+                        "valid_on_order_no": []
+                    },
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
+                }
+            ]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+        order_data = {
+            "area_id": "87000",
+            "customer_id": "1234",
+            "order_id": "12345",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": "1",
+                    "subscription_id": "1151594",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2",
+                    "subscription_id": "2007982",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "3",
+                    "subscription_id": "2050125",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "4",
+                    "subscription_id": "2050126",
+                    "quantity": 5
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 200, response.data)
+        order_data = {
+            "area_id": "87000",
+            "customer_id": "4321",
+            "order_id": "12345",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": "1",
+                    "subscription_id": "1151594",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2",
+                    "subscription_id": "2007982",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "3",
+                    "subscription_id": "2050125",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "4",
+                    "subscription_id": "2050126",
+                    "quantity": 5
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 200, response.data)
+        use_dict = db.find("voucher_use_tracker")[0]
+        self.assertTrue(use_dict['user_id'] == "4321")
+        order_data = {
+            "area_id": "87000",
+            "customer_id": "4321",
+            "order_id": "123456",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": "1",
+                    "subscription_id": "1151594",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2",
+                    "subscription_id": "2007982",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "3",
+                    "subscription_id": "2050125",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "4",
+                    "subscription_id": "2050126",
+                    "quantity": 5
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 400, response.data)
+        use_dict = db.find("voucher_use_tracker")[0]
+        self.assertTrue(use_dict['user_id'] == "4321")
+        order_data = {
+            "area_id": "87000",
+            "customer_id": "4321",
+            "order_id": "123456",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": "1",
+                    "subscription_id": "1151594",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2",
+                    "subscription_id": "2007982",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "3",
+                    "subscription_id": "2050125",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "4",
+                    "subscription_id": "2050126",
+                    "quantity": 5
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.apply_coupon', validate=False), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 200, response.data)
+        use_dict = db.find("voucher_use_tracker")[0]
+        self.assertTrue(use_dict['user_id'] == "4321")
 
     def test_is_active_feature(self):
         # 1. To set is_active false for vouchers using update api and verify the sanity
@@ -2944,7 +3342,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        # # # db.insert_row("tokens", **values)
+        # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -2996,10 +3394,13 @@ class CreateRule(unittest.TestCase):
                         "payment_modes": ["VISA"],
                         "valid_on_order_no": []
                     },
-                    "benefits": {
-                        "percentage": 10,
-                        "max_discount": 250
-                    }
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
                 }
             ]
         }
@@ -3012,19 +3413,23 @@ class CreateRule(unittest.TestCase):
             "channel": 0,
             "products": [
                 {
-                    "item_id": "1151594",
+                    "item_id": "1",
+                    "subscription_id": "1151594",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2007982",
+                    "item_id": "2",
+                    "subscription_id": "2007982",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050125",
+                    "item_id": "3",
+                    "subscription_id": "2050125",
                     "quantity": 5
                 },
                 {
-                    "item_id": "2050126",
+                    "item_id": "4",
+                    "subscription_id": "2050126",
                     "quantity": 5
                 },
             ],

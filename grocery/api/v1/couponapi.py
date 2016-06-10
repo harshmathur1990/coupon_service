@@ -3,9 +3,9 @@ import logging
 import werkzeug
 from flask import request
 from lib.decorator import jsonify, check_login
-from lib.utils import length_validator, create_error_response,\
+from lib.utils import length_validator, create_error_response, is_benefits_valid,\
     create_success_response, is_valid_schedule_object, is_valid_duration_string, handle_unprocessable_entity
-from src.enums import VoucherType, Channels, SchedulerType
+from src.enums import VoucherType, Channels, SchedulerType, BenefitType
 from src.rules.utils import apply_benefits, update_keys_in_input_list,\
     fetch_order_response, get_benefits_new, make_transaction_log_entry
 from utils import fetch_auto_benefits, fetch_order_detail, create_regular_coupon, fetch_coupon
@@ -362,38 +362,29 @@ def create_voucher():
                         missing=dict()
                     ),
 
-                    'benefits': fields.Nested(
-                        {
-                            'freebies': fields.List(
-                                fields.List(
-                                    fields.Int(
-                                        validate=validate.Range(min=0)
-                                    ),
+                    'benefits': fields.List(
+                        fields.Nested(
+                            {
+                                'type': fields.Int(
+                                    required=True,
+                                    validate=validate.OneOf(
+                                        [l.value for l in list(BenefitType)],
+                                        [l.name for l in list(BenefitType)]
+                                    )
                                 ),
-                                required=False,
-                                missing=list()
-                            ),
-
-                            'amount': fields.Int(
-                                required=False, missing=None, validate=validate.Range(min=0)
-                            ),
-
-                            'percentage': fields.Int(
-                                required=False, missing=None, validate=validate.Range(min=0, max=100)
-                            ),
-
-                            'max_discount': fields.Int(
-                                required=False, validate=validate.Range(min=0)
-                            )
-                        },
-                        required=False,
-                        missing={
-                            'freebies': [[]],
-                            'amount': None,
-                            'percentage': None,
-                            'max_discount': None
-                        },
-                        validate=lambda val: length_validator(val, 1000)
+                                'amount': fields.Float(required=False, validate=validate.Range(min=0)),
+                                'percentage': fields.Float(required=False, validate=validate.Range(min=0)),
+                                'freebies': fields.List(
+                                    fields.List(
+                                        fields.Int(required=False, validate=validate.Range(min=1)),
+                                        required=True
+                                    ),
+                                    required=False
+                                ),
+                                'max_cap': fields.Float(required=False, validate=validate.Range(min=1))
+                            }
+                        ),
+                        validate=[lambda val: length_validator(val, 1000), is_benefits_valid],
                     )
                 }
             ),
@@ -502,7 +493,7 @@ def apply_coupon():
         'products': fields.List(
             fields.Nested(
                 {
-                    'subscription_id': fields.Str(validate=validate.Length(min=1), required=False),
+                    'subscription_id': fields.Str(validate=validate.Length(min=1), required=True),
                     'item_id': fields.Str(validate=validate.Length(min=1), required=True),
                     'quantity': fields.Int(validate=validate.Range(min=1), required=True),
                     'coupon_codes': fields.List(
@@ -552,46 +543,31 @@ def apply_coupon():
 
         'payment_mode': fields.Str(required=False, missing=None, location='json'),
 
-        'check_payment_mode': fields.Bool(location='query', missing=False)
+        'check_payment_mode': fields.Bool(location='query', missing=False),
+
+        'validate': fields.Bool(location='query', missing=True),
+
+        'order_date': fields.DateTime(location='json', required=False, missing=None)
     }
     try:
         args = parser.parse(apply_coupon_args, request)
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
-    for product in args.get('products'):
-        product['subscription_id'] = product['item_id']
-
-    order_exists, benefits_given = fetch_order_response(args)
-    if order_exists:
-        return benefits_given
+    # order_exists, benefits_given = fetch_order_response(args)
+    # if order_exists:
+    #     return benefits_given
 
     success, order, error_list = fetch_order_detail(args)
 
     if not success:
-        products = list()
-        for product in args.get('products'):
-            product_dict = dict()
-            product_dict['itemid'] = product.get('item_id')
-            product_dict['quantity'] = product.get('quantity')
-            product_dict['discount'] = 0.0
-            products.append(product_dict)
-        rv = {
-            'success': False,
-            'error': {
-                'code': 503,
-                'error': ','.join(error_list)
-            },
-            'products': products,
-            'freebies': [],
-            'totalDiscount': 0.0,
-            'channel': [],
-            'paymentModes': [],
-            'errors': error_list
-        }
-        return rv
+        return create_failed_api_response(args, error_list)
 
     success, error_list = validate_coupon(args.get('coupon_codes', list()), order, validate_for_apply=True)
+
+    # If user does not exist
+    if not success:
+        return create_failed_api_response(args, error_list)
 
     if order.failed_vouchers:
         voucher_success = False
@@ -635,7 +611,7 @@ def check_coupon():
         'products': fields.List(
             fields.Nested(
                 {
-                    'subscription_id': fields.Str(validate=validate.Length(min=1), required=False),
+                    'subscription_id': fields.Str(validate=validate.Length(min=1), required=True),
                     'item_id': fields.Str(validate=validate.Length(min=1), required=True),
                     'quantity': fields.Int(validate=validate.Range(min=1), required=True),
                     'coupon_codes': fields.List(
@@ -694,8 +670,8 @@ def check_coupon():
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
-    for product in args.get('products'):
-        product['subscription_id'] = product['item_id']
+    # for product in args.get('products'):
+    #     product['subscription_id'] = product['item_id']
 
     success, order, error_list = fetch_order_detail(args)
 
@@ -703,6 +679,8 @@ def check_coupon():
         return create_failed_api_response(args, error_list)
 
     success, error_list = validate_coupon(args.get('coupon_codes', list()), order)
+
+    # If user does not exist
     if not success:
         return create_failed_api_response(args, error_list)
 

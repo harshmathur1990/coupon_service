@@ -7,7 +7,7 @@ from constants import GROCERY_ITEM_KEY, GROCERY_CACHE_TTL, GROCERY_LOCATION_KEY
 import config
 from data import VerificationItemData, OrderData
 from lib import cache
-from lib.utils import make_api_call, create_success_response, create_error_response, get_utc_timezone_unaware_date_object
+from lib.utils import make_api_call, create_success_response
 from src.enums import VoucherType, BenefitType
 from src.rules.rule import Benefits
 from src.rules.utils import create_rule_object, save_vouchers, create_regular_voucher
@@ -72,12 +72,12 @@ def create_freebie_coupon(args):
             'sellers': [],
             'payment_modes': []
         },
-        'benefits': {
-            'freebies': rule.get('benefits').get('freebies'),
-            'amount': None,
-            'percentage': None,
-            'max_discount': None
-        },
+        'benefits': [
+            {
+                'type': 2,
+                'freebies': rule.get('benefits')[0].get('freebies'),
+            }
+        ],
         'description': rule.get('description')
     }
     if args.get('type') is VoucherType.auto_freebie.value:
@@ -277,6 +277,7 @@ def fetch_location_dict(area_id):
 def fetch_order_detail(args):
     # custom implementation for askmegrocery, this method has to be
     # re-written to integrate with other sites' services
+    # This
     area_id = args.get('area_id')
     subscription_id_set = set()
     item_map = dict()
@@ -307,6 +308,9 @@ def fetch_order_detail(args):
     order_data_dict['check_payment_mode'] = args.get('check_payment_mode')
     order_data_dict['items'] = items
     order_data_dict['customer_id'] = args.get('customer_id')
+    order_data_dict['order_id'] = args.get('order_id')
+    order_data_dict['area_id'] = args.get('area_id')
+    order_data_dict['validate'] = args.get('validate')
     order_data = OrderData(**order_data_dict)
     return True, order_data, None
 
@@ -315,7 +319,6 @@ def get_criteria_kwargs(data):
     criteria = data.get('criteria')
     blacklist_criteria = data.get('blacklist_criteria', dict())
     benefits = data.get('benefits')
-    description = data.get('description')
     rule_criteria_kwargs = dict()
     rule_blacklist_criteria_kwargs = dict()
     rule_criteria_keys = [
@@ -346,25 +349,37 @@ def get_criteria_kwargs(data):
     from rule_criteria import RuleCriteria
     rule_criteria = RuleCriteria(**rule_criteria_kwargs)
     rule_blacklist_criteria = RuleCriteria(**rule_blacklist_criteria_kwargs)
-    freebie_benefit_list = list()
-    for freebie in benefits.get('freebies', list()):
-        freebie_dict = dict()
-        freebie_dict['type'] = BenefitType.freebie.value
-        freebie_dict['value'] = freebie
-        freebie_benefit_list.append(freebie_dict)
-    amount_benefit = {
-        'type': BenefitType.amount.value,
-        'value': benefits.get('amount')
-    }
-    percentage_benefit = {
-        'type': BenefitType.percentage.value,
-        'value': benefits.get('percentage')
-    }
-    benefit_list = freebie_benefit_list
-    benefit_list.append(amount_benefit)
-    benefit_list.append(percentage_benefit)
+
+    benefit_list = list()
+
+    for benefit in benefits:
+        type = BenefitType(benefit['type'])
+        if type is BenefitType.freebie:
+            freebies = benefit.get('freebies', list())
+            for freebie in freebies:
+                benefit_dict = dict()
+                benefit_dict['type'] = type.value
+                benefit_dict['value'] = freebie
+                benefit_list.append(benefit_dict)
+        elif type in [
+            BenefitType.amount,
+            BenefitType.cashback_amount,
+            BenefitType.agent_cashback_amount,
+            BenefitType.agent_amount
+        ]:
+            benefit_dict = dict()
+            benefit_dict['type'] = type.value
+            benefit_dict['value'] = benefit['amount']
+            benefit_dict['max_cap'] = benefit.get('max_cap')
+            benefit_list.append(benefit_dict)
+        else:
+            benefit_dict = dict()
+            benefit_dict['type'] = type.value
+            benefit_dict['value'] = benefit['percentage']
+            benefit_dict['max_cap'] = benefit.get('max_cap')
+            benefit_list.append(benefit_dict)
+
     benefit_criteria_kwargs = {
-        'max_discount': benefits.get('max_discount'),
         'data': benefit_list
     }
     benefits = Benefits(**benefit_criteria_kwargs)

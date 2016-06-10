@@ -3,7 +3,7 @@ import logging
 import time
 import pytz
 import croniter
-from src.enums import SchedulerType
+from src.enums import SchedulerType, BenefitType
 from src.rules.user import User
 from src.sqlalchemydb import CouponsAlchemyDB
 from flask import request
@@ -232,6 +232,76 @@ def get_num_from_str(str):
             return int(str)
     except Exception as exp:
         return 0
+
+
+def is_benefits_valid(benefits):
+    if not benefits:
+        return False
+    for benefit in benefits:
+        benefit_type = BenefitType(benefit['type'])
+        if benefit_type in [
+            BenefitType.amount,
+            BenefitType.cashback_amount,
+            BenefitType.agent_amount,
+            BenefitType.agent_cashback_amount
+        ]:
+            amount = benefit.get('amount')
+            if not amount:
+                return False
+        if benefit_type in [
+            BenefitType.percentage,
+            BenefitType.cashback_percentage,
+            BenefitType.agent_percentage,
+            BenefitType.agent_cashback_percentage
+        ]:
+            percentage = benefit.get('percentage')
+            if not percentage:
+                return False
+        if benefit_type in [BenefitType.freebie]:
+            freebies = benefit.get('freebies')
+            if not freebies:
+                return False
+    return True
+
+
+def is_old_benefit_dict_valid(benefit_dict):
+
+    freebie_present = False
+    amount_present = False
+    percentage_present = False
+    cashback_present = False
+
+    if not benefit_dict:
+        return False
+
+    freebies = benefit_dict.get('freebies')
+
+    if freebies:
+        for freebie in freebies:
+            if freebie:
+                freebie_present = True
+                break
+
+    amount = benefit_dict.get('amount')
+
+    if amount:
+        amount_present = True
+
+    percentage = benefit_dict.get('percentage')
+
+    if percentage:
+        percentage_present = True
+
+    cashback = benefit_dict.get('cashback')
+
+    if cashback:
+        cashback_present = True
+
+    if not freebie_present and not amount_present \
+            and not percentage_present and not cashback_present:
+        return False
+
+    return True
 
 
 def can_push_to_kafka():

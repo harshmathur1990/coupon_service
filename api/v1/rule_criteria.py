@@ -1,5 +1,6 @@
 import canonicaljson
 from data import VerificationItemData
+import copy
 from src.enums import UseType, MatchStatus
 from src.sqlalchemydb import CouponsAlchemyDB
 from utils import fetch_user_details
@@ -18,6 +19,7 @@ class RuleCriteria(object):
         ('zone', 'zone', match_list_intersection_atleast_one_common, None),
         ('area', 'area', match_value_in_list, None),
         ('source', 'source', match_value_in_list, None),
+        ('payment_modes', 'payment_mode', match_value_in_list, None),
         ('valid_on_order_no', None, match_user_order_no, fetch_user_details)
     ]
 
@@ -106,7 +108,23 @@ class RuleCriteria(object):
         return self.__dict__ == other.__dict__
 
     def canonical_json(self):
-        return canonicaljson.encode_canonical_json(self.__dict__)
+        self_dict = copy.deepcopy(self.__dict__)
+        for key, items in self_dict.items():
+            if not items:
+                del self_dict[key]
+            elif isinstance(items, dict):
+                if key is 'usage':
+                    if items['use_type'] is UseType.not_available.value:
+                        del self_dict[key]
+                else:
+                    if not items['in']:
+                        del items['in']
+                    if not items['not_in']:
+                        del items['not_in']
+                    if not items:
+                        del self_dict[key]
+
+        return canonicaljson.encode_canonical_json(self_dict)
 
     def match_item(self, item):
         assert isinstance(item, VerificationItemData)
@@ -142,6 +160,8 @@ class RuleCriteria(object):
         for criteria_attr, order_attr, method, callback in self.criteria_attributes:
             if getattr(self, criteria_attr):
                 if not callback:
+                    if criteria_attr == 'payment_modes' and not order.check_payment_mode:
+                        continue
                     if method(getattr(self, criteria_attr), getattr(order, order_attr)):
                         found_matching = True
                     else:
@@ -186,7 +206,7 @@ class RuleCriteria(object):
 
         return True, {'total': order.matching_criteria_total, 'item_id_list': item_id_list}, None
 
-    def check_usage(self, user_id, voucher_id, db=None):
+    def check_usage(self, user_id, voucher_id, order_id=None, db=None):
         use_type = self.usage['use_type']
         rv = {
             'success': True,
