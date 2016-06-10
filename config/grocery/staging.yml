@@ -4,7 +4,6 @@ mysql:
     connection: mysql+pymysql://coupon:coupon1234@coupon.c0wj8qdslqom.ap-southeast-1.rds.amazonaws.com/coupon
 
 logfile:
-    foldername: couponlogs
     logfilename: CouponService.out
     errorlogfilename: CouponServiceError.log
 
@@ -14,6 +13,10 @@ ruleredis:
     host: coupon.6h3jqd.0001.apse1.cache.amazonaws.com
     port: 6379
     db: 0
+
+kafka:
+  host: 'kafka01.production.askmebazaar.com:9092,kafka02.production.askmebazaar.com:9092,kafka03.production.askmebazaar.com:9092'
+  zookeeper: 'kafka01.production.askmebazaar.com:2181,kafka02.production.askmebazaar.com:2181,kafka03.production.askmebazaar.com:2181'
 
 informationhosturl: http://uatadmin.api.askmegrocery.com
 
@@ -28,3 +31,10 @@ userfromphoneendpoint: /user/mobile/
 token: Z3IwY2VyeTpncjBjZXJ5QDIx
 
 migrationsdirectory: old_grocery_migrations
+
+testtoken:
+  user: autotest
+  token: autotest
+  kafkatopic: grocery_staging_replay
+  hosttohit: http://pyservice01.staging.askme.com:9933
+  pushtokafka: no

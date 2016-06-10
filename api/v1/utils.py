@@ -4,14 +4,13 @@ import json
 import logging
 
 from constants import GROCERY_ITEM_KEY, GROCERY_CACHE_TTL, GROCERY_LOCATION_KEY
-from config import SUBSCRIPTIONURL, TOKEN, LOCATIONURL, USERFROMMOBILEURL
+import config
 from data import VerificationItemData, OrderData
 from lib import cache
 from lib.utils import make_api_call, create_success_response, create_error_response, get_utc_timezone_unaware_date_object
 from src.enums import VoucherType, BenefitType
 from src.rules.rule import Benefits
-from src.rules.utils import create_rule_object, save_vouchers, create_and_save_rule_list
-from src.rules.validate import validate_for_create_voucher
+from src.rules.utils import create_rule_object, save_vouchers, create_regular_voucher
 from src.rules.vouchers import Vouchers
 from src.sqlalchemydb import CouponsAlchemyDB
 
@@ -117,23 +116,7 @@ def create_freebie_coupon(args):
 
 
 def create_regular_coupon(args):
-    rule_id_list, rule_list = create_and_save_rule_list(args, get_criteria_kwargs)
-    assert(len(rule_list) == len(rule_id_list))
-    if not rule_id_list:
-        return create_error_response(400, u'Unknown Exception')
-
-    args['from'] = get_utc_timezone_unaware_date_object(args.get('from'))
-    args['to'] = get_utc_timezone_unaware_date_object(args.get('to'))
-
-    success, error = validate_for_create_voucher(args)
-    if not success:
-        return create_error_response(400, error)
-
-    success_list, error_list = save_vouchers(args, rule_id_list)
-
-    for s in success_list:
-        del s['id']
-    return create_success_response(success_list, error_list)
+    return create_regular_voucher(args, get_criteria_kwargs)
 
 
 def generate_auto_freebie():
@@ -190,15 +173,12 @@ def fetch_items(subscription_id_list, item_map):
     if to_fetch_subscription_list:
         subscription_id_list_str = ','.join(u'{}'.format(v) for v in to_fetch_subscription_list)
 
-        item_url = SUBSCRIPTIONURL + subscription_id_list_str
-
+        item_url = config.SUBSCRIPTIONURL + subscription_id_list_str
         headers = {
-            'Authorization': TOKEN
+            'Authorization': config.TOKEN
         }
 
-        list_of_responses = make_api_call([item_url], headers=headers)
-
-        response = list_of_responses[0]
+        response = make_api_call(item_url, headers=headers)
 
         try:
             data_list = json.loads(response.text)
@@ -236,12 +216,12 @@ def fetch_location_dict(area_id):
     key = GROCERY_LOCATION_KEY+u'{}'.format(area_id)
     location_dict = cache.get(key)
     if not location_dict:
-        location_url = LOCATIONURL + str(area_id) + '/'
+        location_url = config.LOCATIONURL + str(area_id) + '/'
         headers = {
-            'Authorization': TOKEN
+            'Authorization': config.TOKEN
         }
-        response_list = make_api_call([location_url], headers=headers)
-        response = response_list[0]
+        response = make_api_call(location_url, headers=headers)
+
         try:
             data_list = json.loads(response.text)
         except Exception as e:
@@ -361,12 +341,12 @@ def get_criteria_kwargs(data):
 
 def fetch_user_details(order):
     customer_id = order.customer_id
-    user_info_url = USERFROMMOBILEURL + str(customer_id) + '/'
+    user_info_url = config.USERFROMMOBILEURL + str(customer_id) + '/'
     headers = {
-        'Authorization': TOKEN
+        'Authorization': config.TOKEN
     }
-    response_list = make_api_call([user_info_url], headers=headers)
-    response = response_list[0]
+    response = make_api_call(user_info_url, headers=headers)
+
     return get_user_details(response)
 
 

@@ -7,7 +7,8 @@ from datetime import timedelta
 import croniter
 from dateutil import parser
 
-from lib.utils import is_between, get_num_from_str, create_error_response, get_intersection_of_lists
+from lib.utils import is_between, get_num_from_str, create_error_response,\
+    get_intersection_of_lists, get_utc_timezone_unaware_date_object, create_success_response
 from rule import Rule
 from src.enums import *
 from src.enums import BenefitType, Channels
@@ -204,7 +205,7 @@ def fetch_voucher_for_coupon_details(coupon, db):
     return True, voucher, None
 
 
-def update_coupon(coupon, update_dict):
+def update_coupon(coupon, update_dict, change_id):
     db = CouponsAlchemyDB()
     db.begin()
     try:
@@ -212,7 +213,7 @@ def update_coupon(coupon, update_dict):
         if not success:
             db.rollback()
             return False, error
-        success, error_list = voucher.update(update_dict, db)
+        success, error_list = voucher.update(update_dict, db, change_id)
         if not success:
             db.rollback()
             return False, u','.join(error_list)
@@ -224,7 +225,7 @@ def update_coupon(coupon, update_dict):
     return True, None
 
 
-def update_values_in_this_list_of_coupons(data):
+def update_values_in_this_list_of_coupons(data, change_id):
     success_list = list()
     error_list = list()
     coupon_list = data.get('coupons')
@@ -232,6 +233,7 @@ def update_values_in_this_list_of_coupons(data):
     schedule = data['update'].get('schedule')
     custom = data['update'].get('custom')
     description = data['update'].get('description')
+    is_active = 'is_active' in data['update']
     update_dict = dict()
     if schedule:
         update_dict['schedule'] = schedule
@@ -241,12 +243,14 @@ def update_values_in_this_list_of_coupons(data):
         update_dict['description'] = description
     if to_date:
         update_dict['to'] = to_date
+    if is_active:
+        update_dict['is_active'] = data['update'].get('is_active')
     for coupon in coupon_list:
         if isinstance(coupon, dict):
             code = coupon.get('code')
         else:
             code = coupon
-        success, error = update_coupon(coupon, update_dict)
+        success, error = update_coupon(coupon, update_dict, change_id)
         if not success:
             error_dict = {
                 'code': code,
@@ -262,12 +266,25 @@ def update_values_in_this_list_of_coupons(data):
 
 
 def update_keys_in_input_list(data_list):
+    db = CouponsAlchemyDB()
+    db.begin()
+    change_id = None
+    try:
+        db.insert_row("all_vouchers_log_sequence")
+        query = 'select last_insert_id() as id'
+        max_change_log = db.execute_raw_sql(query, dict())
+        change_id = max_change_log[0]['id']
+        db.commit()
+    except Exception as e:
+        logger.exception(e)
+        db.rollback()
     success_list = list()
     error_list = list()
-    for data in data_list:
-        success_list_in_this_data, error_list_in_this_data = update_values_in_this_list_of_coupons(data)
-        success_list += success_list_in_this_data
-        error_list += error_list_in_this_data
+    if change_id:
+        for data in data_list:
+            success_list_in_this_data, error_list_in_this_data = update_values_in_this_list_of_coupons(data, change_id=change_id)
+            success_list += success_list_in_this_data
+            error_list += error_list_in_this_data
     return success_list, error_list
 
 
@@ -394,3 +411,25 @@ def get_benefits_new(order):
     response_dict['channel'] = channels_list
     response_dict['couponCodes'] = [existing_voucher['voucher'].code for existing_voucher in order.existing_vouchers]
     return response_dict
+
+
+def create_regular_voucher(args, get_criteria_kwargs_callback):
+    rule_id_list, rule_list = create_and_save_rule_list(args, get_criteria_kwargs_callback)
+    assert(len(rule_list) == len(rule_id_list))
+    if not rule_id_list:
+        return create_error_response(400, u'Unknown Exception')
+
+    args['from'] = get_utc_timezone_unaware_date_object(args.get('from'))
+    args['to'] = get_utc_timezone_unaware_date_object(args.get('to'))
+
+    from validate import validate_for_create_voucher
+
+    success, error = validate_for_create_voucher(args)
+    if not success:
+        return create_error_response(400, error)
+
+    success_list, error_list = save_vouchers(args, rule_id_list)
+
+    for s in success_list:
+        del s['id']
+    return create_success_response(success_list, error_list)

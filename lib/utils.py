@@ -1,4 +1,4 @@
-import grequests
+import requests
 import logging
 import time
 import pytz
@@ -9,6 +9,9 @@ from src.sqlalchemydb import CouponsAlchemyDB
 from flask import request
 from dateutil import parser
 import json
+import cache
+from . import KAFTATESTINGKEY
+import config
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +29,20 @@ def get_intersection_of_lists(list1, list2, key=None):
         return [l[key] for l in list1 if l in list2]
 
 
-def make_api_call(urls, headers=dict()):
-    rs = (grequests.get(u, headers=headers) for u in urls)
+def make_api_call(url, method='GET', body=None, headers=dict(), params=dict()):
+    # body must be a json serializable dict
     start = time.time()
-    response_list = grequests.map(rs)
-    for response, url in zip(response_list, urls):
-        logger.info(u'Url: {}, headers: {}, Status Code: {} Response Body: {} Total Time Taken: {}'.format(
-            url, headers, response.status_code, response.text, time.time() - start))
-    return response_list
+    if method == 'GET':
+        response = requests.get(url=url, headers=headers, params=params)
+    elif method == 'POST':
+        response = requests.post(url=url, headers=headers, json=body, params=params)
+    elif method == 'PUT':
+        response = requests.post(url=url, headers=headers, json=body, params=params)
+    else:
+        raise Exception(u'Method {} not supported'.format(method))
+    logger.info(u'Url: {}, method: {}, headers: {}, Request Body: {} Status Code: {} Response Body: {} Total Time Taken: {}'.format(
+            url, method, headers, body, response.status_code, response.text, time.time() - start))
+    return response
 
 
 def create_success_response(success_list, error_list=list(), success=True):
@@ -67,18 +76,31 @@ def unauthenticated():
     return create_error_response(401, u'Unauthenticated Client')
 
 
-def is_logged_in(agent_name, authorization):
+def unauthorized():
+    return create_error_response(403, u'Unauthorized Access')
+
+def login():
     # return True
+    agent_name = request.headers.get('X-API-USER', None)
+    authorization = request.headers.get('X-API-TOKEN', None)
     authenticated = False
-    db = CouponsAlchemyDB()
-    token = db.find_one("tokens", **{'token': authorization, 'agent_name': agent_name})
-    if token:
+    if agent_name and authorization:
+        db = CouponsAlchemyDB()
+        token = db.find_one("tokens", **{'token': authorization, 'agent_name': agent_name})
+        if token:
+            user_dict = dict()
+            user_dict['agent_id'] = token['agent_id']
+            user_dict['agent_name'] = token['agent_name']
+            user = User(**user_dict)
+            setattr(request, 'user', user)
+            authenticated = True
+    if not authenticated:
         user_dict = dict()
-        user_dict['agent_id'] = token['agent_id']
-        user_dict['agent_name'] = token['agent_name']
+        user_dict['agent_id'] = 0
+        user_dict['agent_name'] = u'anonymous'
         user = User(**user_dict)
         setattr(request, 'user', user)
-        authenticated = True
+
     return authenticated
 
 
@@ -87,7 +109,7 @@ def get_agent_id():
     try:
         agent_id = request.user.agent_id
     except AttributeError:
-        pass
+        raise
     return agent_id
 
 
@@ -210,3 +232,21 @@ def get_num_from_str(str):
             return int(str)
     except Exception as exp:
         return 0
+
+
+def can_push_to_kafka():
+    PUSHTOKAFKA = cache.get(KAFTATESTINGKEY)
+    if PUSHTOKAFKA is None:
+        return config.PUSHTOKAFKA
+    return PUSHTOKAFKA
+
+
+def validate_permission(permission):
+    if not permission or not permission.value:
+        return True
+    agent_id = get_agent_id()
+    db = CouponsAlchemyDB()
+    agent_permission_dict = db.find_one("agent_permission", **{'agent_id': agent_id, 'permission_id': permission.value})
+    if not agent_permission_dict:
+        return False
+    return True
