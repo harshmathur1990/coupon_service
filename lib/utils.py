@@ -76,6 +76,9 @@ def unauthenticated():
     return create_error_response(401, u'Unauthenticated Client')
 
 
+def unauthorized():
+    return create_error_response(403, u'Unauthorized Access')
+
 def login():
     # return True
     agent_name = request.headers.get('X-API-USER', None)

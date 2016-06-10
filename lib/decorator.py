@@ -4,7 +4,7 @@ import logging
 import json
 from flask import Response
 from flask import request
-from utils import unauthenticated, login, validate_permission
+from utils import unauthenticated, login, validate_permission, unauthorized
 from kafka_lib import send_message_to_kafka
 from config import TEST_USER, TEST_TOPIC_KAFKA
 from utils import can_push_to_kafka
@@ -64,7 +64,7 @@ def check_login(permission=None):
             if validate_permission(permission):
                 return method(*args, **kwargs)
             else:
-                return unauthenticated()
+                return unauthorized()
         return wrapper
     return check_login_decorator
 
