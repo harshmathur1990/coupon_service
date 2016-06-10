@@ -1,4 +1,5 @@
 import canonicaljson
+import copy
 from data import VerificationItemData
 from src.enums import UseType, MatchStatus
 from src.sqlalchemydb import CouponsAlchemyDB
@@ -107,7 +108,23 @@ class RuleCriteria(object):
         return self.__dict__ == other.__dict__
 
     def canonical_json(self):
-        return canonicaljson.encode_canonical_json(self.__dict__)
+        self_dict = copy.deepcopy(self.__dict__)
+        for key, items in self_dict.items():
+            if not items:
+                del self_dict[key]
+            elif isinstance(items, dict):
+                if key is 'usage':
+                    if items['use_type'] is UseType.not_available.value:
+                        del self_dict[key]
+                else:
+                    if not items['in']:
+                        del items['in']
+                    if not items['not_in']:
+                        del items['not_in']
+                    if not items:
+                        del self_dict[key]
+
+        return canonicaljson.encode_canonical_json(self_dict)
 
     def match_item(self, item):
         assert isinstance(item, VerificationItemData)

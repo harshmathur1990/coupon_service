@@ -334,6 +334,13 @@ def get_criteria_kwargs(data):
         }
         benefit_list.append(amount_benefit)
 
+    if benefits.get('amount') == 0:
+        cashback_benefit = {
+            'type': BenefitType.cashback_amount.value,
+            'value': '?'
+        }
+        benefit_list.append(cashback_benefit)
+
     if benefits.get('percentage'):
         percentage_benefit = {
             'type': BenefitType.percentage.value,

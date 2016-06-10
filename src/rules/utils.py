@@ -380,6 +380,9 @@ def get_benefits_new(order):
                         if max_cap and amount > max_cap:
                             amount = max_cap
 
+                    if benefit_type is BenefitType.cashback_amount and benefit['value']:
+                        amount = 0 if benefit['value'] == '?' else benefit['value']
+
                     for item in order.items:
 
                         if item.item_id in item_id_list:
@@ -474,7 +477,10 @@ def get_benefits_new(order):
     response_dict['totalCashback'] = total_cashback
     response_dict['totalAgentDiscount'] = total_agent_discount
     response_dict['totalAgentCashback'] = total_agent_cashback
-    response_dict['paymentMode'] = payment_modes_list
+    if hasattr(order, 'check_payment_mode') and order.check_payment_mode:
+            response_dict['paymentMode'] = order.payment_mode
+    else:
+        response_dict['paymentMode'] = payment_modes_list
     response_dict['channel'] = channels_list
     response_dict['couponCodes'] = [existing_voucher['voucher'].code for existing_voucher in order.existing_vouchers]
     return response_dict
