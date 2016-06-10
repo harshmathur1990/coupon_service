@@ -2,8 +2,9 @@ import json
 import logging
 import werkzeug
 from flask import request
-from lib.decorator import jsonify, check_login
-from lib.utils import length_validator, create_error_response, is_old_benefit_dict_valid,\
+from lib import KAFTATESTINGKEY, cache
+from lib.decorator import jsonify, check_login, push_to_kafka_for_testing
+from lib.utils import length_validator, create_error_response,\
     create_success_response, is_valid_schedule_object, is_valid_duration_string, handle_unprocessable_entity
 from src.enums import VoucherType, Channels, SchedulerType
 from src.rules.utils import apply_benefits, update_keys_in_input_list,\
@@ -15,12 +16,14 @@ from webargs.flaskparser import parser
 from api import voucher_api, voucher_api_v_1_1
 from validate import validate_for_create_api_v1, validate_for_update
 from utils import create_freebie_coupon, create_failed_api_response
+from lib.kafka_lib import CouponsKafkaProducer
 
 logger = logging.getLogger(__name__)
 
 
 @voucher_api.route('/create', methods=['POST'])
 @jsonify
+@push_to_kafka_for_testing
 # @check_login
 def create_voucher():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
@@ -401,6 +404,8 @@ def create_voucher():
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
+    error = u'Coupon Creation has been deactivated for some period of time'
+    return create_error_response(400, error)
     # api specific validation
     success, error = validate_for_create_api_v1(args)
     if not success:
@@ -423,6 +428,7 @@ def create_voucher():
 
 @voucher_api.route('/confirm', methods=['POST'])
 @jsonify
+@push_to_kafka_for_testing
 # @check_login
 def confirm_order():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
@@ -440,6 +446,7 @@ def confirm_order():
 
 @voucher_api.route('/update', methods=['PUT', 'POST'])
 @jsonify
+@push_to_kafka_for_testing
 # @check_login
 def update_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
@@ -455,6 +462,9 @@ def update_coupon():
             'errors': [u'Unable to parse Json']
         }
         return rv
+
+    error = u'Coupon Update has been deactivated for some period of time'
+    return create_error_response(400, error)
 
     success, error = validate_for_update(data_list)
     if not success:
@@ -472,6 +482,7 @@ def update_coupon():
 
 @voucher_api.route('/fetchDetail', methods=['POST'])
 @jsonify
+@push_to_kafka_for_testing
 # @check_login
 def get_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
@@ -488,6 +499,7 @@ def get_coupon():
 
 @voucher_api_v_1_1.route('/apply', methods=['POST'])
 @jsonify
+@push_to_kafka_for_testing
 @check_login
 def apply_coupon_v2():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
@@ -621,6 +633,7 @@ def apply_coupon_v2():
 
 @voucher_api_v_1_1.route('/check', methods=['POST'])
 @jsonify
+@push_to_kafka_for_testing
 @check_login
 def check_coupon_v2():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
@@ -721,3 +734,28 @@ def check_coupon_v2():
             'error': ','.join(error_list)
         }
     return benefits
+
+
+@voucher_api.route('/start_testing', methods=['POST'])
+@jsonify
+def start_testing():
+    start_testing_args = {
+        'test': fields.Bool(location='json', required=True),
+        'seconds': fields.Int(location='json', required=False, missing=3600)
+    }
+    try:
+        args = parser.parse(start_testing_args, request)
+    except werkzeug.exceptions.UnprocessableEntity as e:
+        return handle_unprocessable_entity(e)
+
+    cache.set(KAFTATESTINGKEY, args['test'], ex=args['seconds'])
+
+    if not args['test']:
+        CouponsKafkaProducer.destroy_instance()
+    else:
+        CouponsKafkaProducer.create_kafka_producer()
+
+    rv = {
+        'success': True
+    }
+    return rv

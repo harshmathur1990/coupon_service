@@ -14,9 +14,13 @@ ruleredis:
     port: 6379
     db: 0
 
+kafka:
+  host: localhost:9092
+  zookeeper: localhost:2181
+
 informationhosturl: http://uatadmin.api.askmegrocery.com
 
-subscriptionendpoint: /item/
+subscriptionendpoint: /services.ashx?method=getitembyid&itemid=
 
 locationendpoint: /area/
 
@@ -27,3 +31,10 @@ userfromphoneendpoint: /user/mobile/
 token: Z3IwY2VyeTpncjBjZXJ5QDIx
 
 migrationsdirectory: old_grocery_migrations
+
+testtoken:
+  user: autotest
+  token: autotest
+  kafkatopic: grocery_dev_topic
+  hosttohit: http://localhost:8001
+  pushtokafka: no

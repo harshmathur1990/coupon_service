@@ -13,6 +13,9 @@ ruleredis:
     port: 6379
     db: 0
 
+kafka:
+  host: localhost:9092
+  zookeeper: localhost:2181
 
 subscriptionendpoint: http://pyservice01.staging.askme.com:9070/v1/search
 
@@ -23,3 +26,10 @@ locationendpoint: http://pyservice01.staging.askme.com:8080/geo/v2.0/get_by_gid?
 userendpoint: http://pyservice01.staging.askme.com:9880/orderapi/v1/user/
 
 migrationsdirectory: new_grocery_migrations
+
+testtoken:
+  user: autotest
+  token: autotest
+  kafkatopic: new_grocery_prod_replay
+  hosttohit: http://localhost:8001
+  pushtokafka: no

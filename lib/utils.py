@@ -9,6 +9,9 @@ from src.sqlalchemydb import CouponsAlchemyDB
 from flask import request
 from dateutil import parser
 import json
+import cache
+from . import KAFTATESTINGKEY
+import config
 
 logger = logging.getLogger(__name__)
 
@@ -26,14 +29,15 @@ def get_intersection_of_lists(list1, list2, key=None):
         return [l[key] for l in list1 if l in list2]
 
 
-def make_api_call(url, method='GET', body=None, headers=dict()):
+def make_api_call(url, method='GET', body=None, headers=dict(), params=dict()):
+    # body must be a json serializable dict
     start = time.time()
     if method == 'GET':
-        response = requests.get(url=url, headers=headers)
+        response = requests.get(url=url, headers=headers, params=params)
     elif method == 'POST':
-        response = requests.post(url=url, headers=headers, json=body)
+        response = requests.post(url=url, headers=headers, json=body, params=params)
     elif method == 'PUT':
-        response = requests.post(url=url, headers=headers, json=body)
+        response = requests.post(url=url, headers=headers, json=body, params=params)
     else:
         raise Exception(u'Method {} not supported'.format(method))
     logger.info(u'Url: {}, method: {}, headers: {}, Request Body: {} Status Code: {} Response Body: {} Total Time Taken: {}'.format(
@@ -285,3 +289,10 @@ def is_old_benefit_dict_valid(benefit_dict):
         return False
 
     return True
+
+
+def can_push_to_kafka():
+    PUSHTOKAFKA = cache.get(KAFTATESTINGKEY)
+    if PUSHTOKAFKA is None:
+        return config.PUSHTOKAFKA
+    return PUSHTOKAFKA

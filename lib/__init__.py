@@ -1,0 +1,1 @@
+KAFTATESTINGKEY = u'pushtokafkafortesting'

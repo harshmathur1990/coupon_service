@@ -144,8 +144,9 @@ def validate_for_update(data_list):
                             data.get('update').get('to')
                         # or data.get('update').get('schedule')
                     or data.get('update').get('description')
-                or data.get('update').get('custom')):
-            return False, u'At least one of [to, description, custom] must be present in update key'
+                or data.get('update').get('custom')
+            or 'is_active' in data.get('update')):
+            return False, u'At least one of [to, description, custom, is_active] must be present in update key'
 
         error = False
         for coupon_obj in data.get('coupons'):
@@ -173,6 +174,8 @@ def validate_for_update(data_list):
             except ValueError:
                 return False, u'Invalid Date format'
 
+        if 'is_active' in data.get('update') and data.get('update').get('is_active') not in [True, False]:
+            return False, u'Invalid value for is_active'
         # is_schedule_object_valid = is_valid_schedule_object(data.get('update'))
         # if not is_schedule_object_valid:
         #     return False, u'Schedule is not valid in update params'

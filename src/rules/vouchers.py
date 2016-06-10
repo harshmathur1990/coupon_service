@@ -29,6 +29,7 @@ class Vouchers(object):
         self.from_date = kwargs.get('from')
         self.to_date = kwargs.get('to')
         self.type = kwargs.get('type')
+        self.is_active = kwargs.get('is_active', True)
         self.schedule = kwargs.get('schedule')
         self.created_by = kwargs.get('created_by')
         self.updated_by = kwargs.get('updated_by')
@@ -78,12 +79,13 @@ class Vouchers(object):
             'to': now,
             'code': code
         }
-        sql = "select * from all_vouchers where `to` >= :to && code=:code order by `from` asc limit 0,1"
+        sql = "select * from all_vouchers where `to` >= :to && code=:code && is_active=1 order by `from` asc limit 0,1"
         active_voucher_dict = db.execute_raw_sql(sql, active_voucher_params)
         if active_voucher_dict:
             active_voucher = Vouchers.from_dict(active_voucher_dict[0])
             present_voucher = Vouchers.find_one(code, db)
             values = active_voucher.get_value_dict()
+            del values['is_active']
             if not present_voucher:
                 db.insert_row("vouchers", **values)
             else:
@@ -203,15 +205,19 @@ class Vouchers(object):
                 return False, [u'Voucher to_date clashes with another voucher with same code']
         return self.update_to_date_single(to_date, db)
 
-    def update(self, update_dict, db):
+    def update(self, update_dict, db, change_id):
         update_dict['id'] = self.id_bin
         if 'to' in update_dict:
             success, error_list = self.update_to_date(update_dict.get('to'), db)
             if not success:
                 return False, error_list
             del update_dict['to']
-        db.update_row("vouchers", "id", **update_dict)
         db.update_row("all_vouchers", "id", **update_dict)
+        if 'is_active' in update_dict:
+            Vouchers.fetch_active_voucher(self.code, db)
+            del update_dict['is_active']
+        db.update_row("vouchers", "id", **update_dict)
+        self.add_audit_log_entry(change_id, db)
         return True, None
 
     def get_value_dict(self):
@@ -223,12 +229,40 @@ class Vouchers(object):
         values['from'] = self.from_date
         values['to'] = self.to_date
         values['type'] = self.type
-        if self.created_by:
-            values['created_by'] = self.created_by
+        values['created_by'] = self.created_by
         values['updated_by'] = self.updated_by
         values['custom'] = self.custom
+        values['is_active'] = self.is_active
         values['schedule'] = json.dumps(self.schedule)
+
         return values
+
+    # def update_object(self, update_dict):
+    #     if 'schedule' in update_dict:
+    #         self.schedule = update_dict['schedule']
+    #     if 'custom' in update_dict:
+    #         self.custom = update_dict['custom']
+    #     if 'description' in update_dict:
+    #         self.description = update_dict['description']
+    #     if 'to' in update_dict:
+    #         self.to_date = update_dict['to']
+    #     if 'is_active' in update_dict:
+    #         self.is_active = update_dict['is_active']
+
+    def add_audit_log_entry(self, change_id, db):
+        # This method will get from db and update in audit trail.
+        voucher = Vouchers.find_one_all_vouchers(self.code, self.from_date, db)
+        now = datetime.datetime.utcnow()
+        if not voucher:
+            assert self.from_date >= now, u'Voucher {} with id {} has from date less than now'.format(self.code, self.id)
+            return
+        values = voucher.get_value_dict()
+        values['change_id'] = change_id
+        values['created_at'] = voucher.created_at
+        values['updated_at'] = voucher.updated_at
+        values['created_by'] = voucher.created_by
+        values['updated_by'] = voucher.updated_by
+        db.insert_row("all_vouchers_log", **values)
 
     @staticmethod
     def find_one(code, db=None):
