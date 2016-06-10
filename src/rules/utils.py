@@ -369,6 +369,8 @@ def get_benefits_new(order):
                 if benefit_type is BenefitType.freebie:
                     freebie_list.append(benefit['value'])
                 else:
+                    if benefit['value'] is None:
+                        continue
                     if benefit_type in [
                         BenefitType.amount,
                         BenefitType.cashback_amount,
