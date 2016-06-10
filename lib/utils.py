@@ -76,18 +76,28 @@ def unauthenticated():
     return create_error_response(401, u'Unauthenticated Client')
 
 
-def is_logged_in(agent_name, authorization):
+def login():
     # return True
+    agent_name = request.headers.get('X-API-USER', None)
+    authorization = request.headers.get('X-API-TOKEN', None)
     authenticated = False
-    db = CouponsAlchemyDB()
-    token = db.find_one("tokens", **{'token': authorization, 'agent_name': agent_name})
-    if token:
+    if agent_name and authorization:
+        db = CouponsAlchemyDB()
+        token = db.find_one("tokens", **{'token': authorization, 'agent_name': agent_name})
+        if token:
+            user_dict = dict()
+            user_dict['agent_id'] = token['agent_id']
+            user_dict['agent_name'] = token['agent_name']
+            user = User(**user_dict)
+            setattr(request, 'user', user)
+            authenticated = True
+    if not authenticated:
         user_dict = dict()
-        user_dict['agent_id'] = token['agent_id']
-        user_dict['agent_name'] = token['agent_name']
+        user_dict['agent_id'] = 0
+        user_dict['agent_name'] = u'anonymous'
         user = User(**user_dict)
         setattr(request, 'user', user)
-        authenticated = True
+
     return authenticated
 
 
@@ -96,7 +106,7 @@ def get_agent_id():
     try:
         agent_id = request.user.agent_id
     except AttributeError:
-        pass
+        raise
     return agent_id
 
 
@@ -226,3 +236,14 @@ def can_push_to_kafka():
     if PUSHTOKAFKA is None:
         return config.PUSHTOKAFKA
     return PUSHTOKAFKA
+
+
+def validate_permission(permission):
+    if not permission or not permission.value:
+        return True
+    agent_id = get_agent_id()
+    db = CouponsAlchemyDB()
+    agent_permission_dict = db.find_one("agent_permission", **{'agent_id': agent_id, 'permission_id': permission.value})
+    if not agent_permission_dict:
+        return False
+    return True

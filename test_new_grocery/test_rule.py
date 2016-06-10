@@ -24,7 +24,7 @@ class CreateRule(unittest.TestCase):
         db.delete_row("all_vouchers")
         db.delete_row("vouchers")
         db.delete_row("rule")
-        db.delete_row("tokens")
+        # db.delete_row("tokens")
         db.delete_row("all_vouchers_log")
         self.app_context.pop()
 
@@ -725,7 +725,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        db.insert_row("tokens", **values)
+        # # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -792,7 +792,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        db.insert_row("tokens", **values)
+        # # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -1413,7 +1413,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        db.insert_row("tokens", **values)
+        # # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -1712,7 +1712,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        db.insert_row("tokens", **values)
+        # # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -1924,7 +1924,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        db.insert_row("tokens", **values)
+        # # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -2022,7 +2022,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        db.insert_row("tokens", **values)
+        # # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -2118,7 +2118,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        db.insert_row("tokens", **values)
+        # # # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -2407,7 +2407,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        db.insert_row("tokens", **values)
+        # # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -2505,7 +2505,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        db.insert_row("tokens", **values)
+        # # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -2760,7 +2760,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        db.insert_row("tokens", **values)
+        # # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
@@ -2944,7 +2944,7 @@ class CreateRule(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        db.insert_row("tokens", **values)
+        # # # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
