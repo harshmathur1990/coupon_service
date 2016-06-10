@@ -1,5 +1,5 @@
 import datetime
-import json
+import simplejson as json
 import unittest
 from src.sqlalchemydb import CouponsAlchemyDB
 from src.rules.utils import create_rule_list
@@ -25,6 +25,7 @@ class CreateRule(unittest.TestCase):
         db.delete_row("vouchers")
         db.delete_row("rule")
         db.delete_row("tokens")
+        db.delete_row("all_vouchers_log")
         self.app_context.pop()
 
     def test_create_voucher(self):
@@ -763,6 +764,7 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
                                     headers=headers, content_type='application/json')
         data = json.loads(response.data)
+        self.assertTrue(response.status_code ==200, response.data)
         order_data = {
             "area_id": "87000",
             "customer_id": "1234",
@@ -2930,3 +2932,141 @@ class CreateRule(unittest.TestCase):
         response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon', check_payment_mode=True), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         self.assertTrue(response.status_code == 400, response.data)
+
+    def test_is_active_feature(self):
+        # 1. To set is_active false for vouchers using update api and verify the sanity
+        # 2. To check the audit trail.
+        values = {
+            'token': u'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy',
+            'agent_id': 1,
+            'agent_name': u'askmegrocery',
+            'created_at': datetime.datetime.utcnow(),
+            'last_accessed_at': datetime.datetime.utcnow()
+        }
+        db = CouponsAlchemyDB()
+        db.insert_row("tokens", **values)
+        headers= {
+            'X-API-USER': 'askmegrocery',
+            'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
+        }
+        today = datetime.datetime.utcnow()
+        hour = today.hour
+        hour -= 1
+        today = today.date()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "custom": "ICICI CASHBACK 500",
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": None,
+                        "range_max": None,
+                        "cart_range_min": 100,
+                        "cart_range_max": None,
+                        "channels": [],
+                        "brands": [],
+                        "products": {
+                            'in':[],
+                            'not_in': []
+                        },
+                        "categories": {
+                            "in": [],
+                            "not_in": []
+                        },
+                        "storefronts": [],
+                        "variants": [],
+                        "sellers": [],
+                        "location": {
+                            "country":[],
+                            "state": [],
+                            "city": [],
+                            "area": [],
+                            "zone": []
+                        },
+                        "payment_modes": ["VISA"],
+                        "valid_on_order_no": []
+                    },
+                    "benefits": {
+                        "percentage": 10,
+                        "max_discount": 250
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+        order_data = {
+            "area_id": "87000",
+            "customer_id": "1234",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": "1151594",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2007982",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2050125",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2050126",
+                    "quantity": 5
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 200, response.data)
+        expire_args = [
+            {
+                'coupons': [{'code': 'TEST1CODE1', 'from': today.isoformat()}],
+                'update': {
+                    'is_active': False
+                }
+            }
+        ]
+        response = self.client.post(url_for('grocery_voucher_api/v1.update_coupon'), data=json.dumps(expire_args),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+        db = CouponsAlchemyDB()
+        voucher = Vouchers.find_one('TEST1CODE1')
+        self.assertTrue(voucher is False)
+        expire_args = [
+            {
+                'coupons': [{'code': 'TEST1CODE1', 'from': today.isoformat()}],
+                'update': {
+                    'is_active': True
+                }
+            }
+        ]
+        response = self.client.post(url_for('grocery_voucher_api/v1.update_coupon'), data=json.dumps(expire_args),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+        voucher = Vouchers.find_one('TEST1CODE1')
+        self.assertTrue(voucher is not False)
+        db = CouponsAlchemyDB()
+        query = 'select max(change_id) as id from all_vouchers_log'
+        max_id = db.execute_raw_sql(query, dict())[0]['id']
+        all_voucher_log = db.find_one("all_vouchers_log", **{'change_id': max_id})
+        vouchers = db.find_one("all_vouchers")
+        del all_voucher_log['auto_id']
+        del all_voucher_log['change_id']
+        del all_voucher_log['changed_on']
+        self.assertTrue(vouchers == all_voucher_log, u'{} - {}'.format(vouchers, all_voucher_log))
+        pass

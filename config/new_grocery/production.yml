@@ -33,4 +33,4 @@ testtoken:
   token: autotest
   kafkatopic: new_grocery_prod_replay
   hosttohit: http://pyservice01.staging.askme.com:882
-  pushtokafka: yes
+  pushtokafka: no

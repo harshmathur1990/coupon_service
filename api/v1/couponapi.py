@@ -16,7 +16,7 @@ from webargs.flaskparser import parser
 from api import voucher_api, voucher_api_v_1_1
 from validate import validate_for_create_api_v1, validate_for_update
 from utils import create_freebie_coupon, create_failed_api_response
-import config
+from lib.kafka_lib import CouponsKafkaProducer
 
 logger = logging.getLogger(__name__)
 
@@ -743,6 +743,11 @@ def start_testing():
         return handle_unprocessable_entity(e)
 
     cache.set(KAFTATESTINGKEY, args['test'], ex=args['seconds'])
+
+    if not args['test']:
+        CouponsKafkaProducer.destroy_instance()
+    else:
+        CouponsKafkaProducer.create_kafka_producer()
 
     rv = {
         'success': True

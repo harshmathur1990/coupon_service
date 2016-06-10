@@ -27,14 +27,24 @@ def set(key, value, ctype='rules', ex=None, px=None, nx=False, xx=False):
         already exists.
     """
     pool = cache_type.get(ctype)
-    r = redis.StrictRedis(connection_pool=pool)
-    return r.set(key, pickle.dumps(value), ex, px, nx, xx)
+    try:
+        r = redis.StrictRedis(connection_pool=pool)
+        r.set(key, pickle.dumps(value), ex, px, nx, xx)
+    except Exception as e:
+        logger.exception(e)
+        return None
 
 
 def get(key, ctype='rules'):
     pool = cache_type.get(ctype)
-    r = redis.StrictRedis(connection_pool=pool)
-    pickled_value = r.get(key)
+
+    try:
+        r = redis.StrictRedis(connection_pool=pool)
+        pickled_value = r.get(key)
+    except Exception as e:
+        logger.exception(e)
+        return None
+
     if pickled_value is None:
         return None
     try:
