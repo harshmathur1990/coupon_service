@@ -37,4 +37,4 @@ testtoken:
   token: autotest
   kafkatopic: coupons_grocery_preprod_testing
   hosttohit: http://pyservice01.staging.askme.com:9933
-  pushtokafka: yes
+  pushtokafka: no
