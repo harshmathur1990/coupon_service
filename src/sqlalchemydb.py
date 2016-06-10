@@ -251,16 +251,16 @@ class CouponsAlchemyDB:
             CouponsAlchemyDB.permissions = Table(
                 'permissions', CouponsAlchemyDB.metadata,
                 Column('id', BIGINT, primary_key=True),
-                Column('permission', VARCHAR(100), index=True, unique=True)
+                Column('permission', VARCHAR(100), index=False, unique=True)
             )
 
             CouponsAlchemyDB._table["permissions"] = CouponsAlchemyDB.permissions
 
             CouponsAlchemyDB.agent_permission = Table(
                 'agent_permission', CouponsAlchemyDB.metadata,
-                Column('agent_id', ForeignKey("tokens.agent_id")),
-                Column('permission_id', ForeignKey("permissions.id")),
-                Index('agent_id_permission_id', 'agent_id', 'permission_id')
+                Column('agent_id', ForeignKey("tokens.agent_id"), nullable=False),
+                Column('permission_id', ForeignKey("permissions.id"), nullable=False),
+                Index('agent_id_permission_id', 'agent_id', 'permission_id', unique=True)
             )
 
             CouponsAlchemyDB._table["agent_permission"] = CouponsAlchemyDB.agent_permission
