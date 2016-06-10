@@ -219,15 +219,15 @@ class CouponsAlchemyDB:
             CouponsAlchemyDB.all_vouchers_log = Table(
                 'all_vouchers_log', CouponsAlchemyDB.metadata,
                 Column('auto_id', BIGINT, primary_key=True, autoincrement=True),
-                Column('change_id', BIGINT, nullable=False),
-                Column('changed_on', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
+                Column('change_id', BIGINT, index=True, nullable=False),
+                Column('changed_on', DATETIME(fsp=6), index=True, default=datetime.utcnow, nullable=False),
                 Column('id', BINARY(16), index=True),
                 Column('code', VARCHAR(200), index=True, nullable=False),
                 Column('rules', VARCHAR(150), nullable=False),
                 Column('custom', VARCHAR(1000)),
                 Column('description', VARCHAR(255)),
-                Column('from', DATETIME(fsp=6), index=True),
-                Column('to', DATETIME(fsp=6), index=True),
+                Column('from', DATETIME(fsp=6)),
+                Column('to', DATETIME(fsp=6)),
                 Column('schedule', VARCHAR(250)),
                 Column('mutable', BOOLEAN, default=False),
                 Column('is_active', BOOLEAN, nullable=False, default=True),
@@ -236,7 +236,7 @@ class CouponsAlchemyDB:
                 Column('updated_by', VARCHAR(32), nullable=False, default=''),
                 Column('created_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
                 Column('updated_at', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, onupdate=datetime.utcnow),
-                Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=get_agent_id, nullable=True)
+                Column('agent_id', INTEGER, default=get_agent_id, nullable=True)
             )
 
             CouponsAlchemyDB._table["all_vouchers_log"] = CouponsAlchemyDB.all_vouchers_log

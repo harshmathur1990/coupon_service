@@ -32,20 +32,19 @@ def upgrade():
     sa.Column('from', mysql.DATETIME(fsp=6), nullable=True),
     sa.Column('to', mysql.DATETIME(fsp=6), nullable=True),
     sa.Column('schedule', sa.VARCHAR(length=250), nullable=True),
-    sa.Column('mutable', sa.BOOLEAN(), nullable=True),
+    sa.Column('mutable', mysql.TINYINT(unsigned=True), nullable=True),
     sa.Column('type', mysql.TINYINT(unsigned=True), nullable=False),
     sa.Column('created_by', sa.VARCHAR(length=32), nullable=False),
     sa.Column('updated_by', sa.VARCHAR(length=32), nullable=False),
     sa.Column('created_at', mysql.DATETIME(fsp=6), nullable=False),
     sa.Column('updated_at', mysql.DATETIME(fsp=6), nullable=False),
     sa.Column('agent_id', mysql.INTEGER(), nullable=True),
-    sa.ForeignKeyConstraint(['agent_id'], ['tokens.agent_id'], ),
     sa.PrimaryKeyConstraint('auto_id')
     )
     op.create_index(op.f('ix_all_vouchers_log_code'), 'all_vouchers_log', ['code'], unique=False)
-    op.create_index(op.f('ix_all_vouchers_log_from'), 'all_vouchers_log', ['from'], unique=False)
+    op.create_index(op.f('ix_all_vouchers_log_change_id'), 'all_vouchers_log', ['change_id'], unique=False)
     op.create_index(op.f('ix_all_vouchers_log_id'), 'all_vouchers_log', ['id'], unique=False)
-    op.create_index(op.f('ix_all_vouchers_log_to'), 'all_vouchers_log', ['to'], unique=False)
+    op.create_index(op.f('ix_all_vouchers_log_changed_on'), 'all_vouchers_log', ['changed_on'], unique=False)
     op.create_index(op.f('ix_all_vouchers_from'), 'all_vouchers', ['from'], unique=False)
     op.create_index(op.f('ix_all_vouchers_to'), 'all_vouchers', ['to'], unique=False)
     op.create_index('user_voucher_transaction_log_order_id', 'user_voucher_transaction_log', ['order_id'], unique=False)
@@ -57,9 +56,9 @@ def downgrade():
     op.drop_index('user_voucher_transaction_log_order_id', table_name='user_voucher_transaction_log')
     op.drop_index(op.f('ix_all_vouchers_to'), table_name='all_vouchers')
     op.drop_index(op.f('ix_all_vouchers_from'), table_name='all_vouchers')
-    op.drop_index(op.f('ix_all_vouchers_log_to'), table_name='all_vouchers_log')
+    op.drop_index(op.f('ix_all_vouchers_log_change_id'), table_name='all_vouchers_log')
     op.drop_index(op.f('ix_all_vouchers_log_id'), table_name='all_vouchers_log')
-    op.drop_index(op.f('ix_all_vouchers_log_from'), table_name='all_vouchers_log')
+    op.drop_index(op.f('ix_all_vouchers_log_changed_on'), table_name='all_vouchers_log')
     op.drop_index(op.f('ix_all_vouchers_log_code'), table_name='all_vouchers_log')
     op.drop_table('all_vouchers_log')
     op.drop_table('all_vouchers_log_sequence')

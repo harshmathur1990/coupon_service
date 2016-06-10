@@ -229,8 +229,7 @@ class Vouchers(object):
         values['from'] = self.from_date
         values['to'] = self.to_date
         values['type'] = self.type
-        if self.created_by:
-            values['created_by'] = self.created_by
+        values['created_by'] = self.created_by
         values['updated_by'] = self.updated_by
         values['custom'] = self.custom
         values['is_active'] = self.is_active
@@ -238,23 +237,24 @@ class Vouchers(object):
 
         return values
 
-    def update_object(self, update_dict):
-        if 'schedule' in update_dict:
-            self.schedule = update_dict['schedule']
-        if 'custom' in update_dict:
-            self.custom = update_dict['custom']
-        if 'description' in update_dict:
-            self.description = update_dict['description']
-        if 'to' in update_dict:
-            self.to_date = update_dict['to']
-        if 'is_active' in update_dict:
-            self.is_active = update_dict['is_active']
+    # def update_object(self, update_dict):
+    #     if 'schedule' in update_dict:
+    #         self.schedule = update_dict['schedule']
+    #     if 'custom' in update_dict:
+    #         self.custom = update_dict['custom']
+    #     if 'description' in update_dict:
+    #         self.description = update_dict['description']
+    #     if 'to' in update_dict:
+    #         self.to_date = update_dict['to']
+    #     if 'is_active' in update_dict:
+    #         self.is_active = update_dict['is_active']
 
     def add_audit_log_entry(self, change_id, db):
         # This method will get from db and update in audit trail.
         voucher = Vouchers.find_one_all_vouchers(self.code, self.from_date, db)
         now = datetime.datetime.utcnow()
-        if not voucher and self.from_date >= now:
+        if not voucher:
+            assert self.from_date >= now, u'Voucher {} with id {} has from date less than now'.format(self.code, self.id)
             return
         values = voucher.get_value_dict()
         values['change_id'] = change_id
