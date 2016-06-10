@@ -26,7 +26,22 @@ class Benefits(object):
         return self.__dict__ == other.__dict__
 
     def canonical_json(self):
-        return canonicaljson.encode_canonical_json(self.__dict__)
+        self_dict = copy.deepcopy(self.__dict__)
+        max_discount = self_dict.get('max_discount')
+        if max_discount:
+            for data in self_dict['data']:
+                if data['type'] == 1:
+                    data['max_cap'] = max_discount
+
+        data_list = list()
+        for data in self_dict['data']:
+            if data['value']:
+                if 'max_cap' in data and not data['max_cap']:
+                    del data['max_cap']
+                data_list.append(data)
+
+        self_dict['data'] = data_list
+        return canonicaljson.encode_canonical_json(self_dict)
 
 
 class BenefitsData(object):

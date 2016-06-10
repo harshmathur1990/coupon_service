@@ -1,6 +1,13 @@
 from src.sqlalchemydb import CouponsAlchemyDB
 from lib.utils import make_api_call
 from dateutil import parser
+import binascii
+import canonicaljson
+import importlib
+from src.rules.rule import Rule, Benefits
+from config import method_dict
+import hashlib
+
 
 def do_it_now(body):
     headers = {
@@ -80,3 +87,33 @@ def update_is_active():
         with open('/Users/harshmathur/Documents/update_to_date/output_active.log', 'a+') as f:
             f.write(r.text)
             f.close()
+
+
+def cleanup_rules():
+    rule_criteria_class = getattr(
+            importlib.import_module(
+                method_dict.get('criteria_class')['package']),
+            method_dict.get('criteria_class')['attribute'])
+    db = CouponsAlchemyDB()
+    rule_dict_list = db.find("rule")
+    for rule_dict in rule_dict_list:
+        rule_dict['id'] = binascii.b2a_hex(rule_dict['id'])
+        rule = Rule(**rule_dict)
+        criteria_dict = canonicaljson.json.loads(rule.criteria_json)
+        if rule.blacklist_criteria_json:
+            blacklist_dict = canonicaljson.json.loads(rule.blacklist_criteria_json)
+        else:
+            blacklist_dict = dict()
+        benefit_dict = canonicaljson.json.loads(rule.benefits_json)
+        rule_criteria = rule_criteria_class(**criteria_dict)
+        rule_blacklist_criteria = rule_criteria_class(**blacklist_dict)
+        benefits = Benefits(**benefit_dict)
+        values = dict()
+        values['id'] = rule.id_bin
+        values['criteria_json'] = rule_criteria.canonical_json()
+        values['blacklist_criteria_json'] = rule_blacklist_criteria.canonical_json()
+        values['benefits_json'] = benefits.canonical_json()
+        un_hashed_string = unicode(values['criteria_json']) + \
+            unicode(values['criteria_json']) + unicode(values['criteria_json'])
+        values['sha2hash'] = hashlib.sha256(un_hashed_string).hexdigest()
+        db.update_row("rule", "id", **values)
