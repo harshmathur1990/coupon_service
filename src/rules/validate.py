@@ -32,7 +32,7 @@ def validate_coupon(coupon_list, order, validate_for_apply=False):
     # it will have failed_vouchers as a list and existing vouchers as list.
     success = True
     for a_coupon in coupon_list:
-        voucher, error = get_voucher(a_coupon)
+        voucher, error = get_voucher(a_coupon, order_date=getattr(order, 'order_date', None))
         if not voucher:
             failed_dict = {
                 'voucher': a_coupon,
@@ -40,6 +40,7 @@ def validate_coupon(coupon_list, order, validate_for_apply=False):
             }
             order.failed_vouchers.append(failed_dict)
             continue
+
         try:
             if validate_for_apply:
                 voucher.match(order)

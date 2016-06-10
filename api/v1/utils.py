@@ -10,7 +10,7 @@ from lib import cache
 from lib.utils import make_api_call, create_success_response, create_error_response, get_utc_timezone_unaware_date_object
 from src.enums import VoucherType, BenefitType
 from src.rules.rule import Benefits
-from src.rules.utils import create_rule_object, save_vouchers, create_regular_voucher
+from src.rules.utils import create_rule_object, save_vouchers, create_regular_voucher, get_benefits_new
 from src.rules.vouchers import Vouchers
 from src.sqlalchemydb import CouponsAlchemyDB
 
@@ -263,16 +263,18 @@ def fetch_order_detail(args):
 
     success, items, error = fetch_items(list(subscription_id_set), item_map)
     if not success:
-        return False, None, error
+        return False, None, [error]
 
     success, location_dict, error = fetch_location_dict(area_id)
     if not success:
-        return False, None, error
+        return False, None, [error]
 
     order_data_dict = dict()
     order_data_dict.update(location_dict)
     order_data_dict['channel'] = args.get('channel')
     order_data_dict['source'] = args.get('source')
+    order_data_dict['payment_mode'] = args.get('payment_mode')
+    order_data_dict['check_payment_mode'] = args.get('check_payment_mode')
     order_data_dict['items'] = items
     order_data_dict['customer_id'] = args.get('customer_id')
     order_data = OrderData(**order_data_dict)
@@ -314,28 +316,43 @@ def get_criteria_kwargs(data):
     from rule_criteria import RuleCriteria
     rule_criteria = RuleCriteria(**rule_criteria_kwargs)
     rule_blacklist_criteria = RuleCriteria(**rule_blacklist_criteria_kwargs)
-    freebie_benefit_list = list()
+
+    benefit_list = list()
+
     for freebie in benefits.get('freebies', list()):
-        freebie_dict = dict()
-        freebie_dict['type'] = BenefitType.freebie.value
-        freebie_dict['value'] = freebie
-        freebie_benefit_list.append(freebie_dict)
-    amount_benefit = {
-        'type': BenefitType.amount.value,
-        'value': benefits.get('amount')
-    }
-    percentage_benefit = {
-        'type': BenefitType.percentage.value,
-        'value': benefits.get('percentage')
-    }
-    benefit_list = freebie_benefit_list
-    benefit_list.append(amount_benefit)
-    benefit_list.append(percentage_benefit)
+        benefit_dict = dict()
+        benefit_dict['type'] = BenefitType.freebie.value
+        benefit_dict['value'] = freebie
+        benefit_list.append(benefit_dict)
+
+    if benefits.get('amount'):
+        amount_benefit = {
+            'type': BenefitType.amount.value,
+            'value': benefits.get('amount'),
+        }
+        benefit_list.append(amount_benefit)
+
+    if benefits.get('percentage'):
+        percentage_benefit = {
+            'type': BenefitType.percentage.value,
+            'value': benefits.get('percentage')
+        }
+        if benefits.get('max_discount'):
+            percentage_benefit['max_cap'] = benefits.get('max_discount')
+        benefit_list.append(percentage_benefit)
+
+    if benefits.get('cashback'):
+        cashback_benefit = {
+            'type': BenefitType.cashback_amount.value,
+            'value': benefits.get('cashback'),
+        }
+        benefit_list.append(cashback_benefit)
+
     benefit_criteria_kwargs = {
-        'max_discount': benefits.get('max_discount'),
         'data': benefit_list
     }
     benefits = Benefits(**benefit_criteria_kwargs)
+
     return rule_criteria, rule_blacklist_criteria, benefits
 
 
@@ -604,3 +621,20 @@ def create_failed_api_response(args, error_list):
         'errors': error_list
     }
     return rv
+
+
+def refactor_benefits(order):
+    benefits = get_benefits_new(order)
+    benefits_list = benefits.get('benefits')
+    for benefit in benefits_list:
+        if benefit.get('benefit_type') is BenefitType.amount.value:
+            benefit['flat_discount'] = benefit.get('amount')
+        else:
+            benefit['flat_discount'] = 0.0
+        if benefit.get('benefit_type') is BenefitType.percentage.value:
+            benefit['prorated_discount'] = benefit.get('amount')
+        else:
+            benefit['prorated_discount'] = 0.0
+        benefit['max_discount'] = benefit.get('max_cap')
+        benefit['freebies'] = benefit.get('freebies', list())
+    return benefits

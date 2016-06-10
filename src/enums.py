@@ -12,7 +12,12 @@ class BenefitType(Enum):
     amount = 0
     percentage = 1
     freebie = 2
-    pay_cashback = 101
+    cashback_amount = 3
+    cashback_percentage = 4
+    agent_amount = 5
+    agent_percentage = 6
+    agent_cashback_amount = 7
+    agent_cashback_percentage = 8
 
 
 class Channels(Enum):

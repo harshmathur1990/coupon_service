@@ -6,26 +6,49 @@ import canonicaljson
 from src.enums import BenefitType, MatchStatus
 from src.sqlalchemydb import CouponsAlchemyDB
 from config import method_dict
+import copy
+
 logger = logging.getLogger()
 
 
 class Benefits(object):
     def __init__(self, **kwargs):
-        self.max_discount = kwargs.get('max_discount', kwargs.get('maximum_discount', None))
-        self.data = kwargs.get('data', list())
+        max_discount = kwargs.get('max_discount', kwargs.get('maximum_discount', None))
+        self.data = kwargs.get('data')
         self.data.sort()
+        for data in self.data:
+            if 'max_cap' not in data \
+                    and data['type'] is BenefitType.percentage.value \
+                    and max_discount:
+                data['max_cap'] = max_discount
 
-    def __eq__(self, other) :
+    def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
     def canonical_json(self):
-        return canonicaljson.encode_canonical_json(self.__dict__)
+        self_dict = copy.deepcopy(self.__dict__)
+        max_discount = self_dict.get('max_discount')
+        if max_discount:
+            for data in self_dict['data']:
+                if data['type'] == 1:
+                    data['max_cap'] = max_discount
+
+        data_list = list()
+        for data in self_dict['data']:
+            if data['value']:
+                if 'max_cap' in data and not data['max_cap']:
+                    del data['max_cap']
+                data_list.append(data)
+
+        self_dict['data'] = data_list
+        return canonicaljson.encode_canonical_json(self_dict)
 
 
 class BenefitsData(object):
     def __init__(self, **kwargs):
         self.type = kwargs.get('type')
         self.value = kwargs.get('value')
+        self.max_cap = kwargs.get('max_cap')
         if self.type == BenefitType.freebie.value:
             self.value.sort()
 
@@ -125,6 +148,7 @@ class Rule(object):
     def __eq__(self, other):
         if self.criteria_obj == other.criteria_obj and \
                 self.benefits_obj == other.benefits_obj:
+
             return True
         return False
 

@@ -18,7 +18,12 @@ from vouchers import Vouchers, VoucherTransactionLog
 logger = logging.getLogger(__name__)
 
 
-def get_voucher(voucher_code):
+def get_voucher(voucher_code, order_date=None):
+    if order_date:
+        voucher = Vouchers.find_voucher_at_the_date(voucher_code, order_date)
+        if not voucher:
+            return None, u'No Voucher found with code {} on {}'.format(voucher_code, order_date)
+        return voucher, None
     voucher = Vouchers.find_one(voucher_code)
     now = datetime.datetime.utcnow()
     if voucher and voucher.from_date <= now <= voucher.to_date:
@@ -73,16 +78,23 @@ def apply_benefits(args, order, benefits):
     db = CouponsAlchemyDB()
     db.begin()
     try:
+        rows_with_order_id = db.find("voucher_use_tracker", **{'order_id': order_id})
+        if rows_with_order_id:
+            db.delete_row_in_transaction("voucher_use_tracker", **{'order_id': order_id})
         for existing_voucher in order.existing_vouchers:
             voucher_id = existing_voucher['voucher'].id
             if voucher_id in voucher_id_list:
                 continue
             voucher_id_list.append(voucher_id)
             rule = existing_voucher['voucher'].rules_list[0]
-            success, error = rule.criteria_obj.check_usage(order.customer_id, existing_voucher['voucher'].id_bin, db)
-            if not success:
-                db.rollback()
-                return False, 400, u'Voucher {} has expired'.format(existing_voucher['voucher'].code)
+            if hasattr(order, 'validate') and not order.validate:
+                pass
+            else:
+                success, error = rule.criteria_obj.check_usage(order.customer_id, existing_voucher['voucher'].id_bin, order_id, db)
+                if not success:
+                    db.rollback()
+                    return False, 400, u'Voucher {} has expired'.format(existing_voucher['voucher'].code)
+
             transaction_log = VoucherTransactionLog(**{
                 'id': uuid.uuid1().hex,
                 'user_id': user_id,
@@ -323,6 +335,9 @@ def get_benefits_new(order):
         product_dict['itemid'] = item.item_id
         product_dict['quantity'] = item.quantity
         product_dict['discount'] = 0.0
+        product_dict['agent_discount'] = 0.0
+        product_dict['cashback'] = 0.0
+        product_dict['agent_cashback'] = 0.0
         products_dict[item.item_id] = product_dict
     for existing_voucher in order.existing_vouchers:
         rules = existing_voucher['voucher'].rules_list
@@ -331,83 +346,154 @@ def get_benefits_new(order):
             benefit_list = benefits.data
             total = existing_voucher['total']
             item_id_list = existing_voucher['item_id_list']
-            max_discount = benefits.max_discount
+            custom_dict = None
+            if not benefit_list and existing_voucher['voucher'].custom:
+                try:
+                    custom_dict = json.loads(existing_voucher['voucher'].custom)
+                except:
+                    pass
+                if custom_dict and custom_dict.get('Param'):
+                    cashback = {
+                        'type': BenefitType.cashback_amount.value,
+                        'value': '?'
+                    }
+                    benefit_list.append(cashback)
             for benefit in benefit_list:
                 benefit_dict = dict()
-                if benefit['value'] is 0 and benefit['type'] == BenefitType.amount.value and existing_voucher['voucher'].custom:
-                    pass
-                elif not benefit['value']:
-                    continue
-                flat_discount = 0.0
-                percentage_discount = 0.0
-                percentage_discount_actual = 0.0
+                benefit_dict['max_cap'] = None
+                amount = 0.0
+                amount_actual = 0.0
+                max_cap = 0.0
                 freebie_list = list()
                 benefit_type = BenefitType(benefit['type'])
                 if benefit_type is BenefitType.freebie:
                     freebie_list.append(benefit['value'])
                 else:
-                    if benefit_type is BenefitType.amount and benefit['value']:
-                        flat_discount = benefit['value']
-                    elif benefit_type is BenefitType.percentage and benefit['value']:
+                    if benefit['value'] is None:
+                        continue
+                    if benefit_type in [
+                        BenefitType.amount,
+                        BenefitType.cashback_amount,
+                        BenefitType.agent_amount,
+                        BenefitType.agent_cashback_amount,
+                    ]:
+                        amount = benefit['value']
+
+                    elif benefit_type in [
+                        BenefitType.percentage,
+                        BenefitType.cashback_percentage,
+                        BenefitType.agent_percentage,
+                        BenefitType.agent_cashback_percentage
+                    ]:
                         percentage = benefit['value']
-                        percentage_discount = percentage * total / 100
-                        percentage_discount_actual = percentage_discount
-                    if max_discount and flat_discount > max_discount:
-                        flat_discount = max_discount
-                    if max_discount and percentage_discount > max_discount:
-                        percentage_discount = max_discount
+                        amount = percentage * total / 100
+                        amount_actual = amount
+                        max_cap = benefit.get('max_cap')
+                        benefit_dict['max_cap'] = max_cap
+                        if max_cap and amount > max_cap:
+                            amount = max_cap
+
+                    if benefit_type is BenefitType.cashback_amount and benefit['value']:
+                        amount = 0 if benefit['value'] == '?' else benefit['value']
+
                     for item in order.items:
+
                         if item.item_id in item_id_list:
-                            if flat_discount:
-                                item_flat_discount = (item.quantity * item.price * flat_discount)/total
+
+                            item_amount = (item.quantity * item.price * amount)/total
+
+                            if benefit_type in [
+                                BenefitType.amount,
+                                BenefitType.percentage
+                            ]:
                                 products_dict[item.item_id]['discount'] = max(
-                                    products_dict[item.item_id]['discount'], item_flat_discount)
-                            if percentage_discount:
-                                item_percentage_discount = (item.quantity * item.price * percentage_discount)/total
-                                products_dict[item.item_id]['discount'] = max(
-                                    products_dict[item.item_id]['discount'], item_percentage_discount)
+                                    products_dict[item.item_id]['discount'], item_amount)
+
+                            if benefit_type in [
+                                BenefitType.cashback_amount,
+                                BenefitType.cashback_percentage
+                            ]:
+                                products_dict[item.item_id]['cashback'] = max(
+                                    products_dict[item.item_id]['cashback'], item_amount)
+
+                            if benefit_type in [
+                                BenefitType.agent_amount,
+                                BenefitType.agent_percentage
+                            ]:
+                                products_dict[item.item_id]['agent_discount'] = max(
+                                    products_dict[item.item_id]['agent_discount'], item_amount)
+
+                            if benefit_type in [
+                                BenefitType.agent_cashback_amount,
+                                BenefitType.agent_cashback_percentage
+                            ]:
+                                products_dict[item.item_id]['agent_cashback'] = max(
+                                    products_dict[item.item_id]['agent_cashback'], item_amount)
+
                 benefit_dict['couponCode'] = existing_voucher['voucher'].code
-                benefit_dict['flat_discount'] = flat_discount
-                benefit_dict['prorated_discount'] = percentage_discount
-                benefit_dict['prorated_discount_actual'] = percentage_discount_actual
-                benefit_dict['freebies'] = freebie_list
+                benefit_dict['benefit_type'] = benefit_type.value
+                if existing_voucher['voucher'].type in [VoucherType.auto_freebie.value, VoucherType.regular_freebie.value]:
+                    benefit_dict['freebies'] = freebie_list
+                else:
+                    benefit_dict['amount'] = amount
+                    benefit_dict['amount_actual'] = amount_actual
                 benefit_dict['items'] = item_id_list
                 benefit_dict['type'] = existing_voucher['voucher'].type
                 benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
                 benefit_dict['channel'] = [Channels(c).value for c in rule.criteria_obj.channels]
                 benefit_dict['custom'] = existing_voucher['voucher'].custom
-                if max_discount:
-                    benefit_dict['max_discount'] = max_discount
-                else:
-                    benefit_dict['max_discount'] = None
+
                 benefits_list.append(benefit_dict)
+
                 if not payment_modes_list:
                     payment_modes_list = benefit_dict['paymentMode']
                 else:
                     payment_modes_list = get_intersection_of_lists(payment_modes_list, benefit_dict['paymentMode'])
+
                 if not channels_list:
                     channels_list = benefit_dict['channel']
                 else:
                     channels_list = get_intersection_of_lists(channels_list, benefit_dict['channel'])
     total_discount = 0.0
+    total_agent_discount = 0.0
+    total_cashback = 0.0
+    total_agent_cashback = 0.0
     products_list = list()
     for item in products_dict:
         product_dict = products_dict[item]
         products_list.append(product_dict)
         total_discount += product_dict['discount']
+        total_agent_discount += product_dict['agent_discount']
+        total_cashback += product_dict['cashback']
+        total_agent_cashback += product_dict['agent_cashback']
         product_dict['discount'] = round(product_dict['discount'], 2)
+        product_dict['agent_discount'] = round(product_dict['agent_discount'], 2)
+        product_dict['cashback'] = round(product_dict['cashback'], 2)
+        product_dict['agent_cashback'] = round(product_dict['agent_cashback'], 2)
 
     for a_benefit in benefits_list:
-        a_benefit['prorated_discount'] = a_benefit['prorated_discount_actual']
-        del a_benefit['prorated_discount_actual']
+        if a_benefit['type'] is VoucherType.regular_coupon.value\
+                and a_benefit['amount_actual']:
+            a_benefit['amount'] = a_benefit['amount_actual']
+            del a_benefit['amount_actual']
 
     total_discount = round(total_discount, 2)
+    total_agent_discount = round(total_agent_discount, 2)
+    total_cashback = round(total_cashback, 2)
+    total_agent_cashback = round(total_agent_cashback, 2)
+
     response_dict = dict()
 
     response_dict['products'] = products_list
     response_dict['benefits'] = benefits_list
     response_dict['totalDiscount'] = total_discount
-    response_dict['paymentMode'] = payment_modes_list
+    response_dict['totalCashback'] = total_cashback
+    response_dict['totalAgentDiscount'] = total_agent_discount
+    response_dict['totalAgentCashback'] = total_agent_cashback
+    if hasattr(order, 'check_payment_mode') and order.check_payment_mode:
+            response_dict['paymentMode'] = order.payment_mode
+    else:
+        response_dict['paymentMode'] = payment_modes_list
     response_dict['channel'] = channels_list
     response_dict['couponCodes'] = [existing_voucher['voucher'].code for existing_voucher in order.existing_vouchers]
     return response_dict

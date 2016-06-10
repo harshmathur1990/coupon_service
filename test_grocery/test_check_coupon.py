@@ -138,7 +138,6 @@ class CheckCoupon(unittest.TestCase):
         db.delete_row("all_vouchers")
         db.delete_row("vouchers")
         db.delete_row("rule")
-        db.delete_row("tokens")
         self.app_context.pop()
 
     def test_check_coupon(self):
@@ -150,7 +149,7 @@ class CheckCoupon(unittest.TestCase):
             'last_accessed_at': datetime.datetime.utcnow()
         }
         db = CouponsAlchemyDB()
-        db.insert_row("tokens", **values)
+        # db.insert_row("tokens", **values)
         headers= {
             'X-API-USER': 'askmegrocery',
             'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'

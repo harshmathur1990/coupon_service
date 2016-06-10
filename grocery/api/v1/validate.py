@@ -1,4 +1,4 @@
-from src.enums import VoucherType
+from src.enums import VoucherType, BenefitType
 from dateutil import parser
 from lib.utils import get_utc_timezone_unaware_date_object, is_valid_schedule_object, get_intersection_of_lists
 
@@ -69,7 +69,12 @@ def validate_for_create_api_v1(data):
 
         for rule in rules:
             benefits = rule.get('benefits')
-            if benefits.get('freebies'):
+            if len(benefits) != 1:
+                success = False
+                error.append(u'Only 1 benefit allowed per rule')
+                break
+            benefit = benefits[0]
+            if benefit.get('type') == BenefitType.freebie.value:
                 success = False
                 error.append(u'Regular coupon should not have freebies')
 
@@ -100,8 +105,9 @@ def validate_for_create_api_v1(data):
 
         rule = rules[0]
         benefits = rule.get('benefits')
+        benefit = benefits[0]
         criteria = rule.get('criteria')
-        if not benefits.get('freebies') or benefits.get('amount') or benefits.get('percentage'):
+        if not benefit.get('freebies') or benefit.get('amount') or benefit.get('percentage'):
             success = False
             error.append(u'Regular freebie and auto freebie must have freebie as benefit')
 
@@ -117,7 +123,7 @@ def validate_for_create_api_v1(data):
 
         else:
 
-            if len(benefits.get('freebies')) != 1 or len(benefits.get('freebies')[0]) != 1:
+            if len(benefits[0].get('freebies')) != 1 or len(benefits[0].get('freebies')[0]) != 1:
                 success = False
                 error.append(u'Only 1 freebie is allowed per auto freebie voucher')
 

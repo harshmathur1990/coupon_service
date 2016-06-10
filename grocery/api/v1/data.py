@@ -26,6 +26,10 @@ class OrderData(object):
         self.source = kwargs.get('source')
         self.payment_mode = kwargs.get('payment_mode')
         self.check_payment_mode = kwargs.get('check_payment_mode')
+        self.order_id = kwargs.get('order_id')
+        self.area_id = kwargs.get('area_id')
+        self.order_date = kwargs.get('order_date')
+        self.validate = kwargs.get('validate')
         self.total_price = 0.0
         for item in self.items:
             self.total_price += item.price * item.quantity
