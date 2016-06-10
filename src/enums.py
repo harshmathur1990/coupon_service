@@ -47,3 +47,14 @@ class MatchStatus(Enum):
     found_matching = 0
     found_not_matching = 1
     not_found = 2
+
+
+class Permission(Enum):
+    no_permission_required = 0
+    create_voucher = 1
+    update_voucher = 2
+    check_voucher = 3
+    apply_voucher = 4
+    fetch_voucher = 5
+    update_order_status = 6
+    test = 7

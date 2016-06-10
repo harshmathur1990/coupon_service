@@ -206,17 +206,18 @@ class Vouchers(object):
         return self.update_to_date_single(to_date, db)
 
     def update(self, update_dict, db, change_id):
-        update_dict['id'] = self.id_bin
-        if 'to' in update_dict:
-            success, error_list = self.update_to_date(update_dict.get('to'), db)
+        new_update_dict = copy.deepcopy(update_dict)
+        new_update_dict['id'] = self.id_bin
+        if 'to' in new_update_dict:
+            success, error_list = self.update_to_date(new_update_dict.get('to'), db)
             if not success:
                 return False, error_list
-            del update_dict['to']
-        db.update_row("all_vouchers", "id", **update_dict)
-        if 'is_active' in update_dict:
+            del new_update_dict['to']
+        db.update_row("all_vouchers", "id", **new_update_dict)
+        if 'is_active' in new_update_dict:
             Vouchers.fetch_active_voucher(self.code, db)
-            del update_dict['is_active']
-        db.update_row("vouchers", "id", **update_dict)
+            del new_update_dict['is_active']
+        db.update_row("vouchers", "id", **new_update_dict)
         self.add_audit_log_entry(change_id, db)
         return True, None
 

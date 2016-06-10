@@ -246,6 +246,24 @@ class CouponsAlchemyDB:
             )
 
             CouponsAlchemyDB._table["all_vouchers_log_sequence"] = CouponsAlchemyDB.all_vouchers_log_sequence
+
+            CouponsAlchemyDB.permissions = Table(
+                'permissions', CouponsAlchemyDB.metadata,
+                Column('id', BIGINT, primary_key=True),
+                Column('permission', VARCHAR(100), index=False, unique=True)
+            )
+
+            CouponsAlchemyDB._table["permissions"] = CouponsAlchemyDB.permissions
+
+            CouponsAlchemyDB.agent_permission = Table(
+                'agent_permission', CouponsAlchemyDB.metadata,
+                Column('agent_id', ForeignKey("tokens.agent_id"), nullable=False),
+                Column('permission_id', ForeignKey("permissions.id"), nullable=False),
+                Index('agent_id_permission_id', 'agent_id', 'permission_id', unique=True)
+            )
+
+            CouponsAlchemyDB._table["agent_permission"] = CouponsAlchemyDB.agent_permission
+
             # no need of below statement. DB can be created by upgrade with initial migration script.
             # But if we retain the below statement, then the database gets created before migration can
             # check the difference between metadata model and the actual database,

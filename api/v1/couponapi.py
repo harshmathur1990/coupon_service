@@ -11,6 +11,7 @@ from src.rules.utils import apply_benefits, update_keys_in_input_list,\
     fetch_order_response, get_benefits_new, make_transaction_log_entry
 from utils import fetch_auto_benefits, fetch_order_detail, create_regular_coupon, fetch_coupon
 from src.rules.validate import validate_coupon
+from src.enums import Permission
 from webargs import fields, validate
 from webargs.flaskparser import parser
 from api import voucher_api, voucher_api_v_1_1
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 @voucher_api.route('/create', methods=['POST'])
 @jsonify
 @push_to_kafka_for_testing
-# @check_login
+@check_login(Permission.create_voucher)
 def create_voucher():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     coupon_create_args = {
@@ -404,8 +405,6 @@ def create_voucher():
     except werkzeug.exceptions.UnprocessableEntity as e:
         return handle_unprocessable_entity(e)
 
-    error = u'Coupon Creation has been deactivated for some period of time'
-    return create_error_response(400, error)
     # api specific validation
     success, error = validate_for_create_api_v1(args)
     if not success:
@@ -429,7 +428,7 @@ def create_voucher():
 @voucher_api.route('/confirm', methods=['POST'])
 @jsonify
 @push_to_kafka_for_testing
-# @check_login
+@check_login(Permission.update_order_status)
 def confirm_order():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     confirm_order_args = {
@@ -447,7 +446,7 @@ def confirm_order():
 @voucher_api.route('/update', methods=['PUT', 'POST'])
 @jsonify
 @push_to_kafka_for_testing
-# @check_login
+@check_login(Permission.update_voucher)
 def update_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     try:
@@ -462,9 +461,6 @@ def update_coupon():
             'errors': [u'Unable to parse Json']
         }
         return rv
-
-    error = u'Coupon Update has been deactivated for some period of time'
-    return create_error_response(400, error)
 
     success, error = validate_for_update(data_list)
     if not success:
@@ -483,7 +479,7 @@ def update_coupon():
 @voucher_api.route('/fetchDetail', methods=['POST'])
 @jsonify
 @push_to_kafka_for_testing
-# @check_login
+@check_login(Permission.fetch_voucher)
 def get_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     get_coupon_args = {
@@ -500,7 +496,7 @@ def get_coupon():
 @voucher_api_v_1_1.route('/apply', methods=['POST'])
 @jsonify
 @push_to_kafka_for_testing
-@check_login
+@check_login(Permission.apply_voucher)
 def apply_coupon_v2():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     apply_coupon_args = {
@@ -634,7 +630,7 @@ def apply_coupon_v2():
 @voucher_api_v_1_1.route('/check', methods=['POST'])
 @jsonify
 @push_to_kafka_for_testing
-@check_login
+@check_login(Permission.check_voucher)
 def check_coupon_v2():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     check_coupon_args = {
@@ -738,6 +734,7 @@ def check_coupon_v2():
 
 @voucher_api.route('/start_testing', methods=['POST'])
 @jsonify
+@check_login(Permission.test)
 def start_testing():
     start_testing_args = {
         'test': fields.Bool(location='json', required=True),

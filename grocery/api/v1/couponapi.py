@@ -10,6 +10,7 @@ from src.rules.utils import apply_benefits, update_keys_in_input_list,\
     fetch_order_response, get_benefits_new, make_transaction_log_entry
 from utils import fetch_auto_benefits, fetch_order_detail, create_regular_coupon, fetch_coupon
 from src.rules.validate import validate_coupon
+from src.enums import Permission
 from webargs import fields, validate
 from webargs.flaskparser import parser
 from grocery import grocery_voucher_api as voucher_api
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 @voucher_api.route('/create', methods=['POST'])
 @jsonify
-# @check_login
+@check_login(Permission.create_voucher)
 def create_voucher():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     coupon_create_args = {
@@ -413,7 +414,7 @@ def create_voucher():
 
 @voucher_api.route('/confirm', methods=['POST'])
 @jsonify
-# @check_login
+@check_login(Permission.update_order_status)
 def confirm_order():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     confirm_order_args = {
@@ -430,7 +431,7 @@ def confirm_order():
 
 @voucher_api.route('/update', methods=['PUT', 'POST'])
 @jsonify
-# @check_login
+@check_login(Permission.update_voucher)
 def update_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     try:
@@ -463,7 +464,7 @@ def update_coupon():
 
 @voucher_api.route('/fetchDetail', methods=['POST'])
 @jsonify
-# @check_login
+@check_login(Permission.fetch_voucher)
 def get_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     get_coupon_args = {
@@ -479,7 +480,7 @@ def get_coupon():
 
 @voucher_api.route('/apply', methods=['POST'])
 @jsonify
-@check_login
+@check_login(Permission.apply_voucher)
 def apply_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     apply_coupon_args = {
@@ -597,7 +598,7 @@ def apply_coupon():
 
 @voucher_api.route('/check', methods=['POST'])
 @jsonify
-@check_login
+@check_login(Permission.check_voucher)
 def check_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     check_coupon_args = {
@@ -703,6 +704,7 @@ def check_coupon():
 
 @voucher_api.route('/start_testing', methods=['POST'])
 @jsonify
+@check_login(Permission.test)
 def start_testing():
     start_testing_args = {
         'test': fields.Bool(location='json', required=True),
