@@ -22,13 +22,10 @@ class Benefits(object):
                     and max_discount:
                 data['max_cap'] = max_discount
 
-
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
     def canonical_json(self):
-        self_dict = copy.deepcopy(self.__dict__)
-
         return canonicaljson.encode_canonical_json(self.__dict__)
 
 

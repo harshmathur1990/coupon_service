@@ -87,11 +87,14 @@ def apply_benefits(args, order, benefits):
                 continue
             voucher_id_list.append(voucher_id)
             rule = existing_voucher['voucher'].rules_list[0]
-            if order.validate:
+            if hasattr(order, 'validate') and not order.validate:
+                pass
+            else:
                 success, error = rule.criteria_obj.check_usage(order.customer_id, existing_voucher['voucher'].id_bin, order_id, db)
                 if not success:
                     db.rollback()
                     return False, 400, u'Voucher {} has expired'.format(existing_voucher['voucher'].code)
+
             transaction_log = VoucherTransactionLog(**{
                 'id': uuid.uuid1().hex,
                 'user_id': user_id,
@@ -343,13 +346,21 @@ def get_benefits_new(order):
             benefit_list = benefits.data
             total = existing_voucher['total']
             item_id_list = existing_voucher['item_id_list']
+            custom_dict = None
+            if not benefit_list and existing_voucher['voucher'].custom:
+                try:
+                    custom_dict = json.loads(existing_voucher['voucher'].custom)
+                except:
+                    pass
+                if custom_dict and custom_dict.get('Param'):
+                    cashback = {
+                        'type': BenefitType.cashback_amount.value,
+                        'value': '?'
+                    }
+                    benefit_list.append(cashback)
             for benefit in benefit_list:
                 benefit_dict = dict()
                 benefit_dict['max_cap'] = None
-                if benefit['value'] is 0 and benefit['type'] == BenefitType.amount.value and existing_voucher['voucher'].custom:
-                    pass
-                elif not benefit['value']:
-                    continue
                 amount = 0.0
                 amount_actual = 0.0
                 max_cap = 0.0

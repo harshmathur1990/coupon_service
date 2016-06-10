@@ -10,7 +10,7 @@ from lib import cache
 from lib.utils import make_api_call, create_success_response, create_error_response, get_utc_timezone_unaware_date_object
 from src.enums import VoucherType, BenefitType
 from src.rules.rule import Benefits
-from src.rules.utils import create_rule_object, save_vouchers, create_regular_voucher
+from src.rules.utils import create_rule_object, save_vouchers, create_regular_voucher, get_benefits_new
 from src.rules.vouchers import Vouchers
 from src.sqlalchemydb import CouponsAlchemyDB
 
@@ -323,31 +323,30 @@ def get_criteria_kwargs(data):
         benefit_dict = dict()
         benefit_dict['type'] = BenefitType.freebie.value
         benefit_dict['value'] = freebie
-        benefit_dict['max_cap'] = None
         benefit_list.append(benefit_dict)
 
     if benefits.get('amount'):
         amount_benefit = {
             'type': BenefitType.amount.value,
             'value': benefits.get('amount'),
-            'max_cap': None
         }
         benefit_list.append(amount_benefit)
-
-    if benefits.get('amount') == 0:
-        cashback_benefit = {
-            'type': BenefitType.cashback_amount.value,
-            'value': '?'
-        }
-        benefit_list.append(cashback_benefit)
 
     if benefits.get('percentage'):
         percentage_benefit = {
             'type': BenefitType.percentage.value,
-            'value': benefits.get('percentage'),
-            'max_cap': benefits.get('max_discount')
+            'value': benefits.get('percentage')
         }
+        if benefits.get('max_discount'):
+            percentage_benefit['max_cap'] = benefits.get('max_discount')
         benefit_list.append(percentage_benefit)
+
+    if benefits.get('cashback'):
+        cashback_benefit = {
+            'type': BenefitType.cashback_amount.value,
+            'value': benefits.get('cashback'),
+        }
+        benefit_list.append(cashback_benefit)
 
     benefit_criteria_kwargs = {
         'data': benefit_list
@@ -622,3 +621,20 @@ def create_failed_api_response(args, error_list):
         'errors': error_list
     }
     return rv
+
+
+def refactor_benefits(order):
+    benefits = get_benefits_new(order)
+    benefits_list = benefits.get('benefits')
+    for benefit in benefits_list:
+        if benefit.get('benefit_type') is BenefitType.amount.value:
+            benefit['flat_discount'] = benefit.get('amount')
+        else:
+            benefit['flat_discount'] = 0.0
+        if benefit.get('benefit_type') is BenefitType.percentage.value:
+            benefit['prorated_discount'] = benefit.get('amount')
+        else:
+            benefit['prorated_discount'] = 0.0
+        benefit['max_discount'] = benefit.get('max_cap')
+        benefit['freebies'] = benefit.get('freebies', list())
+    return benefits

@@ -206,7 +206,7 @@ class RuleCriteria(object):
 
         return True, {'total': order.matching_criteria_total, 'item_id_list': item_id_list}, None
 
-    def check_usage(self, user_id, voucher_id, db=None):
+    def check_usage(self, user_id, voucher_id, order_id=None, db=None):
         use_type = self.usage['use_type']
         rv = {
             'success': True,
