@@ -3156,7 +3156,7 @@ class CreateRule(unittest.TestCase):
                     "description": "TEST1RULE1DESCRIPTION1",
                     "criteria": {
                         "no_of_uses_allowed_per_user": 1,
-                        "no_of_total_uses_allowed": 100,
+                        "no_of_total_uses_allowed": 1,
                         "range_min": None,
                         "range_max": None,
                         "cart_range_min": 100,
@@ -3258,12 +3258,79 @@ class CreateRule(unittest.TestCase):
             ],
             "coupon_codes": ["TEST1CODE1"]
         }
-        response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
+        response = self.client.post(url_for('grocery_voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
                                     content_type='application/json', headers=headers)
         self.assertTrue(response.status_code == 200, response.data)
         use_dict = db.find("voucher_use_tracker")[0]
         self.assertTrue(use_dict['user_id'] == "4321")
-        pass
+        order_data = {
+            "area_id": "87000",
+            "customer_id": "4321",
+            "order_id": "123456",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": "1",
+                    "subscription_id": "1151594",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2",
+                    "subscription_id": "2007982",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "3",
+                    "subscription_id": "2050125",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "4",
+                    "subscription_id": "2050126",
+                    "quantity": 5
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.apply_coupon'), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 400, response.data)
+        use_dict = db.find("voucher_use_tracker")[0]
+        self.assertTrue(use_dict['user_id'] == "4321")
+        order_data = {
+            "area_id": "87000",
+            "customer_id": "4321",
+            "order_id": "123456",
+            "channel": 0,
+            "products": [
+                {
+                    "item_id": "1",
+                    "subscription_id": "1151594",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "2",
+                    "subscription_id": "2007982",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "3",
+                    "subscription_id": "2050125",
+                    "quantity": 5
+                },
+                {
+                    "item_id": "4",
+                    "subscription_id": "2050126",
+                    "quantity": 5
+                },
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.apply_coupon', validate=False), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 200, response.data)
+        use_dict = db.find("voucher_use_tracker")[0]
+        self.assertTrue(use_dict['user_id'] == "4321")
 
     def test_is_active_feature(self):
         # 1. To set is_active false for vouchers using update api and verify the sanity
