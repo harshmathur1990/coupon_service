@@ -598,13 +598,24 @@ def fetch_coupon(args):
                 criteria['valid_on_order_no'] = criteria_obj.valid_on_order_no
                 criteria['payment_modes'] = criteria_obj.payment_modes
                 benefits_obj = rule.benefits_obj
-                benefits['max_discount'] = benefits_obj.max_discount
+                # benefits['max_discount'] = benefits_obj.max_discount
                 for data in benefits_obj.data:
                     type = BenefitType(data.get('type'))
-                    if type is BenefitType.amount:
+                    if type in [
+                        BenefitType.amount,
+                        BenefitType.agent_amount,
+                        BenefitType.cashback_amount,
+                        BenefitType.agent_cashback_amount
+                    ]:
                         benefits['amount'] = data.get('value')
-                    elif type is BenefitType.percentage:
+                    elif type in [
+                        BenefitType.percentage,
+                        BenefitType.agent_percentage,
+                        BenefitType.cashback_percentage,
+                        BenefitType.agent_cashback_percentage
+                    ]:
                         benefits['percentage'] = data.get('value')
+                        benefits['max_cap'] = data.get('max_cap')
                     else:
                         benefits['freebies'] = [data.get('value')]
                 if not benefits.get('freebies'):
