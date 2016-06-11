@@ -113,7 +113,7 @@ class Vouchers(object):
         else:
             return Vouchers.get_active_voucher(code, db)
 
-    def update_to_date_single(self, to_date, db):
+    def update_to_date_single(self, to_date, db, force=False):
         validity_period_exclusive_for_benefit_voucher_callback = getattr(
             importlib.import_module(
                 method_dict.get('check_auto_benefit_exclusivity')['package']),
@@ -177,6 +177,9 @@ class Vouchers(object):
         elif to_date < now and self.to_date < now:
             # Its a request to expire a voucher which has already expired.
             # go ahead and delete it if it exists in vouchers and auto_benefits table
+            if force:
+                self.to_date = to_date
+                db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
             self.delete(db)
             Vouchers.fetch_active_voucher(self.code, db)
         else:
@@ -185,7 +188,7 @@ class Vouchers(object):
             return False, [u'Unknown Error, Please contact tech support']
         return True, None
 
-    def update_to_date(self, to_date, db):
+    def update_to_date(self, to_date, db, force=False):
         now = datetime.datetime.now()
         if now < to_date <= self.from_date:
             return False, [u'to date cannot be less than from date']
@@ -203,13 +206,14 @@ class Vouchers(object):
             if to_date >= existing_voucher.from_date:
                 # overlapping intervals
                 return False, [u'Voucher to_date clashes with another voucher with same code']
-        return self.update_to_date_single(to_date, db)
+        return self.update_to_date_single(to_date, db, force)
 
     def update(self, update_dict, db, change_id):
         new_update_dict = copy.deepcopy(update_dict)
+        force = new_update_dict.pop('force', False)
         new_update_dict['id'] = self.id_bin
         if 'to' in new_update_dict:
-            success, error_list = self.update_to_date(new_update_dict.get('to'), db)
+            success, error_list = self.update_to_date(new_update_dict.get('to'), db, force)
             if not success:
                 return False, error_list
             del new_update_dict['to']

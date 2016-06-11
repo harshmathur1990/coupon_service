@@ -257,6 +257,7 @@ def update_values_in_this_list_of_coupons(data, change_id):
         update_dict['to'] = to_date
     if is_active:
         update_dict['is_active'] = data['update'].get('is_active')
+    update_dict['force'] = data.get('force', False)
     for coupon in coupon_list:
         if isinstance(coupon, dict):
             code = coupon.get('code')
