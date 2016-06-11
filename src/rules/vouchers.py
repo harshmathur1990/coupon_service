@@ -172,7 +172,11 @@ class Vouchers(object):
             if self.from_date > now:
                 db.delete_row_in_transaction("all_vouchers", **{'id': self.id_bin})
             else:
-                db.update_row("all_vouchers", "id", to=now, id=self.id_bin)
+                if force:
+                    self.to_date = to_date
+                    db.update_row("all_vouchers", "id", to=self.to_date, id=self.id_bin)
+                else:
+                    db.update_row("all_vouchers", "id", to=now, id=self.id_bin)
             Vouchers.fetch_active_voucher(self.code, db)
         elif to_date < now and self.to_date < now:
             # Its a request to expire a voucher which has already expired.
