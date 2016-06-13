@@ -14,7 +14,7 @@ from src.enums import *
 from src.enums import BenefitType, Channels
 from src.sqlalchemydb import CouponsAlchemyDB
 from vouchers import Vouchers, VoucherTransactionLog
-
+from . import default_error_message
 logger = logging.getLogger(__name__)
 
 
@@ -22,7 +22,7 @@ def get_voucher(voucher_code, order_date=None):
     if order_date:
         voucher = Vouchers.find_voucher_at_the_date(voucher_code, order_date)
         if not voucher:
-            return None, u'No Voucher found with code {} on {}'.format(voucher_code, order_date)
+            return None, default_error_message
         return voucher, None
     voucher = Vouchers.find_one(voucher_code)
     now = datetime.datetime.utcnow()
@@ -61,14 +61,14 @@ def get_voucher(voucher_code, order_date=None):
                             is_between(now, cron_current, duration_current) or \
                             is_between(now, cron_next, duration_next):
                         return voucher, None
-            return None, u'The voucher {} is not valid'.format(voucher.code)
+            return None, default_error_message
         return voucher, None
     elif voucher and now > voucher.to_date:
         active_voucher = Vouchers.fetch_active_voucher(voucher_code)
         if active_voucher:
             return get_voucher(voucher_code)
 
-    return None, u'The voucher {} does not exist'.format(voucher_code)
+    return None, default_error_message
 
 
 def apply_benefits(args, order, benefits):
@@ -93,7 +93,7 @@ def apply_benefits(args, order, benefits):
                 success, error = rule.criteria_obj.check_usage(order.customer_id, existing_voucher['voucher'].id_bin, order_id, db)
                 if not success:
                     db.rollback()
-                    return False, 400, u'Voucher {} has expired'.format(existing_voucher['voucher'].code)
+                    return False, 400, default_error_message
 
             transaction_log = VoucherTransactionLog(**{
                 'id': uuid.uuid1().hex,

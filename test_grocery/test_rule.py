@@ -1555,7 +1555,7 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(not data.get('success'), response.data)
         self.assertTrue(len(data.get('benefits')) == 2, response.data)
-        self.assertTrue(data.get('error', dict()).get('error') == u'The voucher INVALIDCOUPON does not exist', response.data)
+        self.assertTrue(data.get('error', dict()).get('error') == u'Oops! The coupon applied is either invalid or has expired', response.data)
         order_data = {
             "area_id": "29557",
             "customer_id": "1234",
@@ -1576,7 +1576,7 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(not data.get('success'), response.data)
         self.assertTrue(len(data.get('benefits')) == 2, response.data)
-        self.assertTrue(data.get('error', dict()).get('error') == u'The voucher INVALIDCOUPON does not exist', response.data)
+        self.assertTrue(data.get('error', dict()).get('error') == u'Oops! The coupon applied is either invalid or has expired', response.data)
 
     def test_update_to_date_auto_freebie_fail_because_it_overlaps_with_existing_freebie(self):
         # All the freebies created are of overlapping ranges, but at a time only one will be active
