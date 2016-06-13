@@ -22,7 +22,7 @@ class RuleCriteria(object):
         ('zone', 'zone', match_list_intersection_atleast_one_common, None),
         ('area', 'area', match_value_in_list, None),
         ('source', 'source', match_value_in_list, None),
-        ('payment_modes', 'payment_mode', match_value_in_list, None ),
+        ('payment_modes', 'payment_mode', match_value_in_list, None),
         ('valid_on_order_no', None, match_user_order_no, fetch_user_details)
     ]
 
@@ -46,7 +46,9 @@ class RuleCriteria(object):
         'cart_range_min': cart_min_error_message,
         'cart_range_max': cart_max_error_message,
         'range_min': range_min_error_message,
-        'range_max': range_max_error_message
+        'range_max': range_max_error_message,
+        'payment_modes': payment_error_message,
+        'valid_on_order_no': order_no_not_valid_error_message
     }
 
     def __init__(self, **kwargs):
