@@ -9,12 +9,12 @@ from config import method_dict
 import hashlib
 
 
-def do_it_now(body):
+def do_it_now(body, params=dict()):
     headers = {
         'X-API-USER': 'admin',
         'X-API-TOKEN': 'kuchbhi'
     }
-    r = make_api_call('http://api-service03.production.askme.com:9933/vouchers/v1/update', method='POST', headers=headers, body=body)
+    r = make_api_call('http://api-service03.production.askme.com:9933/vouchers/v1/update', method='POST', headers=headers, body=body, params=params)
     return r
 
 
@@ -41,35 +41,38 @@ def do_iocl_date_correction():
             f.close()
 
 
-
 def do_date_correction():
     db = CouponsAlchemyDB()
-    query = 'select count(1) c, `to` from all_vouchers group by `to` order by c desc'
+    query = 'select count(1) c, `to` from vouchers group by `to` order by c desc'
     count_date_list = db.execute_raw_sql(query, dict())
+    done_date = parser.parse("2016-08-30 18:30:00.000000")
     for count_date_map in count_date_list:
         date_value = count_date_map['to']
-        count = count_date_map['c']
-        get_voucher_query = 'select `code`, `from` from all_vouchers where `to` = :to'
+        if date_value == done_date:
+            continue
+        get_voucher_query = 'select `code`, `from` from vouchers where `to` = :to'
         code_from_list = db.execute_raw_sql(get_voucher_query, {'to': date_value})
         code_from_list = [{'from': code_from_dict['from'].isoformat(), 'code': code_from_dict['code']} for code_from_dict in code_from_list]
-        body = [
-            {
-                "coupons": code_from_list,
-                "update": {
-                    "to": date_value.isoformat()
+        lists = list(chunks(code_from_list, 5000))
+        for a_list in lists:
+            body = [
+                {
+                    "coupons": a_list,
+                    "update": {
+                        "to": date_value.isoformat()
+                    }
                 }
-            }
-        ]
-        r = do_it_now(body=body)
-        with open('/Users/harshmathur/Documents/update_to_date/output.log', 'a+') as f:
-            f.write(r.text)
-            f.close()
-
+            ]
+            r = do_it_now(body=body, params={'force': u'true'})
+            with open('/var/log/couponlogs/grocery/output_date_correction.log', 'a+') as f:
+                f.write(r.text)
+                f.close()
 
 
 def chunks(l,n):
     for i in range(0, len(l), n):
         yield l[i:i+n]
+
 
 def update_is_active():
     codes_list = ["HEPYKM","HEPYLX","HEPYXB","HEQBDG"]
