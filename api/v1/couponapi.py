@@ -449,6 +449,11 @@ def confirm_order():
 @check_login(Permission.update_voucher)
 def update_coupon():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
+
+    args = request.args.to_dict()
+    if args.get('force'):
+        args['force'] = json.loads(args.get('force'))
+
     try:
         data_list = json.loads(request.get_data())
     except Exception as e:
@@ -462,7 +467,7 @@ def update_coupon():
         }
         return rv
 
-    success, error = validate_for_update(data_list)
+    success, error = validate_for_update(data_list, args.get('force', False))
     if not success:
         return create_error_response(400, error)
 

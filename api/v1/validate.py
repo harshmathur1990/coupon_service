@@ -132,11 +132,12 @@ def validate_for_create_api_v1(data):
     return success, error
 
 
-def validate_for_update(data_list):
+def validate_for_update(data_list, force=False):
     if not isinstance(data_list, list):
         return False, u'Input is not list'
 
     for data in data_list:
+        data['force'] = force
         if not data.get('coupons') or not isinstance(data.get('coupons'), list):
             return False, u'Every element of input list must have a list of dicts with each dict containing from date and code'
 
