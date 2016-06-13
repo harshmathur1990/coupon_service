@@ -7,6 +7,9 @@ from utils import fetch_user_details
 from src.rules.match_utils import match_list_intersection_atleast_one_common, \
     match_value_in_list, match_user_order_no, match_in_not_in, match_greater_than, \
     match_less_than, match_greater_than_equal_to, match_less_than_equal_to
+from src.rules import default_error_message, payment_error_message,\
+    order_no_not_valid_error_message, cart_min_error_message, cart_max_error_message,\
+    range_min_error_message, range_max_error_message
 
 
 class RuleCriteria(object):
@@ -38,6 +41,13 @@ class RuleCriteria(object):
         ('range_min', 'matching_criteria_total', match_greater_than_equal_to, None),
         ('range_max', 'matching_criteria_total', match_less_than_equal_to, None),
     ]
+
+    message_dict = {
+        'cart_range_min': cart_min_error_message,
+        'cart_range_max': cart_max_error_message,
+        'range_min': range_min_error_message,
+        'range_max': range_max_error_message
+    }
 
     def __init__(self, **kwargs):
         self.area = kwargs.get('area', list())
@@ -165,12 +175,14 @@ class RuleCriteria(object):
                     if method(getattr(self, criteria_attr), getattr(order, order_attr)):
                         found_matching = True
                     else:
-                        return MatchStatus.found_not_matching, u'This voucher {} is not valid on this order'.format(code)
+                        if criteria_attr == 'payment_modes':
+                            return MatchStatus.found_not_matching, payment_error_message
+                        return MatchStatus.found_not_matching, default_error_message
                 else:
                     if method(getattr(self, criteria_attr), order, callback):
                         found_matching = True
                     else:
-                        return MatchStatus.found_not_matching, u'This voucher {} is not valid on this order'.format(code)
+                        return MatchStatus.found_not_matching, order_no_not_valid_error_message
 
         if found_matching:
             return MatchStatus.found_matching, None
@@ -180,7 +192,7 @@ class RuleCriteria(object):
     def match(self, order, voucher):
         success, error = self.check_usage(order.customer_id, voucher.id_bin)
         if not success:
-            return False, None, u'Coupon {} has expired'.format(voucher.code)
+            return False, None, default_error_message
 
         status, error = self.match_criteria(order, voucher.code)
         if status is MatchStatus.found_not_matching:
@@ -197,12 +209,13 @@ class RuleCriteria(object):
         order.matching_criteria_total = total
 
         if not item_id_list:
-            return False, None, u'No matching items found for this coupon {}'.format(voucher.code)
+            return False, None, default_error_message
 
         for criteria_attr, order_attr, method, callback in self.match_attributes:
             if getattr(self, criteria_attr):
                 if not method(getattr(self, criteria_attr), getattr(order, order_attr)):
-                    return False, None, u'This voucher {} is not valid'.format(voucher.code)
+                    error_message = self.message_dict.get(criteria_attr)
+                    return False, None, error_message.format(getattr(self, criteria_attr))
 
         return True, {'total': order.matching_criteria_total, 'item_id_list': item_id_list}, None
 
