@@ -177,14 +177,14 @@ class RuleCriteria(object):
                     if method(getattr(self, criteria_attr), getattr(order, order_attr)):
                         found_matching = True
                     else:
-                        if criteria_attr == 'payment_modes':
-                            return MatchStatus.found_not_matching, payment_error_message
-                        return MatchStatus.found_not_matching, default_error_message
+                        error_message = self.message_dict.get(criteria_attr, default_error_message)
+                        return MatchStatus.found_not_matching, error_message
                 else:
                     if method(getattr(self, criteria_attr), order, callback):
                         found_matching = True
                     else:
-                        return MatchStatus.found_not_matching, order_no_not_valid_error_message
+                        error_message = self.message_dict.get(criteria_attr, default_error_message)
+                        return MatchStatus.found_not_matching, error_message
 
         if found_matching:
             return MatchStatus.found_matching, None
