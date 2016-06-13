@@ -91,9 +91,13 @@ class CreateRule(unittest.TestCase):
         from grocery.api.v1.utils import get_criteria_kwargs
         rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
+            data_list = created_rule.benefits_obj.data
+            for data in data_list:
+                if 'max_cap' in data and not data.get('max_cap'):
+                    del data['max_cap']
             self.assertTrue(
-                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
-                    created_rule.criteria_obj.__dict__, test_rule.criteria_obj.__dict__))
+                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {} - {} - {}'.format(
+                    created_rule.criteria_obj.__dict__, test_rule.criteria_obj.__dict__, created_rule.blacklist_criteria_obj.__dict__, test_rule.blacklist_criteria_obj.__dict__, created_rule.benefits_obj.__dict__, test_rule.benefits_obj.__dict__))
 
     def test_create_invalid_auto_freebie(self):
         today = datetime.datetime.utcnow()
@@ -1661,7 +1665,7 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(not data.get('success'), response.data)
         self.assertTrue(len(data.get('benefits')) == 2, response.data)
-        self.assertTrue(data.get('error', dict()).get('error') == u'The voucher INVALIDCOUPON does not exist', response.data)
+        self.assertTrue(data.get('error', dict()).get('error') == u'Oops! The coupon applied is either invalid or has expired', response.data)
         order_data = {
              "area_id": "87000",
             "customer_id": "1234",
@@ -1683,7 +1687,7 @@ class CreateRule(unittest.TestCase):
         data = json.loads(response.data)
         self.assertTrue(not data.get('success'), response.data)
         self.assertTrue(len(data.get('benefits')) == 2, response.data)
-        self.assertTrue(data.get('error', dict()).get('error') == u'The voucher INVALIDCOUPON does not exist', response.data)
+        self.assertTrue(data.get('error', dict()).get('error') == u'Oops! The coupon applied is either invalid or has expired', response.data)
 
     def test_update_to_date_auto_freebie_fail_because_it_overlaps_with_existing_freebie(self):
         # All the freebies created are of overlapping ranges, but at a time only one will be active
@@ -2765,12 +2769,12 @@ class CreateRule(unittest.TestCase):
                 },
                 {
                     "item_id": "3",
-                    "subscription_id": "2050125",
+                    "subscription_id": "1151596",
                     "quantity": 5
                 },
                 {
                     "item_id": "4",
-                    "subscription_id": "2050126",
+                    "subscription_id": "1151587",
                     "quantity": 5
                 },
             ],
@@ -3005,12 +3009,12 @@ class CreateRule(unittest.TestCase):
                 },
                 {
                     "item_id": "3",
-                    "subscription_id": "2050125",
+                    "subscription_id": "1151596",
                     "quantity": 5
                 },
                 {
                     "item_id": "4",
-                    "subscription_id": "2050126",
+                    "subscription_id": "1151587",
                     "quantity": 5
                 },
             ],
@@ -3036,12 +3040,12 @@ class CreateRule(unittest.TestCase):
                 },
                 {
                     "item_id": "3",
-                    "subscription_id": "2050125",
+                    "subscription_id": "1151596",
                     "quantity": 5
                 },
                 {
                     "item_id": "4",
-                    "subscription_id": "2050126",
+                    "subscription_id": "1151587",
                     "quantity": 5
                 },
             ],
@@ -3069,12 +3073,12 @@ class CreateRule(unittest.TestCase):
                 },
                 {
                     "item_id": "3",
-                    "subscription_id": "2050125",
+                    "subscription_id": "1151596",
                     "quantity": 5
                 },
                 {
                     "item_id": "4",
-                    "subscription_id": "2050126",
+                    "subscription_id": "1151587",
                     "quantity": 5
                 },
             ],
@@ -3101,12 +3105,12 @@ class CreateRule(unittest.TestCase):
                 },
                 {
                     "item_id": "3",
-                    "subscription_id": "2050125",
+                    "subscription_id": "1151596",
                     "quantity": 5
                 },
                 {
                     "item_id": "4",
-                    "subscription_id": "2050126",
+                    "subscription_id": "1151587",
                     "quantity": 5
                 },
             ],
@@ -3214,12 +3218,12 @@ class CreateRule(unittest.TestCase):
                 },
                 {
                     "item_id": "3",
-                    "subscription_id": "2050125",
+                    "subscription_id": "1151596",
                     "quantity": 5
                 },
                 {
                     "item_id": "4",
-                    "subscription_id": "2050126",
+                    "subscription_id": "1151587",
                     "quantity": 5
                 },
             ],
@@ -3246,12 +3250,12 @@ class CreateRule(unittest.TestCase):
                 },
                 {
                     "item_id": "3",
-                    "subscription_id": "2050125",
+                    "subscription_id": "1151596",
                     "quantity": 5
                 },
                 {
                     "item_id": "4",
-                    "subscription_id": "2050126",
+                    "subscription_id": "1151587",
                     "quantity": 5
                 },
             ],
@@ -3280,12 +3284,12 @@ class CreateRule(unittest.TestCase):
                 },
                 {
                     "item_id": "3",
-                    "subscription_id": "2050125",
+                    "subscription_id": "1151596",
                     "quantity": 5
                 },
                 {
                     "item_id": "4",
-                    "subscription_id": "2050126",
+                    "subscription_id": "1151587",
                     "quantity": 5
                 },
             ],
@@ -3314,12 +3318,12 @@ class CreateRule(unittest.TestCase):
                 },
                 {
                     "item_id": "3",
-                    "subscription_id": "2050125",
+                    "subscription_id": "1151596",
                     "quantity": 5
                 },
                 {
                     "item_id": "4",
-                    "subscription_id": "2050126",
+                    "subscription_id": "1151587",
                     "quantity": 5
                 },
             ],
@@ -3424,12 +3428,12 @@ class CreateRule(unittest.TestCase):
                 },
                 {
                     "item_id": "3",
-                    "subscription_id": "2050125",
+                    "subscription_id": "1151596",
                     "quantity": 5
                 },
                 {
                     "item_id": "4",
-                    "subscription_id": "2050126",
+                    "subscription_id": "1151587",
                     "quantity": 5
                 },
             ],
