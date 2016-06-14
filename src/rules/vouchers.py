@@ -198,9 +198,10 @@ class Vouchers(object):
             return False, [u'to date cannot be less than from date']
         query_dict = {
             'to': self.to_date,
-            'code': self.code
+            'code': self.code,
+            'from': self.from_date
         }
-        sql = "select * from all_vouchers where `from` > :to && code=:code order by `from` asc limit 0,1"
+        sql = "select * from all_vouchers where `from` > :to && code=:code && `from` <> :from order by `from` asc limit 0,1"
         existing_voucher = db.execute_raw_sql(sql, query_dict)
         if existing_voucher:
             existing_voucher = Vouchers.from_dict(existing_voucher[0])
@@ -213,20 +214,37 @@ class Vouchers(object):
         return self.update_to_date_single(to_date, db, force)
 
     def update(self, update_dict, db, change_id):
+
         new_update_dict = copy.deepcopy(update_dict)
+
         force = new_update_dict.pop('force', False)
+
+        value_dict = self.get_value_dict()
+
+        for key, items in update_dict.items():
+            if key != 'force' and new_update_dict[key] == value_dict[key]:
+                del new_update_dict[key]
+
+        if not new_update_dict:
+            return True, None
+
         new_update_dict['id'] = self.id_bin
+
         if 'to' in new_update_dict:
             success, error_list = self.update_to_date(new_update_dict.get('to'), db, force)
             if not success:
                 return False, error_list
             del new_update_dict['to']
+
         db.update_row("all_vouchers", "id", **new_update_dict)
         if 'is_active' in new_update_dict:
             Vouchers.fetch_active_voucher(self.code, db)
             del new_update_dict['is_active']
+
         db.update_row("vouchers", "id", **new_update_dict)
+
         self.add_audit_log_entry(change_id, db)
+
         return True, None
 
     def get_value_dict(self):
