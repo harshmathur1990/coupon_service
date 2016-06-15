@@ -325,7 +325,7 @@ def get_criteria_kwargs(data):
         benefit_dict['value'] = freebie
         benefit_list.append(benefit_dict)
 
-    if benefits.get('amount'):
+    if benefits.get('amount') is not None:
         amount_benefit = {
             'type': BenefitType.amount.value,
             'value': benefits.get('amount'),

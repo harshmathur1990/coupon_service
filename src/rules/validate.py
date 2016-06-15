@@ -12,9 +12,12 @@ def validate_for_create_voucher(data_dict):
     error = list()
     success = True
 
-    if not data_dict.get('force') and data_dict.get('from').date() < datetime.datetime.utcnow().date():
-        success = False
-        error.append(u'Backdated voucher creation is not allowed')
+    if not data_dict.get('force'):
+        if data_dict.get('from').date() < datetime.datetime.utcnow().date():
+            success = False
+            error.append(u'Backdated voucher creation is not allowed')
+        elif data_dict.get('from') < datetime.datetime.utcnow():
+            data_dict['from'] = datetime.datetime.utcnow()
 
     if data_dict.get('to') < data_dict.get('from'):
         success = False

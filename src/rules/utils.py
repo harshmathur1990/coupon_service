@@ -291,6 +291,7 @@ def update_keys_in_input_list(data_list):
     except Exception as e:
         logger.exception(e)
         db.rollback()
+        change_id = None
     success_list = list()
     error_list = list()
     if change_id:
@@ -455,6 +456,22 @@ def get_benefits_new(order):
                     channels_list = benefit_dict['channel']
                 else:
                     channels_list = get_intersection_of_lists(channels_list, benefit_dict['channel'])
+            if not benefit_list:
+                benefit_dict = dict()
+                benefit_dict['max_cap'] = None
+                benefit_dict['couponCode'] = existing_voucher['voucher'].code
+                benefit_dict['benefit_type'] = benefit_type.value
+                if existing_voucher['voucher'].type in [VoucherType.auto_freebie.value, VoucherType.regular_freebie.value]:
+                    benefit_dict['freebies'] = freebie_list
+                else:
+                    benefit_dict['amount'] = amount
+                    benefit_dict['amount_actual'] = amount_actual
+                benefit_dict['items'] = item_id_list
+                benefit_dict['type'] = existing_voucher['voucher'].type
+                benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
+                benefit_dict['channel'] = [Channels(c).value for c in rule.criteria_obj.channels]
+                benefit_dict['custom'] = existing_voucher['voucher'].custom
+                benefits_list.append(benefit_dict)
     total_discount = 0.0
     total_agent_discount = 0.0
     total_cashback = 0.0
