@@ -319,34 +319,35 @@ def get_criteria_kwargs(data):
 
     benefit_list = list()
 
-    for freebie in benefits.get('freebies', list()):
-        benefit_dict = dict()
-        benefit_dict['type'] = BenefitType.freebie.value
-        benefit_dict['value'] = freebie
-        benefit_list.append(benefit_dict)
+    if benefits:
+        for freebie in benefits.get('freebies', list()):
+            benefit_dict = dict()
+            benefit_dict['type'] = BenefitType.freebie.value
+            benefit_dict['value'] = freebie
+            benefit_list.append(benefit_dict)
 
-    if benefits.get('amount') is not None:
-        amount_benefit = {
-            'type': BenefitType.amount.value,
-            'value': benefits.get('amount'),
-        }
-        benefit_list.append(amount_benefit)
+        if benefits.get('amount'):
+            amount_benefit = {
+                'type': BenefitType.amount.value,
+                'value': benefits.get('amount'),
+            }
+            benefit_list.append(amount_benefit)
 
-    if benefits.get('percentage'):
-        percentage_benefit = {
-            'type': BenefitType.percentage.value,
-            'value': benefits.get('percentage')
-        }
-        if benefits.get('max_discount'):
-            percentage_benefit['max_cap'] = benefits.get('max_discount')
-        benefit_list.append(percentage_benefit)
+        if benefits.get('percentage'):
+            percentage_benefit = {
+                'type': BenefitType.percentage.value,
+                'value': benefits.get('percentage')
+            }
+            if benefits.get('max_discount'):
+                percentage_benefit['max_cap'] = benefits.get('max_discount')
+            benefit_list.append(percentage_benefit)
 
-    if benefits.get('cashback'):
-        cashback_benefit = {
-            'type': BenefitType.cashback_amount.value,
-            'value': benefits.get('cashback'),
-        }
-        benefit_list.append(cashback_benefit)
+        if benefits.get('cashback'):
+            cashback_benefit = {
+                'type': BenefitType.cashback_amount.value,
+                'value': benefits.get('cashback'),
+            }
+            benefit_list.append(cashback_benefit)
 
     benefit_criteria_kwargs = {
         'data': benefit_list

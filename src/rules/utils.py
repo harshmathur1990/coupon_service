@@ -458,14 +458,7 @@ def get_benefits_new(order):
                     channels_list = get_intersection_of_lists(channels_list, benefit_dict['channel'])
             if not benefit_list:
                 benefit_dict = dict()
-                benefit_dict['max_cap'] = None
                 benefit_dict['couponCode'] = existing_voucher['voucher'].code
-                benefit_dict['benefit_type'] = benefit_type.value
-                if existing_voucher['voucher'].type in [VoucherType.auto_freebie.value, VoucherType.regular_freebie.value]:
-                    benefit_dict['freebies'] = freebie_list
-                else:
-                    benefit_dict['amount'] = amount
-                    benefit_dict['amount_actual'] = amount_actual
                 benefit_dict['items'] = item_id_list
                 benefit_dict['type'] = existing_voucher['voucher'].type
                 benefit_dict['paymentMode'] = rule.criteria_obj.payment_modes
@@ -491,7 +484,7 @@ def get_benefits_new(order):
 
     for a_benefit in benefits_list:
         if a_benefit['type'] is VoucherType.regular_coupon.value\
-                and a_benefit['amount_actual']:
+                and a_benefit.get('amount_actual'):
             a_benefit['amount'] = a_benefit['amount_actual']
             del a_benefit['amount_actual']
 

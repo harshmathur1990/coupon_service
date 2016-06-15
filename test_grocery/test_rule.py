@@ -2976,9 +2976,6 @@ class CreateRule(unittest.TestCase):
                         },
                         "payment_modes": ["VISA"],
                         "valid_on_order_no": ["1+"]
-                    },
-                    "benefits": {
-                        "amount": 0,
                     }
                 }
             ]

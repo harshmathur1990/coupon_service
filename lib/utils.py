@@ -284,7 +284,7 @@ def is_old_benefit_dict_valid(benefit_dict):
 
     amount = benefit_dict.get('amount')
 
-    if amount is not None:
+    if amount:
         amount_present = True
 
     percentage = benefit_dict.get('percentage')
