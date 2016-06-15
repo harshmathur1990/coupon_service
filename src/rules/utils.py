@@ -465,6 +465,15 @@ def get_benefits_new(order):
                 benefit_dict['channel'] = [Channels(c).value for c in rule.criteria_obj.channels]
                 benefit_dict['custom'] = existing_voucher['voucher'].custom
                 benefits_list.append(benefit_dict)
+                if not payment_modes_list:
+                    payment_modes_list = benefit_dict['paymentMode']
+                else:
+                    payment_modes_list = get_intersection_of_lists(payment_modes_list, benefit_dict['paymentMode'])
+
+                if not channels_list:
+                    channels_list = benefit_dict['channel']
+                else:
+                    channels_list = get_intersection_of_lists(channels_list, benefit_dict['channel'])
     total_discount = 0.0
     total_agent_discount = 0.0
     total_cashback = 0.0
