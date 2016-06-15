@@ -1,5 +1,6 @@
 import datetime
 import json
+import time
 import unittest
 from src.sqlalchemydb import CouponsAlchemyDB
 from src.rules.utils import create_rule_list
@@ -2317,7 +2318,7 @@ class CreateRule(unittest.TestCase):
                 }
             ]
         }
-        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_1_create_data),
+        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher', force=True), data=json.dumps(rule_1_create_data),
                                     content_type='application/json')
         data = json.loads(response.data)
         self.assertTrue(not data.get('data',dict()).get('error_list') and
@@ -2375,7 +2376,7 @@ class CreateRule(unittest.TestCase):
                 }
             ]
         }
-        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_2_create_data),
+        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher', force=True), data=json.dumps(rule_2_create_data),
                                     content_type='application/json')
         data = json.loads(response.data)
         self.assertTrue(not data.get('data',dict()).get('error_list') and
@@ -2450,7 +2451,7 @@ class CreateRule(unittest.TestCase):
                 }
             ]
         }
-        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_2_create_data),
+        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher', force=True), data=json.dumps(rule_2_create_data),
                                     content_type='application/json')
         failed_update_args = [
             {
@@ -2518,7 +2519,7 @@ class CreateRule(unittest.TestCase):
                 }
             ]
         }
-        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_2_create_data),
+        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher', force=True), data=json.dumps(rule_2_create_data),
                                     content_type='application/json')
         failed_update_args = [
             {
@@ -3408,9 +3409,10 @@ class CreateRule(unittest.TestCase):
                 }
             ]
         }
-        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher', force=True), data=json.dumps(rule_create_data),
                                     content_type='application/json')
         self.assertTrue(response.status_code == 200, response.data)
+
         order_data = {
             "area_id": "87000",
             "customer_id": "1234",

@@ -391,7 +391,7 @@ def create_voucher():
                             )
                         },
                         required=False,
-                        validate=[lambda val: length_validator(val, 1000), is_old_benefit_dict_valid]
+                        validate=[lambda val: length_validator(val, 1000)]
                     )
                 }
             ),
