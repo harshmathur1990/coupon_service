@@ -146,8 +146,9 @@ class Rule(object):
         return values
 
     def __eq__(self, other):
-        if self.criteria_obj == other.criteria_obj and self.blacklist_criteria_obj == other.blacklist_criteria_obj and self.benefits_obj == other.benefits_obj:
-
+        if self.criteria_obj == other.criteria_obj \
+                and self.blacklist_criteria_obj == other.blacklist_criteria_obj \
+                and self.benefits_obj == other.benefits_obj:
             return True
         return False
 

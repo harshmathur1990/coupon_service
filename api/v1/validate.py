@@ -69,7 +69,7 @@ def validate_for_create_api_v1(data):
 
         for rule in rules:
             benefits = rule.get('benefits')
-            if benefits.get('freebies'):
+            if benefits and benefits.get('freebies'):
                 success = False
                 error.append(u'Regular coupon should not have freebies')
 
