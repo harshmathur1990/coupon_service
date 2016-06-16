@@ -72,6 +72,8 @@ def validate_for_create_api_v1(data):
 
         for rule in rules:
             benefits = rule.get('benefits')
+            if not benefits:
+                continue
             if len(benefits) != 1:
                 success = False
                 error.append(u'Only 1 benefit allowed per rule')

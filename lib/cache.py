@@ -9,7 +9,7 @@ rules_pool = redis.ConnectionPool(
 cache_type = {
     'rules': rules_pool
 }
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 def set(key, value, ctype='rules', ex=None, px=None, nx=False, xx=False):

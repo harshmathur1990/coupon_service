@@ -6,7 +6,7 @@ from sqlalchemy.dialects.mysql import TINYINT, INTEGER, BIGINT, DATETIME
 from sqlalchemy import asc, desc, select, exists
 from config import DATABASE_URL, client
 from sqlalchemy.sql import text
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class CouponsAlchemyDB:
