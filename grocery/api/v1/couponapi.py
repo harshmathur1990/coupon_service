@@ -94,13 +94,14 @@ def create_voucher():
                                     validate=validate.OneOf(
                                         [l.value for l in list(Channels)], [l.name for l in list(Channels)])),
                                 required=False,
-                                missing=list()
+                                location='json',
+                                # missing=list()
                             ),
 
                             'source': fields.List(
                                 fields.Str(),
                                 required=False,
-                                missing=list(),
+                                # missing=list(),
                                 location='json'
                             ),
 
@@ -109,7 +110,8 @@ def create_voucher():
                                     validate=validate.Range(min=0)
                                 ),
                                 required=False,
-                                missing=list()
+                                location='json'
+                                # missing=list()
                             ),
 
                             'products': fields.Nested(
@@ -119,18 +121,19 @@ def create_voucher():
                                             validate=validate.Range(min=0)
                                         ),
                                         required=False,
-                                        missing=list(),
+                                        # missing=list(),
                                     ),
                                     'not_in': fields.List(
                                         fields.Int(
                                             validate=validate.Range(min=0)
                                         ),
                                         required=False,
-                                        missing=list(),
+                                        # missing=list(),
                                     )
                                 },
                                 required=False,
-                                missing={'in': [], 'not_in': []}
+                                location='json'
+                                # missing={'in': [], 'not_in': []}
                             ),
 
                             'categories': fields.Nested(
@@ -140,18 +143,19 @@ def create_voucher():
                                             validate=validate.Range(min=0)
                                         ),
                                         required=False,
-                                        missing=list(),
+                                        # missing=list(),
                                     ),
                                     'not_in': fields.List(
                                         fields.Int(
                                             validate=validate.Range(min=0)
                                         ),
                                         required=False,
-                                        missing=list(),
+                                        # missing=list(),
                                     )
                                 },
                                 required=False,
-                                missing={'in': [], 'not_in': []}
+                                location='json'
+                                # missing={'in': [], 'not_in': []}
                             ),
 
                             'storefronts': fields.List(
@@ -159,7 +163,8 @@ def create_voucher():
                                     validate=validate.Range(min=0)
                                 ),
                                 required=False,
-                                missing=list()
+                                location='json'
+                                # missing=list()
                             ),
 
                             'variants': fields.List(
@@ -167,7 +172,8 @@ def create_voucher():
                                     validate=validate.Range(min=0)
                                 ),
                                 required=False,
-                                missing=list()
+                                location='json'
+                                # missing=list()
                             ),
 
                             'sellers': fields.List(
@@ -175,7 +181,8 @@ def create_voucher():
                                     validate=validate.Length(min=1)
                                 ),
                                 required=False,
-                                missing=list()
+                                location='json'
+                                # missing=list()
                             ),
 
                             'location': fields.Nested(
@@ -188,36 +195,43 @@ def create_voucher():
                                     'state': fields.List(
                                         fields.Int(
                                             validate=validate.Range(min=0)
-                                        ), required=False, missing=list()
+                                        ), required=False,
+                                        # missing=list()
                                     ),
                                     'city': fields.List(
                                         fields.Int(
                                             validate=validate.Range(min=0)
-                                        ), required=False, missing=list()
+                                        ), required=False,
+                                        # missing=list()
                                     ),
                                     'area': fields.List(
                                         fields.Int(
                                             validate=validate.Range(min=0)
-                                        ), required=False, missing=list()
+                                        ), required=False,
+                                        # missing=list()
                                     ),
                                     'zone': fields.List(
-                                        fields.Int(), required=False, missing=list()
+                                        fields.Int(), required=False,
+                                        # missing=list()
                                     ),
                                 },
                                 required=False,
-                                missing={'country': [], 'state': [], 'city': [], 'area': [], 'zone': []}
+                                location='json'
+                                # missing={'country': [], 'state': [], 'city': [], 'area': [], 'zone': []}
                             ),
 
                             'payment_modes': fields.List(
                                 fields.Str(),
-                                missing=list(),
+                                # missing=list(),
+                                location='json',
                                 required=False
                             ),
 
                             'valid_on_order_no': fields.List(
                                 fields.Str(),
                                 required=False,
-                                missing=list()
+                                # missing=list()
+                                location='json'
                             ),
                         },
                         validate=lambda val: length_validator(val, 2000)
@@ -231,13 +245,13 @@ def create_voucher():
                                     validate=validate.OneOf(
                                         [l.value for l in list(Channels)], [l.name for l in list(Channels)])),
                                 required=False,
-                                missing=list()
+                                # missing=list()
                             ),
 
                             'source': fields.List(
                                 fields.Str(),
                                 required=False,
-                                missing=list(),
+                                # missing=list(),
                                 location='json'
                             ),
 
@@ -246,7 +260,7 @@ def create_voucher():
                                     validate=validate.Range(min=0)
                                 ),
                                 required=False,
-                                missing=list()
+                                # missing=list()
                             ),
 
                             'products': fields.Nested(
@@ -256,18 +270,18 @@ def create_voucher():
                                             validate=validate.Range(min=0)
                                         ),
                                         required=False,
-                                        missing=list(),
+                                        # missing=list(),
                                     ),
                                     'not_in': fields.List(
                                         fields.Int(
                                             validate=validate.Range(min=0)
                                         ),
                                         required=False,
-                                        missing=list(),
+                                        # missing=list(),
                                     )
                                 },
                                 required=False,
-                                missing={'in': [], 'not_in': []}
+                                # missing={'in': [], 'not_in': []}
                             ),
 
                             'categories': fields.Nested(
@@ -277,18 +291,18 @@ def create_voucher():
                                             validate=validate.Range(min=0)
                                         ),
                                         required=False,
-                                        missing=list(),
+                                        # missing=list(),
                                     ),
                                     'not_in': fields.List(
                                         fields.Int(
                                             validate=validate.Range(min=0)
                                         ),
                                         required=False,
-                                        missing=list(),
+                                        # missing=list(),
                                     )
                                 },
                                 required=False,
-                                missing={'in': [], 'not_in': []}
+                                # missing={'in': [], 'not_in': []}
                             ),
 
                             'storefronts': fields.List(
@@ -296,7 +310,7 @@ def create_voucher():
                                     validate=validate.Range(min=0)
                                 ),
                                 required=False,
-                                missing=list()
+                                # missing=list()
                             ),
 
                             'variants': fields.List(
@@ -304,7 +318,7 @@ def create_voucher():
                                     validate=validate.Range(min=0)
                                 ),
                                 required=False,
-                                missing=list()
+                                # missing=list()
                             ),
 
                             'sellers': fields.List(
@@ -312,7 +326,7 @@ def create_voucher():
                                     validate=validate.Length(min=1)
                                 ),
                                 required=False,
-                                missing=list()
+                                # missing=list()
                             ),
 
                             'location': fields.Nested(
@@ -325,41 +339,45 @@ def create_voucher():
                                     'state': fields.List(
                                         fields.Int(
                                             validate=validate.Range(min=0)
-                                        ), required=False, missing=list()
+                                        ), required=False,
+                                        # missing=list()
                                     ),
                                     'city': fields.List(
                                         fields.Int(
                                             validate=validate.Range(min=0)
-                                        ), required=False, missing=list()
+                                        ), required=False,
+                                        # missing=list()
                                     ),
                                     'area': fields.List(
                                         fields.Int(
                                             validate=validate.Range(min=0)
-                                        ), required=False, missing=list()
+                                        ), required=False,
+                                        # missing=list()
                                     ),
                                     'zone': fields.List(
-                                        fields.Int(), required=False, missing=list()
+                                        fields.Int(), required=False,
+                                        # missing=list()
                                     ),
                                 },
                                 required=False,
-                                missing={'country': [], 'state': [], 'city': [], 'area': [], 'zone': []}
+                                # missing={'country': [], 'state': [], 'city': [], 'area': [], 'zone': []}
                             ),
 
                             'payment_modes': fields.List(
                                 fields.Str(),
-                                missing=list(),
+                                # missing=list(),
                                 required=False
                             ),
 
                             'valid_on_order_no': fields.List(
                                 fields.Str(),
                                 required=False,
-                                missing=list()
+                                # missing=list()
                             ),
                         },
                         validate=lambda val: length_validator(val, 2000),
                         required=False,
-                        missing=dict()
+                        # missing=dict()
                     ),
 
                     'benefits': fields.List(
