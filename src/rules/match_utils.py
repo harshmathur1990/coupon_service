@@ -51,12 +51,12 @@ def match_user_order_no(valid_on_order_no, order, fetch_user_order_detail_callba
 def match_in_not_in(criteria, value):
     found_matching = MatchStatus.not_found
 
-    if criteria['in']:
+    if criteria and 'in' in criteria and criteria['in'] is not None:
         if get_intersection_of_lists(criteria['in'], value):
             found_matching = MatchStatus.found_matching
         else:
             return MatchStatus.found_not_matching
-    if criteria['not_in']:
+    if criteria and 'not_in' in criteria and criteria['not_in'] is not None:
         if get_intersection_of_lists(criteria['not_in'], value):
             return MatchStatus.found_not_matching
         else:

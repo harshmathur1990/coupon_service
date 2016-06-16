@@ -87,6 +87,25 @@ class CreateRule(unittest.TestCase):
         voucher_rule_list = test1code1_voucher.get_rule()
         from api.v1.utils import get_criteria_kwargs
         rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
+        from api.v1.rule_criteria import RuleCriteria
+        from src.rules.rule import Benefits
+        rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
+        for rule in rule_list:
+            criteria_obj = rule.criteria_obj
+            criteria_json = criteria_obj.canonical_json()
+            benefits_obj = rule.benefits_obj
+            benefits_json = benefits_obj.canonical_json()
+            blacklist_criteria_obj = rule.blacklist_criteria_obj
+            blacklist_criteria_json = blacklist_criteria_obj.canonical_json()
+            new_criteria_dict = json.loads(criteria_json)
+            new_criteria_obj = RuleCriteria(**new_criteria_dict)
+            new_blacklist_criteria_dict = json.loads(blacklist_criteria_json)
+            new_blacklist_criteria_obj = RuleCriteria(**new_blacklist_criteria_dict)
+            new_benefits_dict = json.loads(benefits_json)
+            new_benefits_obj = Benefits(**new_benefits_dict)
+            rule.criteria_obj = new_criteria_obj
+            rule.blacklist_criteria_obj = new_blacklist_criteria_obj
+            rule.benefits_obj = new_benefits_obj
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
                 test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {}'.format(
@@ -712,7 +731,25 @@ class CreateRule(unittest.TestCase):
         test1code1_voucher = Vouchers.find_one('TEST1CODE1')
         voucher_rule_list = test1code1_voucher.get_rule()
         from api.v1.utils import get_criteria_kwargs
+        from api.v1.rule_criteria import RuleCriteria
+        from src.rules.rule import Benefits
         rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
+        for rule in rule_list:
+            criteria_obj = rule.criteria_obj
+            criteria_json = criteria_obj.canonical_json()
+            benefits_obj = rule.benefits_obj
+            benefits_json = benefits_obj.canonical_json()
+            blacklist_criteria_obj = rule.blacklist_criteria_obj
+            blacklist_criteria_json = blacklist_criteria_obj.canonical_json()
+            new_criteria_dict = json.loads(criteria_json)
+            new_criteria_obj = RuleCriteria(**new_criteria_dict)
+            new_blacklist_criteria_dict = json.loads(blacklist_criteria_json)
+            new_blacklist_criteria_obj = RuleCriteria(**new_blacklist_criteria_dict)
+            new_benefits_dict = json.loads(benefits_json)
+            new_benefits_obj = Benefits(**new_benefits_dict)
+            rule.criteria_obj = new_criteria_obj
+            rule.blacklist_criteria_obj = new_blacklist_criteria_obj
+            rule.benefits_obj = new_benefits_obj
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
                 test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {}'.format(
@@ -1512,6 +1549,25 @@ class CreateRule(unittest.TestCase):
         voucher_rule_list = test1code1_voucher.get_rule()
         from api.v1.utils import get_criteria_kwargs
         rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
+        from api.v1.rule_criteria import RuleCriteria
+        from src.rules.rule import Benefits
+        rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
+        for rule in rule_list:
+            criteria_obj = rule.criteria_obj
+            criteria_json = criteria_obj.canonical_json()
+            benefits_obj = rule.benefits_obj
+            benefits_json = benefits_obj.canonical_json()
+            blacklist_criteria_obj = rule.blacklist_criteria_obj
+            blacklist_criteria_json = blacklist_criteria_obj.canonical_json()
+            new_criteria_dict = json.loads(criteria_json)
+            new_criteria_obj = RuleCriteria(**new_criteria_dict)
+            new_blacklist_criteria_dict = json.loads(blacklist_criteria_json)
+            new_blacklist_criteria_obj = RuleCriteria(**new_blacklist_criteria_dict)
+            new_benefits_dict = json.loads(benefits_json)
+            new_benefits_obj = Benefits(**new_benefits_dict)
+            rule.criteria_obj = new_criteria_obj
+            rule.blacklist_criteria_obj = new_blacklist_criteria_obj
+            rule.benefits_obj = new_benefits_obj
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
                 test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
