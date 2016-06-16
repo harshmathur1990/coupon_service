@@ -27,8 +27,9 @@ def match_user_order_no(valid_on_order_no, order, fetch_user_order_detail_callba
             exact_order_no_list.append(int(an_order_no))
         except ValueError:
             # to convert order nos which are like 4+ means minimum order no 4
-            if not min_order_no:
-                min_order_no = int(an_order_no[:-1])
+            new_min_order_no = int(an_order_no[:-1])
+            if not min_order_no or min_order_no > new_min_order_no:
+                min_order_no = new_min_order_no
 
     if exact_order_no_list or min_order_no:
         # if minimum order no is given 1 (1+), than the condition is true always.

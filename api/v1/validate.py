@@ -11,6 +11,7 @@ def validate_for_create_coupon(data):
 
     for rule in rules:
         criteria = rule.get('criteria')
+        blacklist_criteria = rule.get('blacklist_criteria')
 
         if criteria.get('range_max') and criteria.get('range_min') and \
                         criteria.get('range_max') < criteria.get('range_min'):
@@ -46,7 +47,54 @@ def validate_for_create_coupon(data):
                     u'Products[in] and products[not_in] must not have any product in common in a rule {}'.format(
                         intersection))
 
+        all_list = ['all', 'alL', 'aLl', 'All', 'aLL', 'AlL', 'ALl', 'ALL']
+
+        criteria_payment_modes = criteria.get('payment_modes')
+
+        if criteria_payment_modes and get_intersection_of_lists(criteria_payment_modes, all_list):
+            criteria['payment_modes'] = []
+
+        blacklist_criteria_payment_modes = blacklist_criteria.get('payment_modes')
+
+        if blacklist_criteria_payment_modes and get_intersection_of_lists(blacklist_criteria_payment_modes, all_list):
+            blacklist_criteria['payment_modes'] = []
+
+        criteria['valid_on_order_no'] = fix_order_no(criteria.get('valid_on_order_no'))
+
+        blacklist_criteria['valid_on_order_no'] = fix_order_no(blacklist_criteria.get('valid_on_order_no'))
+
     return success, error
+
+
+def fix_order_no(valid_on_order_no):
+
+    if not valid_on_order_no:
+        return valid_on_order_no
+
+    exact_order_no_list = list()
+    min_order_no = None
+    final_valid_on_order_no = list()
+    for an_order_no in valid_on_order_no:
+        try:
+            # to convert order nos which are exact integers
+            exact_order_no_list.append(int(an_order_no))
+        except ValueError:
+            # to convert order nos which are like 4+ means minimum order no 4
+            new_min_order_no = int(an_order_no[:-1])
+            if not min_order_no or min_order_no > new_min_order_no:
+                min_order_no = new_min_order_no
+
+    for order_no in exact_order_no_list:
+        if min_order_no:
+            if order_no < min_order_no:
+                final_valid_on_order_no.append(u'{}'.format(order_no))
+        else:
+            final_valid_on_order_no.append(u'{}'.format(order_no))
+
+    if min_order_no:
+        final_valid_on_order_no.append(u'{}+'.format(min_order_no))
+
+    return final_valid_on_order_no
 
 
 def validate_for_create_api_v1(data):

@@ -108,8 +108,8 @@ class CreateRule(unittest.TestCase):
             rule.benefits_obj = new_benefits_obj
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
-                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {}'.format(
-                    test_rule.criteria_obj.__dict__,  test_rule.benefits_obj.__dict__, created_rule.criteria_obj.__dict__,  created_rule.benefits_obj.__dict__))
+                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {} - {} - {}'.format(
+                    created_rule.criteria_obj.__dict__, test_rule.criteria_obj.__dict__, created_rule.blacklist_criteria_obj.__dict__, test_rule.blacklist_criteria_obj.__dict__, created_rule.benefits_obj.__dict__, test_rule.benefits_obj.__dict__))
 
     def test_create_invalid_auto_freebie(self):
         today = datetime.datetime.utcnow()
@@ -752,8 +752,8 @@ class CreateRule(unittest.TestCase):
             rule.benefits_obj = new_benefits_obj
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
-                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {}'.format(
-                    test_rule.criteria_obj.__dict__,  test_rule.benefits_obj.__dict__, created_rule.criteria_obj.__dict__,  created_rule.benefits_obj.__dict__))
+                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {} - {} - {}'.format(
+                    created_rule.criteria_obj.__dict__, test_rule.criteria_obj.__dict__, created_rule.blacklist_criteria_obj.__dict__, test_rule.blacklist_criteria_obj.__dict__, created_rule.benefits_obj.__dict__, test_rule.benefits_obj.__dict__))
 
     def test_check_auto_freebie(self):
         values = {
@@ -1570,8 +1570,8 @@ class CreateRule(unittest.TestCase):
             rule.benefits_obj = new_benefits_obj
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
-                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
-                    rule_create_data, test_rule.__dict__))
+                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {} - {} - {}'.format(
+                    created_rule.criteria_obj.__dict__, test_rule.criteria_obj.__dict__, created_rule.blacklist_criteria_obj.__dict__, test_rule.blacklist_criteria_obj.__dict__, created_rule.benefits_obj.__dict__, test_rule.benefits_obj.__dict__))
         order_data = {
             "area_id": "29557",
             "customer_id": "1234",
@@ -3065,5 +3065,5 @@ class CreateRule(unittest.TestCase):
             rule.benefits_obj = new_benefits_obj
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
-                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {}'.format(
-                    test_rule.criteria_obj.__dict__,  test_rule.benefits_obj.__dict__, created_rule.criteria_obj.__dict__,  created_rule.benefits_obj.__dict__))
+                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {} - {} - {}'.format(
+                    created_rule.criteria_obj.__dict__, test_rule.criteria_obj.__dict__, created_rule.blacklist_criteria_obj.__dict__, test_rule.blacklist_criteria_obj.__dict__, created_rule.benefits_obj.__dict__, test_rule.benefits_obj.__dict__))

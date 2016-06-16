@@ -165,7 +165,7 @@ def create_rule_object(data, user_id=None, get_criteria_kwargs=None):
     id = uuid.uuid1().hex
     rule = Rule(id=id, description=description, blacklist_criteria_json=rule_blacklist_criteria.canonical_json(),
                 criteria_json=rule_criteria.canonical_json(), benefits_json=benefits.canonical_json(),
-                created_by=user_id, updated_by=user_id, criteria_obj=rule_criteria, benefits_obj=benefits)
+                created_by=user_id, updated_by=user_id)
     return rule
 
 
