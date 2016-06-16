@@ -52,48 +52,46 @@ class RuleCriteria(object):
     }
 
     def __init__(self, **kwargs):
-        self.area = kwargs.get('area', list())
-        self.brands = kwargs.get('brands', list())
-        self.brands.sort()
-        default_in_not_in = dict()
-        default_in_not_in['in'] = list()
-        default_in_not_in['not_in'] = list()
-        category = kwargs.get('categories', default_in_not_in)
-        self.categories = {
-            'in': category.get('in', list()),
-            'not_in': category.get('not_in', list())
-        }
-        self.categories['in'].sort()
-        self.categories['not_in'].sort()
-        self.channels = kwargs.get('channels', list())
-        self.channels.sort()
-        self.city = kwargs.get('city', list())
-        self.city.sort()
-        self.country = kwargs.get('country', list())
-        self.country.sort()
-        self.payment_modes = kwargs.get('payment_modes', list())
-        self.payment_modes.sort()
-        self.source = kwargs.get('source', list())
-        self.source.sort()
-        product = kwargs.get('products', default_in_not_in)
-        self.products = {
-            'in': product.get('in', list()),
-            'not_in': product.get('not_in', list())
-        }
-        self.products['in'].sort()
-        self.products['not_in'].sort()
+        self.area = kwargs.get('area', None)
+        self.brands = kwargs.get('brands', None)
+
+        self.categories = kwargs.get('categories', None)
+
+        if self.categories:
+            if 'in' in self.categories and self.categories['in']:
+                self.categories['in'].sort()
+            if 'not_in' in self.categories and self.categories['not_in']:
+                self.categories['not_in'].sort()
+
+        self.channels = kwargs.get('channels', None)
+
+        self.city = kwargs.get('city', None)
+
+        self.country = kwargs.get('country', None)
+
+        self.payment_modes = kwargs.get('payment_modes', None)
+
+        self.source = kwargs.get('source', None)
+
+        self.products = kwargs.get('products', None)
+        if self.products:
+            if 'in' in self.products and self.products['in']:
+                self.products['in'].sort()
+            if 'not_in' in self.products and self.products['not_in']:
+                self.products['not_in'].sort()
+
         self.range_max = kwargs.get('range_max', None)
         self.range_min = kwargs.get('range_min', None)
         self.cart_range_max = kwargs.get('cart_range_max', None)
         self.cart_range_min = kwargs.get('cart_range_min', None)
-        self.sellers = kwargs.get('sellers', list())
-        self.sellers.sort()
-        self.state = kwargs.get('state', list())
-        self.state.sort()
-        self.storefronts = kwargs.get('storefronts', list())
-        self.storefronts.sort()
-        self.valid_on_order_no = kwargs.get('valid_on_order_no', list())
-        self.valid_on_order_no.sort()
+        self.sellers = kwargs.get('sellers', None)
+
+        self.state = kwargs.get('state', None)
+
+        self.storefronts = kwargs.get('storefronts', None)
+
+        self.valid_on_order_no = kwargs.get('valid_on_order_no', None)
+
         if kwargs.get('usage'):
             self.usage = kwargs.get('usage')
         else:
@@ -111,10 +109,35 @@ class RuleCriteria(object):
                 self.usage['use_type'] = UseType.global_use.value
             else:
                 self.usage['use_type'] = UseType.not_available.value
-        self.variants = kwargs.get('variants', list())
-        self.variants.sort()
-        self.zone = kwargs.get('zone', list())
-        self.zone.sort()
+        self.variants = kwargs.get('variants', None)
+
+        self.zone = kwargs.get('zone', None)
+        if self.area:
+            self.area.sort()
+        if self.brands:
+            self.brands.sort()
+        if self.channels:
+            self.channels.sort()
+        if self.city:
+            self.city.sort()
+        if self.country:
+            self.country.sort()
+        if self.payment_modes:
+            self.payment_modes.sort()
+        if self.source:
+            self.source.sort()
+        if self.sellers:
+            self.sellers.sort()
+        if self.state:
+            self.state.sort()
+        if self.storefronts:
+            self.storefronts.sort()
+        if self.valid_on_order_no:
+            self.valid_on_order_no.sort()
+        if self.variants:
+            self.variants.sort()
+        if self.zone:
+            self.zone.sort()
 
     def __eq__(self, other) :
         return self.__dict__ == other.__dict__
@@ -129,9 +152,9 @@ class RuleCriteria(object):
                     if items['use_type'] is UseType.not_available.value:
                         del self_dict[key]
                 else:
-                    if not items['in']:
+                    if 'in' in items and not items['in']:
                         del items['in']
-                    if not items['not_in']:
+                    if 'not_in' in items and not items['not_in']:
                         del items['not_in']
                     if not items:
                         del self_dict[key]
@@ -156,7 +179,7 @@ class RuleCriteria(object):
                 elif status is MatchStatus.found_matching:
                     found_matching = True
             else:
-                if getattr(self, criteria_attr):
+                if getattr(self, criteria_attr) is not None:
                     if method(getattr(self, criteria_attr), getattr(item, item_attr)):
                         found_matching = True
                     else:
@@ -172,7 +195,7 @@ class RuleCriteria(object):
         found_matching = False
 
         for criteria_attr, order_attr, method, callback in self.criteria_attributes:
-            if getattr(self, criteria_attr):
+            if getattr(self, criteria_attr) is not None:
                 if not callback:
                     if criteria_attr == 'payment_modes' and not order.check_payment_mode:
                         continue
@@ -217,7 +240,7 @@ class RuleCriteria(object):
             return False, None, default_error_message
 
         for criteria_attr, order_attr, method, callback in self.match_attributes:
-            if getattr(self, criteria_attr):
+            if getattr(self, criteria_attr) is not None:
                 if not method(getattr(self, criteria_attr), getattr(order, order_attr)):
                     error_message = self.message_dict.get(criteria_attr)
                     return False, None, error_message.format(getattr(self, criteria_attr))

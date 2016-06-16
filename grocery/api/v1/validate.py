@@ -22,9 +22,9 @@ def validate_for_create_coupon(data):
             success = False
             error.append(u'cart_range_max must not be less than cart_range_min')
 
-        in_categories = criteria.get('categories').get('in')
+        in_categories = criteria.get('categories', dict()).get('in')
 
-        not_in_categories = criteria.get('categories').get('not_in')
+        not_in_categories = criteria.get('categories', dict()).get('not_in')
 
         if in_categories and not_in_categories:
             intersection = get_intersection_of_lists(in_categories, not_in_categories)
@@ -34,9 +34,9 @@ def validate_for_create_coupon(data):
                     u'Categories[in] and Categories[not_in] must not have any category in common in a rule {}'.format(
                         intersection))
 
-        in_products = criteria.get('products').get('in')
+        in_products = criteria.get('products', dict()).get('in')
 
-        not_in_products = criteria.get('products').get('not_in')
+        not_in_products = criteria.get('products', dict()).get('not_in')
 
         if in_products and not_in_products:
             intersection = get_intersection_of_lists(in_products, not_in_products)
@@ -62,6 +62,9 @@ def validate_for_create_api_v1(data):
         return success, error
 
     if voucher_type is VoucherType.regular_coupon.value:
+
+        # validations for regular vouchers
+
         if len(rules) > 2 or len(rules) <= 0:
             success = False
             error.append(u'Minimum one rule and maximum two rules per voucher are supported')
@@ -91,6 +94,9 @@ def validate_for_create_api_v1(data):
                     u'Both the rules must same values for no_of_uses_allowed_per_user and no_of_total_uses_allowed')
 
     else:
+
+        # validations for freebie vouchers
+
         if len(rules) != 1:
             success = False
             error.append(u'Only one rule can be present in freebie vouchers')
@@ -107,11 +113,13 @@ def validate_for_create_api_v1(data):
         benefits = rule.get('benefits')
         benefit = benefits[0]
         criteria = rule.get('criteria')
+
         if not benefit.get('freebies') or benefit.get('amount') or benefit.get('percentage'):
             success = False
             error.append(u'Regular freebie and auto freebie must have freebie as benefit')
 
-        if not criteria.get('location').get('zone') or len(criteria.get('location').get('zone')) != 1:
+        if not criteria.get('location') or not criteria.get('location').get('zone') \
+                or len(criteria.get('location').get('zone')) != 1:
             success = False
             error.append(u'Only 1 zone can be present in regular or auto freebie coupon')
 

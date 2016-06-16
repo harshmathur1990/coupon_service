@@ -90,12 +90,26 @@ class CreateRule(unittest.TestCase):
         test1code1_voucher = Vouchers.find_one('TEST1CODE1')
         voucher_rule_list = test1code1_voucher.get_rule()
         from grocery.api.v1.utils import get_criteria_kwargs
+        from grocery.api.v1.rule_criteria import RuleCriteria
+        from src.rules.rule import Benefits
         rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
+        for rule in rule_list:
+            criteria_obj = rule.criteria_obj
+            criteria_json = criteria_obj.canonical_json()
+            benefits_obj = rule.benefits_obj
+            benefits_json = benefits_obj.canonical_json()
+            blacklist_criteria_obj = rule.blacklist_criteria_obj
+            blacklist_criteria_json = blacklist_criteria_obj.canonical_json()
+            new_criteria_dict = json.loads(criteria_json)
+            new_criteria_obj = RuleCriteria(**new_criteria_dict)
+            new_blacklist_criteria_dict = json.loads(blacklist_criteria_json)
+            new_blacklist_criteria_obj = RuleCriteria(**new_blacklist_criteria_dict)
+            new_benefits_dict = json.loads(benefits_json)
+            new_benefits_obj = Benefits(**new_benefits_dict)
+            rule.criteria_obj = new_criteria_obj
+            rule.blacklist_criteria_obj = new_blacklist_criteria_obj
+            rule.benefits_obj = new_benefits_obj
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
-            data_list = created_rule.benefits_obj.data
-            for data in data_list:
-                if 'max_cap' in data and not data.get('max_cap'):
-                    del data['max_cap']
             self.assertTrue(
                 test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {} - {} - {}'.format(
                     created_rule.criteria_obj.__dict__, test_rule.criteria_obj.__dict__, created_rule.blacklist_criteria_obj.__dict__, test_rule.blacklist_criteria_obj.__dict__, created_rule.benefits_obj.__dict__, test_rule.benefits_obj.__dict__))
@@ -759,11 +773,29 @@ class CreateRule(unittest.TestCase):
         test1code1_voucher = Vouchers.find_one('TEST1CODE1')
         voucher_rule_list = test1code1_voucher.get_rule()
         from grocery.api.v1.utils import get_criteria_kwargs
+        from grocery.api.v1.rule_criteria import RuleCriteria
+        from src.rules.rule import Benefits
         rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
+        for rule in rule_list:
+            criteria_obj = rule.criteria_obj
+            criteria_json = criteria_obj.canonical_json()
+            benefits_obj = rule.benefits_obj
+            benefits_json = benefits_obj.canonical_json()
+            blacklist_criteria_obj = rule.blacklist_criteria_obj
+            blacklist_criteria_json = blacklist_criteria_obj.canonical_json()
+            new_criteria_dict = json.loads(criteria_json)
+            new_criteria_obj = RuleCriteria(**new_criteria_dict)
+            new_blacklist_criteria_dict = json.loads(blacklist_criteria_json)
+            new_blacklist_criteria_obj = RuleCriteria(**new_blacklist_criteria_dict)
+            new_benefits_dict = json.loads(benefits_json)
+            new_benefits_obj = Benefits(**new_benefits_dict)
+            rule.criteria_obj = new_criteria_obj
+            rule.blacklist_criteria_obj = new_blacklist_criteria_obj
+            rule.benefits_obj = new_benefits_obj
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
-                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
-                    created_rule.criteria_obj.__dict__, test_rule.criteria_obj.__dict__))
+                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {} - {} - {}'.format(
+                    created_rule.criteria_obj.__dict__, test_rule.criteria_obj.__dict__, created_rule.blacklist_criteria_obj.__dict__, test_rule.blacklist_criteria_obj.__dict__, created_rule.benefits_obj.__dict__, test_rule.benefits_obj.__dict__))
 
     def test_check_auto_freebie(self):
         values = {
@@ -1620,11 +1652,30 @@ class CreateRule(unittest.TestCase):
         test1code1_voucher = Vouchers.find_one('TEST1CODE1')
         voucher_rule_list = test1code1_voucher.get_rule()
         from grocery.api.v1.utils import get_criteria_kwargs
+        from grocery.api.v1.rule_criteria import RuleCriteria
+        from src.rules.rule import Benefits
         rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
+        for rule in rule_list:
+            criteria_obj = rule.criteria_obj
+            criteria_json = criteria_obj.canonical_json()
+            benefits_obj = rule.benefits_obj
+            benefits_json = benefits_obj.canonical_json()
+            blacklist_criteria_obj = rule.blacklist_criteria_obj
+            blacklist_criteria_json = blacklist_criteria_obj.canonical_json()
+            new_criteria_dict = json.loads(criteria_json)
+            new_criteria_obj = RuleCriteria(**new_criteria_dict)
+            new_blacklist_criteria_dict = json.loads(blacklist_criteria_json)
+            new_blacklist_criteria_obj = RuleCriteria(**new_blacklist_criteria_dict)
+            new_benefits_dict = json.loads(benefits_json)
+            new_benefits_obj = Benefits(**new_benefits_dict)
+            rule.criteria_obj = new_criteria_obj
+            rule.blacklist_criteria_obj = new_blacklist_criteria_obj
+            rule.benefits_obj = new_benefits_obj
         for test_rule, created_rule in zip(voucher_rule_list, rule_list):
             self.assertTrue(
-                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {}'.format(
-                    rule_create_data, test_rule.__dict__))
+                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {} - {} - {}'.format(
+                    created_rule.criteria_obj.__dict__, test_rule.criteria_obj.__dict__, created_rule.blacklist_criteria_obj.__dict__, test_rule.blacklist_criteria_obj.__dict__, created_rule.benefits_obj.__dict__, test_rule.benefits_obj.__dict__))
+
         order_data = {
             "area_id": "87000",
             "customer_id": "1234",
@@ -1949,28 +2000,28 @@ class CreateRule(unittest.TestCase):
                         "range_max": None,
                         "cart_range_min": 100,
                         "cart_range_max": None,
-                        "channels": [],
-                        "brands": [],
-                        "products": {
-                            'in':[],
-                            'not_in': []
-                        },
-                        "categories": {
-                            "in": [],
-                            "not_in": []
-                        },
-                        "storefronts": [],
-                        "variants": [],
-                        "sellers": [],
-                        "location": {
-                            "country":[],
-                            "state": [],
-                            "city": [],
-                            "area": [],
-                            "zone": []
-                        },
-                        "payment_modes": [],
-                        "valid_on_order_no": []
+                        # "channels": [],
+                        # "brands": [],
+                        # "products": {
+                        #     'in':[],
+                        #     'not_in': []
+                        # },
+                        # "categories": {
+                        #     "in": [],
+                        #     "not_in": []
+                        # },
+                        # "storefronts": [],
+                        # "variants": [],
+                        # "sellers": [],
+                        # "location": {
+                        #     "country":[],
+                        #     "state": [],
+                        #     "city": [],
+                        #     "area": [],
+                        #     "zone": []
+                        # },
+                        # "payment_modes": [],
+                        # "valid_on_order_no": []
                     },
                     "benefits": [
                         {
@@ -2092,28 +2143,28 @@ class CreateRule(unittest.TestCase):
                         "range_max": None,
                         "cart_range_min": 100,
                         "cart_range_max": None,
-                        "channels": [],
-                        "brands": [],
-                        "products": {
-                            'in':[],
-                            'not_in': []
-                        },
-                        "categories": {
-                            "in": [],
-                            "not_in": []
-                        },
-                        "storefronts": [],
-                        "variants": [],
-                        "sellers": [],
-                        "location": {
-                            "country":[],
-                            "state": [],
-                            "city": [],
-                            "area": [],
-                            "zone": []
-                        },
-                        "payment_modes": [],
-                        "valid_on_order_no": []
+                        # "channels": [],
+                        # "brands": [],
+                        # "products": {
+                        #     'in':[],
+                        #     'not_in': []
+                        # },
+                        # "categories": {
+                        #     "in": [],
+                        #     "not_in": []
+                        # },
+                        # "storefronts": [],
+                        # "variants": [],
+                        # "sellers": [],
+                        # "location": {
+                        #     "country":[],
+                        #     "state": [],
+                        #     "city": [],
+                        #     "area": [],
+                        #     "zone": []
+                        # },
+                        # "payment_modes": [],
+                        # "valid_on_order_no": []
                     },
                     "benefits": [
                         {
@@ -2285,28 +2336,28 @@ class CreateRule(unittest.TestCase):
                         "range_max": None,
                         "cart_range_min": 100,
                         "cart_range_max": None,
-                        "channels": [],
-                        "brands": [],
-                        "products": {
-                            'in':[],
-                            'not_in': []
-                        },
-                        "categories": {
-                            "in": [],
-                            "not_in": []
-                        },
-                        "storefronts": [],
-                        "variants": [],
-                        "sellers": [],
-                        "location": {
-                            "country":[],
-                            "state": [],
-                            "city": [],
-                            "area": [],
-                            "zone": []
-                        },
-                        "payment_modes": [],
-                        "valid_on_order_no": []
+                        # "channels": [],
+                        # "brands": [],
+                        # "products": {
+                        #     'in':[],
+                        #     'not_in': []
+                        # },
+                        # "categories": {
+                        #     "in": [],
+                        #     "not_in": []
+                        # },
+                        # "storefronts": [],
+                        # "variants": [],
+                        # "sellers": [],
+                        # "location": {
+                        #     "country":[],
+                        #     "state": [],
+                        #     "city": [],
+                        #     "area": [],
+                        #     "zone": []
+                        # },
+                        # "payment_modes": [],
+                        # "valid_on_order_no": []
                     },
                     "benefits": [
                         {
@@ -2319,6 +2370,7 @@ class CreateRule(unittest.TestCase):
             ]
         }
         response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher', force=True), data=json.dumps(rule_1_create_data),
+
                                     content_type='application/json')
         data = json.loads(response.data)
         self.assertTrue(not data.get('data',dict()).get('error_list') and
@@ -2587,28 +2639,28 @@ class CreateRule(unittest.TestCase):
                         "range_max": None,
                         "cart_range_min": 100,
                         "cart_range_max": None,
-                        "channels": [],
-                        "brands": [],
-                        "products": {
-                            'in':[],
-                            'not_in': []
-                        },
-                        "categories": {
-                            "in": [],
-                            "not_in": []
-                        },
-                        "storefronts": [],
-                        "variants": [],
-                        "sellers": [],
-                        "location": {
-                            "country":[],
-                            "state": [],
-                            "city": [],
-                            "area": [],
-                            "zone": []
-                        },
-                        "payment_modes": [],
-                        "valid_on_order_no": []
+                        # "channels": [],
+                        # "brands": [],
+                        # "products": {
+                        #     'in':[],
+                        #     'not_in': []
+                        # },
+                        # "categories": {
+                        #     "in": [],
+                        #     "not_in": []
+                        # },
+                        # "storefronts": [],
+                        # "variants": [],
+                        # "sellers": [],
+                        # "location": {
+                        #     "country":[],
+                        #     "state": [],
+                        #     "city": [],
+                        #     "area": [],
+                        #     "zone": []
+                        # },
+                        # "payment_modes": [],
+                        # "valid_on_order_no": []
                     },
                     "benefits": [
                         {
@@ -2689,56 +2741,56 @@ class CreateRule(unittest.TestCase):
                         "range_max": None,
                         "cart_range_min": 100,
                         "cart_range_max": None,
-                        "channels": [],
-                        "brands": [],
-                        "products": {
-                            'in':[],
-                            'not_in': []
-                        },
-                        "categories": {
-                            "in": [],
-                            "not_in": []
-                        },
-                        "storefronts": [],
-                        "variants": [],
-                        "sellers": [],
-                        "location": {
-                            "country":[],
-                            "state": [],
-                            "city": [],
-                            "area": [],
-                            "zone": []
-                        },
-                        "payment_modes": [],
-                        "valid_on_order_no": []
+                        # "channels": [],
+                        # "brands": [],
+                        # "products": {
+                        #     'in':[],
+                        #     'not_in': []
+                        # },
+                        # "categories": {
+                        #     "in": [],
+                        #     "not_in": []
+                        # },
+                        # "storefronts": [],
+                        # "variants": [],
+                        # "sellers": [],
+                        # "location": {
+                        #     "country":[],
+                        #     "state": [],
+                        #     "city": [],
+                        #     "area": [],
+                        #     "zone": []
+                        # },
+                        # "payment_modes": [],
+                        # "valid_on_order_no": []
                     },
                     "blacklist_criteria": {
                         "range_min": None,
                         "range_max": None,
                         "cart_range_min": None,
                         "cart_range_max": None,
-                        "channels": [],
-                        "brands": [],
-                        "products": {
-                            'in':[],
-                            'not_in': []
-                        },
+                        # "channels": [],
+                        # "brands": [],
+                        # "products": {
+                        #     'in':[],
+                        #     'not_in': []
+                        # },
                         "categories": {
                             "in": [581],
-                            "not_in": []
+                            # "not_in": []
                         },
-                        "storefronts": [],
-                        "variants": [],
-                        "sellers": [],
-                        "location": {
-                            "country":[],
-                            "state": [],
-                            "city": [],
-                            "area": [],
-                            "zone": []
-                        },
-                        "payment_modes": [],
-                        "valid_on_order_no": []
+                        # "storefronts": [],
+                        # "variants": [],
+                        # "sellers": [],
+                        # "location": {
+                        #     "country":[],
+                        #     "state": [],
+                        #     "city": [],
+                        #     "area": [],
+                        #     "zone": []
+                        # },
+                        # "payment_modes": [],
+                        # "valid_on_order_no": []
                     },
                     "benefits": [
                         {
@@ -2957,28 +3009,28 @@ class CreateRule(unittest.TestCase):
                         "range_max": None,
                         "cart_range_min": 100,
                         "cart_range_max": None,
-                        "channels": [],
-                        "brands": [],
-                        "products": {
-                            'in':[],
-                            'not_in': []
-                        },
-                        "categories": {
-                            "in": [],
-                            "not_in": []
-                        },
-                        "storefronts": [],
-                        "variants": [],
-                        "sellers": [],
-                        "location": {
-                            "country":[],
-                            "state": [],
-                            "city": [],
-                            "area": [],
-                            "zone": []
-                        },
+                        # "channels": [],
+                        # "brands": [],
+                        # "products": {
+                        #     'in':[],
+                        #     'not_in': []
+                        # },
+                        # "categories": {
+                        #     "in": [],
+                        #     "not_in": []
+                        # },
+                        # "storefronts": [],
+                        # "variants": [],
+                        # "sellers": [],
+                        # "location": {
+                        #     "country":[],
+                        #     "state": [],
+                        #     "city": [],
+                        #     "area": [],
+                        #     "zone": []
+                        # },
                         "payment_modes": ["VISA"],
-                        "valid_on_order_no": []
+                        # "valid_on_order_no": []
                     },
                     "benefits": [
                         {
@@ -3165,28 +3217,28 @@ class CreateRule(unittest.TestCase):
                         "range_max": None,
                         "cart_range_min": 100,
                         "cart_range_max": None,
-                        "channels": [],
-                        "brands": [],
-                        "products": {
-                            'in':[],
-                            'not_in': []
-                        },
-                        "categories": {
-                            "in": [],
-                            "not_in": []
-                        },
-                        "storefronts": [],
-                        "variants": [],
-                        "sellers": [],
-                        "location": {
-                            "country":[],
-                            "state": [],
-                            "city": [],
-                            "area": [],
-                            "zone": []
-                        },
-                        "payment_modes": [],
-                        "valid_on_order_no": []
+                        # "channels": [],
+                        # "brands": [],
+                        # "products": {
+                        #     'in':[],
+                        #     'not_in': []
+                        # },
+                        # "categories": {
+                        #     "in": [],
+                        #     "not_in": []
+                        # },
+                        # "storefronts": [],
+                        # "variants": [],
+                        # "sellers": [],
+                        # "location": {
+                        #     "country":[],
+                        #     "state": [],
+                        #     "city": [],
+                        #     "area": [],
+                        #     "zone": []
+                        # },
+                        # "payment_modes": [],
+                        # "valid_on_order_no": []
                     },
                     "benefits": [
                         {
@@ -3376,26 +3428,26 @@ class CreateRule(unittest.TestCase):
                         "range_max": None,
                         "cart_range_min": 100,
                         "cart_range_max": None,
-                        "channels": [],
-                        "brands": [],
-                        "products": {
-                            'in':[],
-                            'not_in': []
-                        },
-                        "categories": {
-                            "in": [],
-                            "not_in": []
-                        },
-                        "storefronts": [],
-                        "variants": [],
-                        "sellers": [],
-                        "location": {
-                            "country":[],
-                            "state": [],
-                            "city": [],
-                            "area": [],
-                            "zone": []
-                        },
+                        # "channels": [],
+                        # "brands": [],
+                        # "products": {
+                        #     'in':[],
+                        #     'not_in': []
+                        # },
+                        # "categories": {
+                        #     "in": [],
+                        #     "not_in": []
+                        # },
+                        # "storefronts": [],
+                        # "variants": [],
+                        # "sellers": [],
+                        # "location": {
+                        #     "country":[],
+                        #     "state": [],
+                        #     "city": [],
+                        #     "area": [],
+                        #     "zone": []
+                        # },
                         "payment_modes": ["VISA"],
                         "valid_on_order_no": []
                     },
