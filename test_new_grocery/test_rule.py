@@ -3533,3 +3533,140 @@ class CreateRule(unittest.TestCase):
         del all_voucher_log['changed_on']
         self.assertTrue(vouchers == all_voucher_log, u'{} - {}'.format(vouchers, all_voucher_log))
         pass
+
+    def test_allow_zero_amount(self):
+        today = datetime.datetime.utcnow()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1", "TEST1CODE2"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": 100,
+                        "range_max": 1000,
+                        "cart_range_min": 100,
+                        "cart_range_max": 1000,
+                        "channels": [0],
+                        "brands": [1, 2],
+                        "products": {
+                            'in':[2, 3],
+                            'not_in': []
+                        },
+                        "categories": {
+                            "in": [1, 2],
+                            "not_in": [3, 4]
+                        },
+                        "storefronts": [5, 6],
+                        "variants": [8, 9],
+                        "sellers": ["45", "76"],
+                        "location": {
+                            "country": [1],
+                            "state": [1, 4],
+                            "city": [5, 8],
+                            "area": [56, 90],
+                            "zone": [34, 78]
+                        },
+                        "payment_modes": ["VISA"],
+                        "valid_on_order_no": ["1+"]
+                    }
+                }
+            ]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher'), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        data = json.loads(response.data)
+        self.assertTrue(not data.get('data',dict()).get('error_list') and
+                        len(data.get('data', dict()).get('success_list', list())) is 2, response.data)
+        test1code1_voucher = Vouchers.find_one('TEST1CODE1')
+        voucher_rule_list = test1code1_voucher.get_rule()
+        from grocery.api.v1.utils import get_criteria_kwargs
+        from grocery.api.v1.rule_criteria import RuleCriteria
+        from src.rules.rule import Benefits
+        rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
+        for rule in rule_list:
+            criteria_obj = rule.criteria_obj
+            criteria_json = criteria_obj.canonical_json()
+            benefits_obj = rule.benefits_obj
+            benefits_json = benefits_obj.canonical_json()
+            blacklist_criteria_obj = rule.blacklist_criteria_obj
+            blacklist_criteria_json = blacklist_criteria_obj.canonical_json()
+            new_criteria_dict = json.loads(criteria_json)
+            new_criteria_obj = RuleCriteria(**new_criteria_dict)
+            new_blacklist_criteria_dict = json.loads(blacklist_criteria_json)
+            new_blacklist_criteria_obj = RuleCriteria(**new_blacklist_criteria_dict)
+            new_benefits_dict = json.loads(benefits_json)
+            new_benefits_obj = Benefits(**new_benefits_dict)
+            rule.criteria_obj = new_criteria_obj
+            rule.blacklist_criteria_obj = new_blacklist_criteria_obj
+            rule.benefits_obj = new_benefits_obj
+        for test_rule, created_rule in zip(voucher_rule_list, rule_list):
+            self.assertTrue(
+                test_rule == created_rule, u'Rule passed is not equal to rule created {} - {} - {} - {}'.format(
+                    test_rule.criteria_obj.__dict__,  test_rule.benefits_obj.__dict__, created_rule.criteria_obj.__dict__,  created_rule.benefits_obj.__dict__))
+
+    def test_empty_product_list(self):
+        headers= {
+            'X-API-USER': 'askmegrocery',
+            'X-API-TOKEN': 'M2JmN2U5NGYtMDJlNi0xMWU2LWFkZGQtMjRhMDc0ZjE1MGYy'
+        }
+        today = datetime.datetime.utcnow()
+        hour = today.hour
+        hour -= 1
+        today = today.date()
+        tomorrow = today+timedelta(days=2)
+        rule_create_data = {
+            "name": "test_rule_1",
+            "description": "test_some_description_1",
+            "type": 2,
+            "user_id": "1000",
+            "code": ["TEST1CODE1"],
+            "from": today.isoformat(),
+            "to": tomorrow.isoformat(),
+            "custom": "ICICI CASHBACK 500",
+            "rules": [
+                {
+                    "description": "TEST1RULE1DESCRIPTION1",
+                    "criteria": {
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 100,
+                        "range_min": None,
+                        "range_max": None,
+                        "cart_range_min": 100,
+                        "cart_range_max": None,
+                        "payment_modes": ["VISA"],
+                        "valid_on_order_no": []
+                    },
+                    "benefits": [
+                        {
+                            'type': 1,
+                            "percentage": 10,
+                            "max_cap": 250
+                        }
+                    ]
+                }
+            ]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.create_voucher', force=True), data=json.dumps(rule_create_data),
+                                    content_type='application/json')
+        self.assertTrue(response.status_code == 200, response.data)
+
+        order_data = {
+            "area_id": "87000",
+            "customer_id": "1234",
+            "channel": 0,
+            "products": [
+            ],
+            "coupon_codes": ["TEST1CODE1"]
+        }
+        response = self.client.post(url_for('grocery_voucher_api/v1.check_coupon'), data=json.dumps(order_data),
+                                    content_type='application/json', headers=headers)
+        self.assertTrue(response.status_code == 422, response.data)

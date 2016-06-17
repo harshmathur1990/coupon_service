@@ -352,32 +352,33 @@ def get_criteria_kwargs(data):
 
     benefit_list = list()
 
-    for benefit in benefits:
-        type = BenefitType(benefit['type'])
-        if type is BenefitType.freebie:
-            freebies = benefit.get('freebies', list())
-            for freebie in freebies:
+    if benefits:
+        for benefit in benefits:
+            type = BenefitType(benefit['type'])
+            if type is BenefitType.freebie:
+                freebies = benefit.get('freebies', list())
+                for freebie in freebies:
+                    benefit_dict = dict()
+                    benefit_dict['type'] = type.value
+                    benefit_dict['value'] = freebie
+                    benefit_list.append(benefit_dict)
+            elif type in [
+                BenefitType.amount,
+                BenefitType.cashback_amount,
+                BenefitType.agent_cashback_amount,
+                BenefitType.agent_amount
+            ]:
                 benefit_dict = dict()
                 benefit_dict['type'] = type.value
-                benefit_dict['value'] = freebie
+                benefit_dict['value'] = benefit['amount']
+                benefit_dict['max_cap'] = benefit.get('max_cap')
                 benefit_list.append(benefit_dict)
-        elif type in [
-            BenefitType.amount,
-            BenefitType.cashback_amount,
-            BenefitType.agent_cashback_amount,
-            BenefitType.agent_amount
-        ]:
-            benefit_dict = dict()
-            benefit_dict['type'] = type.value
-            benefit_dict['value'] = benefit['amount']
-            benefit_dict['max_cap'] = benefit.get('max_cap')
-            benefit_list.append(benefit_dict)
-        else:
-            benefit_dict = dict()
-            benefit_dict['type'] = type.value
-            benefit_dict['value'] = benefit['percentage']
-            benefit_dict['max_cap'] = benefit.get('max_cap')
-            benefit_list.append(benefit_dict)
+            else:
+                benefit_dict = dict()
+                benefit_dict['type'] = type.value
+                benefit_dict['value'] = benefit['percentage']
+                benefit_dict['max_cap'] = benefit.get('max_cap')
+                benefit_list.append(benefit_dict)
 
     benefit_criteria_kwargs = {
         'data': benefit_list

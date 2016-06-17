@@ -147,7 +147,8 @@ class RuleCriteria(object):
 
     def canonical_json(self):
         self_dict = copy.deepcopy(self.__dict__)
-        for key, items in self_dict.items():
+
+        for key, items in self.__dict__.items():
             if not items:
                 del self_dict[key]
             elif isinstance(items, dict):
@@ -155,11 +156,12 @@ class RuleCriteria(object):
                     if items['use_type'] is UseType.not_available.value:
                         del self_dict[key]
                 else:
-                    if 'in' in items and not items['in']:
-                        del items['in']
-                    if 'not_in' in items and not items['not_in']:
-                        del items['not_in']
-                    if not items:
+                    self_items = self_dict[key]
+                    if 'in' in self_items and not self_items['in']:
+                        del self_items['in']
+                    if 'not_in' in self_items and not self_items['not_in']:
+                        del self_items['not_in']
+                    if not self_items:
                         del self_dict[key]
 
         return canonicaljson.encode_canonical_json(self_dict)

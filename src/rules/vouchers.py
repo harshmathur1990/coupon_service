@@ -12,7 +12,7 @@ from src.sqlalchemydb import CouponsAlchemyDB
 from config import method_dict
 
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class Vouchers(object):

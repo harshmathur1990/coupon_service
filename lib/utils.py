@@ -236,7 +236,7 @@ def get_num_from_str(str):
 
 def is_benefits_valid(benefits):
     if not benefits:
-        return False
+        return True
     for benefit in benefits:
         benefit_type = BenefitType(benefit['type'])
         if benefit_type in [
