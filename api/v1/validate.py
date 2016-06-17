@@ -106,7 +106,7 @@ def fix_order_no(valid_on_order_no):
         else:
             final_valid_on_order_no.append(u'{}'.format(order_no))
 
-    if min_order_no:
+    if min_order_no and min_order_no > 1:
         final_valid_on_order_no.append(u'{}+'.format(min_order_no))
 
     return final_valid_on_order_no
