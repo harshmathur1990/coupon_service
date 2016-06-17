@@ -526,6 +526,7 @@ def apply_coupon():
                 }
             ),
             required=True,
+            validate=validate.Length(min=1),
             location='json'
         ),
 
@@ -644,6 +645,7 @@ def check_coupon():
                 }
             ),
             required=True,
+            validate=validate.Length(min=1),
             location='json'
         ),
 
