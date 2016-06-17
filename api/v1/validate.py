@@ -47,21 +47,33 @@ def validate_for_create_coupon(data):
                     u'Products[in] and products[not_in] must not have any product in common in a rule {}'.format(
                         intersection))
 
-        all_list = ['all', 'alL', 'aLl', 'All', 'aLL', 'AlL', 'ALl', 'ALL']
+        all_list = ['all']
 
         criteria_payment_modes = criteria.get('payment_modes')
+        if criteria_payment_modes:
+            criteria_payment_modes = [criteria_payment_mode.lower() for criteria_payment_mode in criteria_payment_modes]
 
         if criteria_payment_modes and get_intersection_of_lists(criteria_payment_modes, all_list):
-            criteria['payment_modes'] = []
+            del criteria['payment_modes']
 
         blacklist_criteria_payment_modes = blacklist_criteria.get('payment_modes')
+        if blacklist_criteria_payment_modes:
+            blacklist_criteria_payment_modes = [blacklist_criteria_payment_mode.lower() for blacklist_criteria_payment_mode in blacklist_criteria_payment_modes]
 
         if blacklist_criteria_payment_modes and get_intersection_of_lists(blacklist_criteria_payment_modes, all_list):
-            blacklist_criteria['payment_modes'] = []
+            del blacklist_criteria['payment_modes']
 
-        criteria['valid_on_order_no'] = fix_order_no(criteria.get('valid_on_order_no'))
+        try:
+            criteria['valid_on_order_no'] = fix_order_no(criteria.get('valid_on_order_no'))
+        except ValueError:
+            success = False
+            error.append(u'Invalid value in valid_on_order_no in rule criteria')
 
-        blacklist_criteria['valid_on_order_no'] = fix_order_no(blacklist_criteria.get('valid_on_order_no'))
+        try:
+            blacklist_criteria['valid_on_order_no'] = fix_order_no(blacklist_criteria.get('valid_on_order_no'))
+        except ValueError:
+            success = False
+            error.append(u'Invalid value in valid_on_order_no in rule blacklist criteria')
 
     return success, error
 
@@ -80,9 +92,12 @@ def fix_order_no(valid_on_order_no):
             exact_order_no_list.append(int(an_order_no))
         except ValueError:
             # to convert order nos which are like 4+ means minimum order no 4
-            new_min_order_no = int(an_order_no[:-1])
-            if not min_order_no or min_order_no > new_min_order_no:
-                min_order_no = new_min_order_no
+            try:
+                new_min_order_no = int(an_order_no[:-1])
+                if not min_order_no or min_order_no > new_min_order_no:
+                    min_order_no = new_min_order_no
+            except ValueError:
+                raise ValueError
 
     for order_no in exact_order_no_list:
         if min_order_no:
