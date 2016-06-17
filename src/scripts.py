@@ -1,5 +1,5 @@
 from src.sqlalchemydb import CouponsAlchemyDB
-from lib.utils import make_api_call
+from lib.utils import make_api_call, get_intersection_of_lists
 from dateutil import parser
 import binascii
 import canonicaljson
@@ -92,6 +92,40 @@ def update_is_active():
             f.close()
 
 
+def fix_order_no(valid_on_order_no):
+
+    if not valid_on_order_no:
+        return valid_on_order_no
+
+    exact_order_no_list = list()
+    min_order_no = None
+    final_valid_on_order_no = list()
+    for an_order_no in valid_on_order_no:
+        try:
+            # to convert order nos which are exact integers
+            exact_order_no_list.append(int(an_order_no))
+        except ValueError:
+            # to convert order nos which are like 4+ means minimum order no 4
+            try:
+                new_min_order_no = int(an_order_no[:-1])
+                if not min_order_no or min_order_no > new_min_order_no:
+                    min_order_no = new_min_order_no
+            except ValueError:
+                raise ValueError
+
+    for order_no in exact_order_no_list:
+        if min_order_no:
+            if order_no < min_order_no:
+                final_valid_on_order_no.append(u'{}'.format(order_no))
+        else:
+            final_valid_on_order_no.append(u'{}'.format(order_no))
+
+    if min_order_no and min_order_no > 1:
+        final_valid_on_order_no.append(u'{}+'.format(min_order_no))
+
+    return final_valid_on_order_no
+
+
 def cleanup_rules():
     rule_criteria_class = getattr(
             importlib.import_module(
@@ -107,6 +141,33 @@ def cleanup_rules():
             blacklist_dict = canonicaljson.json.loads(rule.blacklist_criteria_json)
         else:
             blacklist_dict = dict()
+
+        all_list = ['all']
+
+        criteria_payment_modes = criteria_dict.get('payment_modes')
+        if criteria_payment_modes:
+            criteria_payment_modes = [criteria_payment_mode.lower() for criteria_payment_mode in criteria_payment_modes]
+
+        if criteria_payment_modes and get_intersection_of_lists(criteria_payment_modes, all_list):
+            del criteria_dict['payment_modes']
+
+        blacklist_criteria_payment_modes = blacklist_dict.get('payment_modes')
+        if blacklist_criteria_payment_modes:
+            blacklist_criteria_payment_modes = [blacklist_criteria_payment_mode.lower() for blacklist_criteria_payment_mode in blacklist_criteria_payment_modes]
+
+        if blacklist_criteria_payment_modes and get_intersection_of_lists(blacklist_criteria_payment_modes, all_list):
+            del blacklist_dict['payment_modes']
+        try:
+            criteria_dict['valid_on_order_no'] = fix_order_no(criteria_dict.get('valid_on_order_no'))
+        except ValueError:
+            success = False
+            # error.append(u'Invalid value in valid_on_order_no in rule criteria')
+
+        try:
+            blacklist_dict['valid_on_order_no'] = fix_order_no(blacklist_dict.get('valid_on_order_no'))
+        except ValueError:
+            success = False
+            # error.append(u'Invalid value in valid_on_order_no in rule blacklist criteria')
         benefit_dict = canonicaljson.json.loads(rule.benefits_json)
         rule_criteria = rule_criteria_class(**criteria_dict)
         rule_blacklist_criteria = rule_criteria_class(**blacklist_dict)
