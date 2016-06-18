@@ -14,7 +14,16 @@ def do_it_now(body, params=dict()):
         'X-API-USER': 'admin',
         'X-API-TOKEN': 'kuchbhi'
     }
-    r = make_api_call('http://api-service03.production.askme.com:9933/vouchers/v1/update', method='POST', headers=headers, body=body, params=params)
+    r = make_api_call('http://api-service04.production.askme.com:9933/vouchers/v1/update', method='POST', headers=headers, body=body, params=params)
+    return r
+
+
+def create_it_now(body, params=dict()):
+    headers = {
+        'X-API-USER': 'admin',
+        'X-API-TOKEN': 'kuchbhi'
+    }
+    r = make_api_call('http://api-service04.production.askme.com:9933/vouchers/v1/create', method='POST', headers=headers, body=body, params=params)
     return r
 
 
@@ -181,3 +190,76 @@ def cleanup_rules():
             unicode(values['criteria_json']) + unicode(values['criteria_json'])
         values['sha2hash'] = hashlib.sha256(un_hashed_string).hexdigest()
         db.update_row("rule", "id", **values)
+
+
+def do_expire_iocl_and_recreate_with_valid_on_first_order():
+    date_value = "2016-08-30 18:30:00.000000"
+    expire_date_value = "2015-08-30 18:30:00.000000"
+    expire_date = parser.parse(expire_date_value)
+    date_value = parser.parse(date_value)
+    db = CouponsAlchemyDB()
+    get_voucher_query = 'select code, `from` from all_vouchers where `to`=:to and code not in (select av.code from all_vouchers av join `voucher_use_tracker` vut on av.id=vut.`voucher_id` where `to`=:to)'
+    code_from_list = db.execute_raw_sql(get_voucher_query, {'to': date_value})
+    code_from_list = [{'from': code_from_dict['from'].isoformat(), 'code': code_from_dict['code']} for code_from_dict in code_from_list]
+
+    code_all_list = [code_from_dict['code'] for code_from_dict in code_from_list]
+
+    lists = list(chunks(code_from_list, 5000))
+    for a_list in lists:
+        body = [
+            {
+                "coupons": a_list,
+                "update": {
+                    "to": expire_date.isoformat()
+                }
+            }
+        ]
+        r = do_it_now(body=body)
+        with open('/var/log/couponlogs/grocery/output_iocl.log', 'a+') as f:
+            f.write(r.text)
+            f.close()
+
+    codes_all_rule_list = list(chunks(code_all_list, 5000))
+    for codes_for_68_rule in codes_all_rule_list:
+        body = {
+            "code": codes_for_68_rule,
+            "from": "2016-06-18 00:00:00",
+            "description": "arti-IOCL punjab",
+            "rules": [
+                {
+                    "benefits": {
+                        "amount": 250,
+                        "freebies": [
+                            []
+                        ]
+                    },
+                    "description": "arti-IOCL punjab",
+                    "criteria": {
+                        "cart_range_min": 250,
+                        "no_of_uses_allowed_per_user": 1,
+                        "no_of_total_uses_allowed": 1,
+                        "valid_on_order_no": [1],
+                        "channels": [
+                            0,
+                            1
+                        ],
+                        "location": {
+                            "country": [
+                                1
+                            ],
+                            "state": [
+                                47
+                            ]
+                        }
+                    }
+                }
+            ],
+            "custom": "{\"Param\":\"\"}",
+            "to": "2016-08-30T18:30:00",
+            "user_id": "1205565",
+            "type": 2
+        }
+        r = create_it_now(body=body)
+        with open('/var/log/couponlogs/grocery/create_iocl.log', 'a+') as f:
+            f.write(r.text)
+            f.close()
