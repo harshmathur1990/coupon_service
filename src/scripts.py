@@ -202,13 +202,7 @@ def do_expire_iocl_and_recreate_with_valid_on_first_order():
     code_from_list = db.execute_raw_sql(get_voucher_query, {'to': date_value})
     code_from_list = [{'from': code_from_dict['from'].isoformat(), 'code': code_from_dict['code']} for code_from_dict in code_from_list]
 
-    rule_query = 'select code from all_vouchers where `to`=:to and code not in (select av.code from all_vouchers av join `voucher_use_tracker` vut on av.id=vut.`voucher_id` where `to`=:to) and rules=:rules'
-
-    code_5b = db.execute_raw_sql(rule_query, {'to': date_value, 'rules': '5b6038d41e7c11e6a98d06e785b601b1'})
-    code_5b_list = [code_5b_ele['code'] for code_5b_ele in code_5b]
-
-    code_68 = db.execute_raw_sql(rule_query, {'to': date_value, 'rules': '68fbafd2270511e6b19606e785b601b1'})
-    code_68_list = [code_68_ele['code'] for code_68_ele in code_68]
+    code_all_list = [code_from_dict['code'] for code_from_dict in code_from_list]
 
     lists = list(chunks(code_from_list, 5000))
     for a_list in lists:
@@ -225,8 +219,8 @@ def do_expire_iocl_and_recreate_with_valid_on_first_order():
             f.write(r.text)
             f.close()
 
-    codes_for_68_rule_list = list(chunks(code_68_list, 5000))
-    for codes_for_68_rule in codes_for_68_rule_list:
+    codes_all_rule_list = list(chunks(code_all_list, 5000))
+    for codes_for_68_rule in codes_all_rule_list:
         body = {
             "code": codes_for_68_rule,
             "from": "2016-06-18 00:00:00",
@@ -255,48 +249,6 @@ def do_expire_iocl_and_recreate_with_valid_on_first_order():
                             ],
                             "state": [
                                 47
-                            ]
-                        }
-                    }
-                }
-            ],
-            "custom": "{\"Param\":\"\"}",
-            "to": "2016-08-30T18:30:00",
-            "user_id": "1205565",
-            "type": 2
-        }
-        r = create_it_now(body=body)
-        with open('/var/log/couponlogs/grocery/create_iocl.log', 'a+') as f:
-            f.write(r.text)
-            f.close()
-
-    codes_for_5b_list = list(chunks(code_5b_list, 5000))
-    for codes_for_5b in codes_for_5b_list:
-        body = {
-            "code": codes_for_5b,
-            "from": "2016-06-18 00:00:00",
-            "description": "arti-IOCL punjab",
-            "rules": [
-                {
-                    "benefits": {
-                        "amount": 250,
-                        "freebies": [
-                            []
-                        ]
-                    },
-                    "description": "arti-IOCL punjab",
-                    "criteria": {
-                        "cart_range_min": 250,
-                        "no_of_uses_allowed_per_user": 1,
-                        "no_of_total_uses_allowed": 1,
-                        "valid_on_order_no": [1],
-                        "channels": [
-                            0,
-                            1
-                        ],
-                        "location": {
-                            "country": [
-                                1
                             ]
                         }
                     }
