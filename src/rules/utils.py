@@ -519,7 +519,7 @@ def get_benefits_new(order):
     response_dict['totalAgentDiscount'] = total_agent_discount
     response_dict['totalAgentCashback'] = total_agent_cashback
     if hasattr(order, 'check_payment_mode') and order.check_payment_mode:
-            response_dict['paymentMode'] = order.payment_mode
+            response_dict['paymentMode'] = [order.payment_mode]
     else:
         response_dict['paymentMode'] = payment_modes_list
     response_dict['channel'] = channels_list
