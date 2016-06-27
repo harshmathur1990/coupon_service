@@ -389,7 +389,7 @@ def get_criteria_kwargs(data):
 
 def fetch_user_details(order):
     customer_id = order.customer_id
-    user_info_url = config.USERINFOURL + str(customer_id)
+    user_info_url = config.USERINFOURL + '?user_id=' + str(customer_id)
     response = make_api_call(user_info_url)
     return get_user_details(response)
 

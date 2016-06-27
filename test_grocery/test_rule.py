@@ -86,9 +86,11 @@ class CreateRule(unittest.TestCase):
         test1code1_voucher = Vouchers.find_one('TEST1CODE1')
         voucher_rule_list = test1code1_voucher.get_rule()
         from api.v1.utils import get_criteria_kwargs
-        rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
         from api.v1.rule_criteria import RuleCriteria
         from src.rules.rule import Benefits
+        from api.v1.validate import fix_order_no
+        for rule in rule_create_data.get('rules'):
+            rule['criteria']['valid_on_order_no'] = fix_order_no(rule['criteria']['valid_on_order_no'])
         rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
         for rule in rule_list:
             criteria_obj = rule.criteria_obj
@@ -733,6 +735,9 @@ class CreateRule(unittest.TestCase):
         from api.v1.utils import get_criteria_kwargs
         from api.v1.rule_criteria import RuleCriteria
         from src.rules.rule import Benefits
+        from api.v1.validate import fix_order_no
+        for rule in rule_create_data.get('rules'):
+            rule['criteria']['valid_on_order_no'] = fix_order_no(rule['criteria']['valid_on_order_no'])
         rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
         for rule in rule_list:
             criteria_obj = rule.criteria_obj
@@ -3046,6 +3051,9 @@ class CreateRule(unittest.TestCase):
         from api.v1.utils import get_criteria_kwargs
         from api.v1.rule_criteria import RuleCriteria
         from src.rules.rule import Benefits
+        from api.v1.validate import fix_order_no
+        for rule in rule_create_data.get('rules'):
+            rule['criteria']['valid_on_order_no'] = fix_order_no(rule['criteria']['valid_on_order_no'])
         rule_list = create_rule_list(rule_create_data, get_criteria_kwargs)
         for rule in rule_list:
             criteria_obj = rule.criteria_obj
