@@ -26,6 +26,10 @@ locationendpoint: http://api-internal.askme.com/geo/v2.0/get_by_gid?gids=
 
 userendpoint: http://api-internal.askme.com/grocery_orderapi/v1/user
 
+userphonenoapi: http://api-internal.askme.com/users/v2/user/
+
+userphoneapiheaders: {Content-Type: application/json, clientid: F3000C083F7611E692D206CAEFBBC0F7, secret: F3000E743F7611E692D206CAEFBBC0F7, Authorization: abcdefghijklmnopqrstuvwxyz}
+
 migrationsdirectory: new_grocery_migrations
 
 testtoken:

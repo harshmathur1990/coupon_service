@@ -47,6 +47,8 @@ if client == 'new_grocery':
     SUBSCRIPTIONHEADERS = CONFIG["subscriptionheaders"]
     LOCATIONURL = CONFIG["locationendpoint"]
     USERINFOURL = CONFIG["userendpoint"]
+    USERPHONENOAPI = CONFIG["userphonenoapi"]
+    USERPHONENOAPIHEADERS = CONFIG["userphoneapiheaders"]
 
 
 module_name = 'client_method_dict' + '.' + client
