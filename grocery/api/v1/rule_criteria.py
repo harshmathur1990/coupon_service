@@ -294,11 +294,15 @@ class RuleCriteria(object):
             db = CouponsAlchemyDB()
         is_logged_in, phone_no = fetch_phone_no(user_id)
 
+        if not phone_no:
+            return True
+
         if u'{}'.format(request.url_rule) == u'/vouchers/grocery/v1/apply':
             if not is_logged_in:
                 return True
         else:
-            return False
+            # check api case
+            pass
 
         setattr(request, 'phone_no', phone_no)
         total_per_user_allowed_uses = self.usage['no_of_uses_allowed_per_user']
