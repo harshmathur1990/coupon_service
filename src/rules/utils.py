@@ -6,7 +6,6 @@ from datetime import timedelta
 
 import croniter
 from dateutil import parser
-
 from lib.utils import is_between, get_num_from_str, create_error_response,\
     get_intersection_of_lists, get_utc_timezone_unaware_date_object, create_success_response
 from rule import Rule

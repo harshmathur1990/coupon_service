@@ -4,7 +4,7 @@ from data import VerificationItemData
 from src.enums import UseType, MatchStatus
 from src.sqlalchemydb import CouponsAlchemyDB
 from utils import fetch_user_details, fetch_phone_no
-import config
+from flask import request
 from src.rules.match_utils import match_list_intersection_atleast_one_common, \
     match_value_in_list, match_user_order_no, match_in_not_in, match_greater_than, \
     match_less_than, match_greater_than_equal_to, match_less_than_equal_to
@@ -293,7 +293,9 @@ class RuleCriteria(object):
         if not db:
             db = CouponsAlchemyDB()
         is_logged_in, phone_no = fetch_phone_no(user_id)
-        if not is_logged_in:
+        if not phone_no:
+            return False
+        if u'{}'.format(request.url_rule) == u'/vouchers/grocery/v1/apply' and not is_logged_in:
             return False
         total_per_user_allowed_uses = self.usage['no_of_uses_allowed_per_user']
         count = db.count("voucher_use_tracker", **{'voucher_id': voucher_id, 'user_id': phone_no, 'not_args': {'order_id': order_id}})

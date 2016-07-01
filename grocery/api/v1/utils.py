@@ -673,8 +673,10 @@ def fetch_phone_no(user_id):
         if not value_list:
             return False, None
         for value in value_list:
-            if value.get('type') == 'phone' and value.get('verified') == True:
-                return True, value.get('value')
+            if value.get('type') == 'phone':
+                if value.get('verified') == True:
+                    return True, value.get('value')
+                return False, value.get('value')
     except Exception as e:
         logger.exception(e)
     return False, None
