@@ -310,7 +310,7 @@ def fetch_order_detail(args):
     order_data_dict['customer_id'] = args.get('customer_id')
     order_data_dict['order_id'] = args.get('order_id')
     order_data_dict['area_id'] = args.get('area_id')
-    order_data_dict['validate'] = args.get('validate')
+    order_data_dict['validate'] = args.get('validate', True)
     order_data = OrderData(**order_data_dict)
     return True, order_data, None
 

@@ -13,7 +13,9 @@ from src.enums import *
 from src.enums import BenefitType, Channels
 from src.sqlalchemydb import CouponsAlchemyDB
 from vouchers import Vouchers, VoucherTransactionLog
+from flask import request
 from . import default_error_message
+import config
 logger = logging.getLogger(__name__)
 
 
@@ -94,9 +96,14 @@ def apply_benefits(args, order, benefits):
                     db.rollback()
                     return False, 400, default_error_message
 
+            if config.client == 'new_grocery':
+                customer_id = request.phone_no
+            else:
+                customer_id = user_id
+
             transaction_log = VoucherTransactionLog(**{
                 'id': uuid.uuid1().hex,
-                'user_id': user_id,
+                'user_id': customer_id,
                 'voucher_id': voucher_id,
                 'order_id': order_id,
                 'status': VoucherTransactionStatus.in_progress.value,

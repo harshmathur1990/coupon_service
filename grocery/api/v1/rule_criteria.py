@@ -293,10 +293,14 @@ class RuleCriteria(object):
         if not db:
             db = CouponsAlchemyDB()
         is_logged_in, phone_no = fetch_phone_no(user_id)
-        if not phone_no:
+
+        if u'{}'.format(request.url_rule) == u'/vouchers/grocery/v1/apply':
+            if not is_logged_in:
+                return True
+        else:
             return False
-        if u'{}'.format(request.url_rule) == u'/vouchers/grocery/v1/apply' and not is_logged_in:
-            return False
+
+        setattr(request, 'phone_no', phone_no)
         total_per_user_allowed_uses = self.usage['no_of_uses_allowed_per_user']
         count = db.count("voucher_use_tracker", **{'voucher_id': voucher_id, 'user_id': phone_no, 'not_args': {'order_id': order_id}})
         if count >= total_per_user_allowed_uses:
