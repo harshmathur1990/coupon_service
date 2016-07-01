@@ -3,7 +3,8 @@ import copy
 from data import VerificationItemData
 from src.enums import UseType, MatchStatus
 from src.sqlalchemydb import CouponsAlchemyDB
-from utils import fetch_user_details
+from utils import fetch_user_details, fetch_phone_no
+import config
 from src.rules.match_utils import match_list_intersection_atleast_one_common, \
     match_value_in_list, match_user_order_no, match_in_not_in, match_greater_than, \
     match_less_than, match_greater_than_equal_to, match_less_than_equal_to
@@ -291,8 +292,11 @@ class RuleCriteria(object):
     def is_voucher_exhausted_for_this_user(self, user_id, voucher_id, order_id, db=None):
         if not db:
             db = CouponsAlchemyDB()
+        is_logged_in, phone_no = fetch_phone_no(user_id)
+        if not is_logged_in:
+            return False
         total_per_user_allowed_uses = self.usage['no_of_uses_allowed_per_user']
-        count = db.count("voucher_use_tracker", **{'voucher_id': voucher_id, 'user_id': user_id, 'not_args': {'order_id': order_id}})
+        count = db.count("voucher_use_tracker", **{'voucher_id': voucher_id, 'user_id': phone_no, 'not_args': {'order_id': order_id}})
         if count >= total_per_user_allowed_uses:
             return True
         return False

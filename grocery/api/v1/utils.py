@@ -659,3 +659,22 @@ def create_failed_api_response(args, error_list):
         'errors': error_list
     }
     return rv
+
+
+def fetch_phone_no(user_id):
+    url = config.USERPHONENOAPI + str(user_id)
+    headers = config.USERPHONENOAPIHEADERS
+    response = make_api_call(url=url, method='GET', headers=headers)
+    if response.status_code != 200:
+        return False, None
+    try:
+        data = json.loads(response.text)
+        value_list = data.get('contact', dict()).get('data')
+        if not value_list:
+            return False, None
+        for value in value_list:
+            if value.get('type') == 'phone' and value.get('verified') == True:
+                return True, value.get('value')
+    except Exception as e:
+        logger.exception(e)
+    return False, None
