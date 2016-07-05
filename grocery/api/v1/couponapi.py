@@ -511,6 +511,8 @@ def apply_coupon():
 
         'customer_id': fields.Str(required=True, location='json'),
 
+        'session_id': fields.Str(required=False, location='json'),
+
         'area_id': fields.Str(required=True, location='json'),
 
         'products': fields.List(
@@ -582,6 +584,9 @@ def apply_coupon():
     # if order_exists:
     #     return benefits_given
 
+    if args.get('session_id'):
+        setattr(request, 'session_id', args.get('session_id'))
+
     success, order, error_list = fetch_order_detail(args)
 
     if not success:
@@ -629,6 +634,8 @@ def check_coupon():
         'order_id': fields.Str(required=False, location='json'),
 
         'customer_id': fields.Str(required=True, location='json'),
+
+        'session_id': fields.Str(required=True, location='json'),
 
         'area_id': fields.Str(required=True, location='json'),
 
@@ -699,6 +706,9 @@ def check_coupon():
 
     # for product in args.get('products'):
     #     product['subscription_id'] = product['item_id']
+
+    if args.get('session_id'):
+        setattr(request, 'session_id', args.get('session_id'))
 
     success, order, error_list = fetch_order_detail(args)
 

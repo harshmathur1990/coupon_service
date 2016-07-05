@@ -28,6 +28,8 @@ userendpoint: http://pyservice01.staging.askme.com:9880/orderapi/v1/user
 
 userphonenoapi: http://pyservice01.staging.askme.com:9095/users/v2/user/
 
+sessionphoneapi: http://pyservice01.staging.askme.com:9095/users/v2/user/ua/
+
 userphoneapiheaders: {Content-Type: application/json, clientid: 960AF3923F5711E68287066A28C33ECE, secret: 960AFAAE3F5711E68287066A28C33ECE, Authorization: abcdefghijklmnopqrstuvwxyz}
 
 migrationsdirectory: new_grocery_migrations
