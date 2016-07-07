@@ -3,6 +3,7 @@ import datetime
 import json
 import logging
 import copy
+from flask import request
 from constants import GROCERY_ITEM_KEY, GROCERY_CACHE_TTL, GROCERY_LOCATION_KEY
 import config
 from data import VerificationItemData, OrderData
@@ -178,7 +179,12 @@ def fetch_items(subscription_id_list, item_map):
             "offset": 0
         }
 
-        response = make_api_call(config.SUBSCRIPTIONURL, method='POST', headers=config.SUBSCRIPTIONHEADERS, body=body)
+        headers = config.SUBSCRIPTIONHEADERS
+        if hasattr(request, 'session_id'):
+            headers['X-ASKME-SESSIONID'] = request.session_id
+        headers['X-ASKME-USERID'] = request.customer_id
+
+        response = make_api_call(config.SUBSCRIPTIONURL, method='POST', headers=headers, body=body)
 
         try:
             response_data = json.loads(response.text)

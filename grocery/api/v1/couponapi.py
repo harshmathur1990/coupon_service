@@ -436,6 +436,8 @@ def create_voucher():
 def confirm_order():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     confirm_order_args = {
+        'customer_id': fields.Str(required=False, location='json'),
+        'session_id': fields.Str(required=False, location='json'),
         'order_id': fields.Str(required=True, location='json'),
         'payment_status': fields.Bool(required=True, location='json')
     }
@@ -587,6 +589,8 @@ def apply_coupon():
     if args.get('session_id'):
         setattr(request, 'session_id', args.get('session_id'))
 
+    setattr(request, 'customer_id', args.get('customer_id'))
+
     success, order, error_list = fetch_order_detail(args)
 
     if not success:
@@ -635,7 +639,7 @@ def check_coupon():
 
         'customer_id': fields.Str(required=True, location='json'),
 
-        'session_id': fields.Str(required=True, location='json'),
+        'session_id': fields.Str(required=False, location='json'),
 
         'area_id': fields.Str(required=True, location='json'),
 
@@ -709,6 +713,8 @@ def check_coupon():
 
     if args.get('session_id'):
         setattr(request, 'session_id', args.get('session_id'))
+
+    setattr(request, 'customer_id', args.get('customer_id'))
 
     success, order, error_list = fetch_order_detail(args)
 
