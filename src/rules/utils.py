@@ -6,7 +6,6 @@ from datetime import timedelta
 
 import croniter
 from dateutil import parser
-
 from lib.utils import is_between, get_num_from_str, create_error_response,\
     get_intersection_of_lists, get_utc_timezone_unaware_date_object, create_success_response
 from rule import Rule
@@ -14,7 +13,9 @@ from src.enums import *
 from src.enums import BenefitType, Channels
 from src.sqlalchemydb import CouponsAlchemyDB
 from vouchers import Vouchers, VoucherTransactionLog
+from flask import request
 from . import default_error_message
+import config
 logger = logging.getLogger(__name__)
 
 
@@ -95,9 +96,14 @@ def apply_benefits(args, order, benefits):
                     db.rollback()
                     return False, 400, default_error_message
 
+            if config.client == 'new_grocery':
+                customer_id = request.phone_no
+            else:
+                customer_id = user_id
+
             transaction_log = VoucherTransactionLog(**{
                 'id': uuid.uuid1().hex,
-                'user_id': user_id,
+                'user_id': customer_id,
                 'voucher_id': voucher_id,
                 'order_id': order_id,
                 'status': VoucherTransactionStatus.in_progress.value,
@@ -519,7 +525,7 @@ def get_benefits_new(order):
     response_dict['totalAgentDiscount'] = total_agent_discount
     response_dict['totalAgentCashback'] = total_agent_cashback
     if hasattr(order, 'check_payment_mode') and order.check_payment_mode:
-            response_dict['paymentMode'] = order.payment_mode
+            response_dict['paymentMode'] = [order.payment_mode]
     else:
         response_dict['paymentMode'] = payment_modes_list
     response_dict['channel'] = channels_list

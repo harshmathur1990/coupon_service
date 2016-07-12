@@ -310,7 +310,7 @@ def fetch_order_detail(args):
     order_data_dict['customer_id'] = args.get('customer_id')
     order_data_dict['order_id'] = args.get('order_id')
     order_data_dict['area_id'] = args.get('area_id')
-    order_data_dict['validate'] = args.get('validate')
+    order_data_dict['validate'] = args.get('validate', True)
     order_data = OrderData(**order_data_dict)
     return True, order_data, None
 
@@ -389,7 +389,7 @@ def get_criteria_kwargs(data):
 
 def fetch_user_details(order):
     customer_id = order.customer_id
-    user_info_url = config.USERINFOURL + str(customer_id)
+    user_info_url = config.USERINFOURL + '?user_id=' + str(customer_id)
     response = make_api_call(user_info_url)
     return get_user_details(response)
 
@@ -659,3 +659,24 @@ def create_failed_api_response(args, error_list):
         'errors': error_list
     }
     return rv
+
+
+def fetch_phone_no(user_id):
+    url = config.USERPHONENOAPI + str(user_id)
+    headers = config.USERPHONENOAPIHEADERS
+    response = make_api_call(url=url, method='GET', headers=headers)
+    if response.status_code != 200:
+        return False, None
+    try:
+        data = json.loads(response.text)
+        value_list = data.get('contact', dict()).get('data')
+        if not value_list:
+            return False, None
+        for value in value_list:
+            if value.get('type') == 'phone':
+                if value.get('verified') == True:
+                    return True, value.get('value')
+                return False, value.get('value')
+    except Exception as e:
+        logger.exception(e)
+    return False, None

@@ -685,6 +685,8 @@ def check_coupon():
 
         'source': fields.Str(required=False, missing=None, location='json'),
 
+        'validate': fields.Bool(location='query', missing=True),
+
         'payment_mode': fields.Str(required=False, missing=None, location='json'),
 
         'check_payment_mode': fields.Bool(location='query', missing=False)

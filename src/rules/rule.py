@@ -8,7 +8,7 @@ from src.sqlalchemydb import CouponsAlchemyDB
 from config import method_dict
 import copy
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 
 class Benefits(object):
