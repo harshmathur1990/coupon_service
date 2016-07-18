@@ -3,6 +3,7 @@ import datetime
 import json
 import logging
 import copy
+from flask import request
 from constants import GROCERY_ITEM_KEY, GROCERY_CACHE_TTL, GROCERY_LOCATION_KEY
 import config
 from data import VerificationItemData, OrderData
@@ -178,7 +179,12 @@ def fetch_items(subscription_id_list, item_map):
             "offset": 0
         }
 
-        response = make_api_call(config.SUBSCRIPTIONURL, method='POST', headers=config.SUBSCRIPTIONHEADERS, body=body)
+        headers = config.SUBSCRIPTIONHEADERS
+        if hasattr(request, 'session_id'):
+            headers['X-ASKME-SESSIONID'] = request.session_id
+        headers['X-ASKME-USERID'] = request.customer_id
+
+        response = make_api_call(config.SUBSCRIPTIONURL, method='POST', headers=headers, body=body)
 
         try:
             response_data = json.loads(response.text)
@@ -308,6 +314,7 @@ def fetch_order_detail(args):
     order_data_dict['check_payment_mode'] = args.get('check_payment_mode')
     order_data_dict['items'] = items
     order_data_dict['customer_id'] = args.get('customer_id')
+    order_data_dict['session_id'] = args.get('session_id')
     order_data_dict['order_id'] = args.get('order_id')
     order_data_dict['area_id'] = args.get('area_id')
     order_data_dict['validate'] = args.get('validate', True)
@@ -677,6 +684,24 @@ def fetch_phone_no(user_id):
                 if value.get('verified') == True:
                     return True, value.get('value')
                 return False, value.get('value')
+    except Exception as e:
+        logger.exception(e)
+    return False, None
+
+
+def fetch_phone_no_from_session_id(session_id):
+    url = config.SESSIONPHONEAPI + str(session_id)
+    headers = config.USERPHONENOAPIHEADERS
+    response = make_api_call(url=url, method='GET', headers=headers)
+    if response.status_code != 200:
+        return False, None
+    try:
+        data = json.loads(response.text)
+        if 'result' in data and data['result'] == 'failure':
+            return False, None
+        if 'error' in data:
+            return False, None
+        return data['user']['is_phone_verified'], data['user']['phone']
     except Exception as e:
         logger.exception(e)
     return False, None

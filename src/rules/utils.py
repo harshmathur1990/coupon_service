@@ -98,12 +98,18 @@ def apply_benefits(args, order, benefits):
 
             if config.client == 'new_grocery':
                 customer_id = request.phone_no
+                session_id = order.session_id
+                user_uuid = order.customer_id
             else:
                 customer_id = user_id
+                session_id = None
+                user_uuid = None
 
             transaction_log = VoucherTransactionLog(**{
                 'id': uuid.uuid1().hex,
                 'user_id': customer_id,
+                'session_id': session_id,
+                'user_uuid': user_uuid,
                 'voucher_id': voucher_id,
                 'order_id': order_id,
                 'status': VoucherTransactionStatus.in_progress.value,

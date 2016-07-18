@@ -111,6 +111,8 @@ class CouponsAlchemyDB:
                 'voucher_use_tracker', CouponsAlchemyDB.metadata,
                 Column('id', BINARY(16), primary_key=True),   # COMM: auto-increment?
                 Column('user_id', VARCHAR(32), nullable=False),
+                Column('user_uuid', VARCHAR(32)),
+                Column('session_id', VARCHAR(32)),
                 Column('applied_on', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
                 Column('order_id', VARCHAR(32), nullable=False),
@@ -127,6 +129,8 @@ class CouponsAlchemyDB:
                 'user_voucher_transaction_log', CouponsAlchemyDB.metadata,
                 Column('id', BINARY(16), primary_key=True),  # COMM: auto-increment?
                 Column('user_id', VARCHAR(32), nullable=False),
+                Column('session_id', VARCHAR(32)),
+                Column('user_uuid', VARCHAR(32)),
                 Column('updated_on', DATETIME(fsp=6), default=datetime.utcnow, nullable=False),
                 Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False),
                 Column('order_id', VARCHAR(32), nullable=False),
@@ -261,6 +265,7 @@ class CouponsAlchemyDB:
                 Column('permission_id', ForeignKey("permissions.id"), nullable=False),
                 Index('agent_id_permission_id', 'agent_id', 'permission_id', unique=True)
             )
+
 
             CouponsAlchemyDB._table["agent_permission"] = CouponsAlchemyDB.agent_permission
 
