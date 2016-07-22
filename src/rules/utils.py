@@ -97,7 +97,7 @@ def apply_benefits(args, order, benefits):
                     return False, 400, default_error_message
 
             if config.client == 'new_grocery':
-                customer_id = request.phone_no
+                customer_id = getattr(request, "phone_no", "-")
             else:
                 customer_id = user_id
 
