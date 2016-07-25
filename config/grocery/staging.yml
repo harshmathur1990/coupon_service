@@ -18,7 +18,7 @@ kafka:
   host: 'kafka01.production.askmebazaar.com:9092,kafka02.production.askmebazaar.com:9092,kafka03.production.askmebazaar.com:9092'
   zookeeper: 'kafka01.production.askmebazaar.com:2181,kafka02.production.askmebazaar.com:2181,kafka03.production.askmebazaar.com:2181'
 
-informationhosturl: http://uatadmin.api.askmegrocery.com
+informationhosturl: http://uatadmin.api.intern.askmegrocery.com
 
 subscriptionendpoint: /services.ashx?method=getitembyid&itemid=
 
