@@ -233,7 +233,61 @@ def fetch_items(subscription_id_list, item_map):
     return True, item_list, None
 
 
-def fetch_location_dict(area_id):
+def fetch_location_dict(id, id_type='zone'):
+    key = GROCERY_LOCATION_KEY+u'{}_{}'.format(id_type, id)
+    location_dict = cache.get(key)
+    if not location_dict:
+        location_url = config.LOCATIONURL + str(id)
+        response = make_api_call(location_url)
+
+        try:
+            raw_data = json.loads(response.text)
+        except Exception as e:
+            logger.exception(e)
+            return False, None, u'Unable to fetch {} details'.format(id_type)
+
+        if not raw_data.get('locations'):
+            return False, None, u'{} does not exist'.format(id_type)
+
+        locations = raw_data.get('locations')
+
+        data = None
+        for location in locations:
+            if 'tags' in location and location['tags']:
+                if 'grocery' in location['tags']:
+                    data = location
+                    break
+
+        if not data and not (('tags' in locations[0]) and locations[0]['tags'] and ('grocery' not in locations[0]['tags'])):
+            data = locations[0]
+
+        if not data or id_type not in data['types']:
+            return False, None, u'Not a valid {} Id'.format(id_type)
+
+        location_dict = {
+            'area': list(),
+            'state': list(),
+            'city': list(),
+            'pincode': list(),
+            'zone': list()
+        }
+        for container in data.get('containers'):
+            if 'state' in container['types']:
+                location_dict['state'].append(container['gid'])
+            if 'city' in container['types']:
+                location_dict['city'].append(container['gid'])
+            if 'zone' in container['types']:
+                location_dict['zone'].append(container['gid'])
+            if 'pincode' in container['types']:
+                location_dict['pincode'].append(container['gid'])
+
+        location_dict[id_type] = id
+        cache.set(key, location_dict, ex=GROCERY_CACHE_TTL)
+
+    return True, location_dict, None
+
+
+def fetch_location_dict_from_area(area_id):
     key = GROCERY_LOCATION_KEY+u'{}'.format(area_id)
     location_dict = cache.get(key)
     if not location_dict:
@@ -251,7 +305,7 @@ def fetch_location_dict(area_id):
 
         locations = raw_data.get('locations')
 
-        data = locations[0]
+        data = locations[0]  # TODO instead of locations[0], pick the entry with 'grocery' tag
 
         types = data['types']
 
@@ -281,10 +335,13 @@ def fetch_location_dict(area_id):
 
 
 def fetch_order_detail(args):
+    success = False
+    error = ""
     # custom implementation for askmegrocery, this method has to be
     # re-written to integrate with other sites' services
     # This
-    area_id = args.get('area_id')
+    area_id = args.get('area_id', None)
+    zone_id = args.get('zone_id', None)
     subscription_id_set = set()
     item_map = dict()
 
@@ -302,7 +359,13 @@ def fetch_order_detail(args):
     if not success:
         return False, None, [error]
 
-    success, location_dict, error = fetch_location_dict(area_id)
+    if zone_id:
+        success, location_dict, error = fetch_location_dict(zone_id, 'zone')
+    elif area_id:
+        success, location_dict, error = fetch_location_dict(area_id, 'area')
+    else:
+        success = False
+        error = "Area id or zone id not provided"
     if not success:
         return False, None, [error]
 

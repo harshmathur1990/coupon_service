@@ -515,7 +515,9 @@ def apply_coupon():
 
         'session_id': fields.Str(required=False, location='json'),
 
-        'area_id': fields.Str(required=True, location='json'),
+        'area_id': fields.Str(required=False, location='json'),
+
+        'zone_id': fields.Str(required=False, location='json'),  # at least one of 'zone_id' or 'area_id' is required
 
         'products': fields.List(
             fields.Nested(
@@ -641,7 +643,9 @@ def check_coupon():
 
         'session_id': fields.Str(required=False, location='json'),
 
-        'area_id': fields.Str(required=True, location='json'),
+        'area_id': fields.Str(required=False, location='json'),
+
+        'zone_id': fields.Str(required=False, location='json'),  # at least one of 'zone_id' or 'area_id' is required
 
         'products': fields.List(
             fields.Nested(
