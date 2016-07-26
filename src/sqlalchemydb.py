@@ -118,6 +118,7 @@ class CouponsAlchemyDB:
                 Column('order_id', VARCHAR(32), nullable=False),
                 Column('response', VARCHAR(8000)),
                 Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=get_agent_id, nullable=True),
+                Index("voucher_use_tracker_order_id", "order_id"),  #TODO check the effectiveness of this index; perhaps we need voucher_id+order_id index instead
                 Index("voucher_use_tracker_user_id", "user_id"),
                 Index("voucher_use_tracker_voucher_id", "voucher_id"),
                 Index("voucher_use_tracker_user_id_voucher_id", "user_id", "voucher_id")

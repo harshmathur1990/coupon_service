@@ -252,6 +252,7 @@ class RuleCriteria(object):
 
     def check_usage(self, user_id, voucher_id, order_id, db=None):
         # TODO can optimize this function by combining multiple queries into single query
+        # TODO moreover, index on order_id needs to be added
         use_type = self.usage['use_type']
         rv = {
             'success': True,
