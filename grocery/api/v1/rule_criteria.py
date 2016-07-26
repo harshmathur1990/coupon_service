@@ -251,6 +251,7 @@ class RuleCriteria(object):
         return True, {'total': order.matching_criteria_total, 'item_id_list': item_id_list}, None
 
     def check_usage(self, user_id, voucher_id, order_id, db=None):
+        # TODO can optimize this function by combining multiple queries into single query
         use_type = self.usage['use_type']
         rv = {
             'success': True,
