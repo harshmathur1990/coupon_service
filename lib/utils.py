@@ -31,6 +31,13 @@ def get_intersection_of_lists(list1, list2, key=None):
 
 def make_api_call(url, method='GET', body=None, headers=dict(), params=dict()):
     # body must be a json serializable dict
+    session_id = request.headers.get('X-ASKME-SESSIONID', None)
+    user_id = request.headers.get('X-ASKME-USERID', None)
+    if session_id:
+        headers['X-ASKME-SESSIONID'] = session_id
+    if user_id:
+        headers['X-ASKME-USERID'] = user_id
+
     start = time.time()
     if method == 'GET':
         response = requests.get(url=url, headers=headers, params=params)

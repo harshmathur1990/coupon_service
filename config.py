@@ -48,6 +48,7 @@ if client == 'new_grocery':
     LOCATIONURL = CONFIG["locationendpoint"]
     USERINFOURL = CONFIG["userendpoint"]
     USERPHONENOAPI = CONFIG["userphonenoapi"]
+    SESSIONPHONEAPI = CONFIG["sessionphoneapi"]
     USERPHONENOAPIHEADERS = CONFIG["userphoneapiheaders"]
 
 

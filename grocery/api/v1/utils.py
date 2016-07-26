@@ -3,6 +3,7 @@ import datetime
 import json
 import logging
 import copy
+from flask import request
 from constants import GROCERY_ITEM_KEY, GROCERY_CACHE_TTL, GROCERY_LOCATION_KEY
 import config
 from data import VerificationItemData, OrderData
@@ -178,7 +179,9 @@ def fetch_items(subscription_id_list, item_map):
             "offset": 0
         }
 
-        response = make_api_call(config.SUBSCRIPTIONURL, method='POST', headers=config.SUBSCRIPTIONHEADERS, body=body)
+        headers = config.SUBSCRIPTIONHEADERS
+
+        response = make_api_call(config.SUBSCRIPTIONURL, method='POST', headers=headers, body=body)
 
         try:
             response_data = json.loads(response.text)
@@ -227,47 +230,60 @@ def fetch_items(subscription_id_list, item_map):
     return True, item_list, None
 
 
-def fetch_location_dict(area_id):
-    key = GROCERY_LOCATION_KEY+u'{}'.format(area_id)
+def fetch_location_dict(id):
+    key = GROCERY_LOCATION_KEY+u'{}'.format(id)
     location_dict = cache.get(key)
     if not location_dict:
-        location_url = config.LOCATIONURL + str(area_id)
+        location_url = config.LOCATIONURL + str(id)
         response = make_api_call(location_url)
 
         try:
             raw_data = json.loads(response.text)
         except Exception as e:
             logger.exception(e)
-            return False, None, u'Unable to fetch area details'
+            return False, None, u'Unable to fetch details for geo id={}'.format(id)
 
         if not raw_data.get('locations'):
-            return False, None, u'Area Does not exist'
+            return False, None, u'geo id={} does not exist'.format(id)
 
         locations = raw_data.get('locations')
 
-        data = locations[0]
+        data = None
+        for location in locations:
+            if 'tags' in location and location['tags']:
+                if 'grocery' in location['tags']:
+                    data = location
+                    break
 
-        types = data['types']
+        if not data and not (('tags' in locations[0]) and locations[0]['tags'] and ('grocery' not in locations[0]['tags'])):
+            data = locations[0]
 
-        if 'area' not in types:
-            return False, None, u'Not a valid Area Id'
+        if not data or not data['types']:
+            return False, None, u'{} is not a valid geo Id'.format(id)
+
+        geo_types_ordered = ['area', 'pincode', 'zone', 'city', 'state']
+        id_types = data['types']
+        id_type = None
+        for geo_type in geo_types_ordered:
+            if geo_type in id_types:
+                id_type = geo_type
+                break
+
+        if not id_type:
+            return False, None, u'{} is not a valid geo Id'.format(id)
 
         location_dict = {
-            'area': area_id,
+            'area': list(),
             'state': list(),
             'city': list(),
             'pincode': list(),
             'zone': list()
         }
         for container in data.get('containers'):
-            if 'state' in container['types']:
-                location_dict['state'].append(container['gid'])
-            if 'city' in container['types']:
-                location_dict['city'].append(container['gid'])
-            if 'zone' in container['types']:
-                location_dict['zone'].append(container['gid'])
-            if 'pincode' in container['types']:
-                location_dict['pincode'].append(container['gid'])
+            for geo_type in geo_types_ordered:
+                if geo_type in container['types']:
+                    location_dict[geo_type].append(container['gid'])
+        location_dict[id_type].append(id)
 
         cache.set(key, location_dict, ex=GROCERY_CACHE_TTL)
 
@@ -278,7 +294,7 @@ def fetch_order_detail(args):
     # custom implementation for askmegrocery, this method has to be
     # re-written to integrate with other sites' services
     # This
-    area_id = args.get('area_id')
+    geo_id = args.get('geo_id', None)
     subscription_id_set = set()
     item_map = dict()
 
@@ -296,7 +312,7 @@ def fetch_order_detail(args):
     if not success:
         return False, None, [error]
 
-    success, location_dict, error = fetch_location_dict(area_id)
+    success, location_dict, error = fetch_location_dict(geo_id)
     if not success:
         return False, None, [error]
 
@@ -309,7 +325,7 @@ def fetch_order_detail(args):
     order_data_dict['items'] = items
     order_data_dict['customer_id'] = args.get('customer_id')
     order_data_dict['order_id'] = args.get('order_id')
-    order_data_dict['area_id'] = args.get('area_id')
+    order_data_dict['geo_id'] = args.get('geo_id')
     order_data_dict['validate'] = args.get('validate', True)
     order_data = OrderData(**order_data_dict)
     return True, order_data, None
@@ -677,6 +693,24 @@ def fetch_phone_no(user_id):
                 if value.get('verified') == True:
                     return True, value.get('value')
                 return False, value.get('value')
+    except Exception as e:
+        logger.exception(e)
+    return False, None
+
+
+def fetch_phone_no_from_session_id(session_id):
+    url = config.SESSIONPHONEAPI + str(session_id)
+    headers = config.USERPHONENOAPIHEADERS
+    response = make_api_call(url=url, method='GET', headers=headers)
+    if response.status_code != 200:
+        return False, None
+    try:
+        data = json.loads(response.text)
+        if 'result' in data and data['result'] == 'failure':
+            return False, None
+        if 'error' in data:
+            return False, None
+        return data['user']['is_phone_verified'], data['user']['phone']
     except Exception as e:
         logger.exception(e)
     return False, None

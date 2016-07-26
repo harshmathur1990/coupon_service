@@ -27,7 +27,7 @@ class OrderData(object):
         self.payment_mode = kwargs.get('payment_mode')
         self.check_payment_mode = kwargs.get('check_payment_mode')
         self.order_id = kwargs.get('order_id')
-        self.area_id = kwargs.get('area_id')
+        self.geo_id = kwargs.get('geo_id')
         self.order_date = kwargs.get('order_date')
         self.validate = kwargs.get('validate')
         self.total_price = 0.0

@@ -101,9 +101,14 @@ def apply_benefits(args, order, benefits):
             else:
                 customer_id = user_id
 
+            session_id = request.headers.get('X-ASKME-SESSIONID', None)
+            user_uuid = request.headers.get('X-ASKME-USERID', None)
+
             transaction_log = VoucherTransactionLog(**{
                 'id': uuid.uuid1().hex,
                 'user_id': customer_id,
+                'session_id': session_id,
+                'user_uuid': user_uuid,
                 'voucher_id': voucher_id,
                 'order_id': order_id,
                 'status': VoucherTransactionStatus.in_progress.value,

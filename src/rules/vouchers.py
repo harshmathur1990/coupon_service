@@ -447,6 +447,8 @@ class VoucherTransactionLog(object):
         if self.id:
             self.id_bin = binascii.a2b_hex(self.id)
         self.user_id = kwargs.get('user_id')
+        self.session_id = kwargs.get('session_id')
+        self.user_uuid = kwargs.get('user_uuid')
         self.voucher_id = kwargs.get('voucher_id')  # uuid.uuid1().hex
         if self.voucher_id:
             self.voucher_id_bin = binascii.a2b_hex(self.voucher_id)
@@ -480,6 +482,8 @@ class VoucherTransactionLog(object):
         values = dict()
         values['id'] = self.id_bin
         values['user_id'] = self.user_id
+        values['session_id'] = self.session_id
+        values['user_uuid'] = self.user_uuid
         values['voucher_id'] = self.voucher_id_bin
         values['order_id'] = self.order_id
         values['status'] = self.status

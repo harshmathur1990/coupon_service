@@ -436,6 +436,7 @@ def create_voucher():
 def confirm_order():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     confirm_order_args = {
+        'customer_id': fields.Str(required=False, location='json'),
         'order_id': fields.Str(required=True, location='json'),
         'payment_status': fields.Bool(required=True, location='json')
     }
@@ -511,7 +512,7 @@ def apply_coupon():
 
         'customer_id': fields.Str(required=True, location='json'),
 
-        'area_id': fields.Str(required=True, location='json'),
+        'geo_id': fields.Str(required=True, location='json'),
 
         'products': fields.List(
             fields.Nested(
@@ -573,6 +574,10 @@ def apply_coupon():
 
         'order_date': fields.DateTime(location='json', required=False, missing=None)
     }
+
+    # TODO remove this auto conversion from area_id to geo_id once order service is updated
+    if not 'geo_id' in request.json and 'area_id' in request.json:
+        request.json['geo_id'] = request.json['area_id']
     try:
         args = parser.parse(apply_coupon_args, request)
     except werkzeug.exceptions.UnprocessableEntity as e:
@@ -581,6 +586,7 @@ def apply_coupon():
     # order_exists, benefits_given = fetch_order_response(args)
     # if order_exists:
     #     return benefits_given
+    setattr(request, 'customer_id', args.get('customer_id'))
 
     success, order, error_list = fetch_order_detail(args)
 
@@ -630,7 +636,7 @@ def check_coupon():
 
         'customer_id': fields.Str(required=True, location='json'),
 
-        'area_id': fields.Str(required=True, location='json'),
+        'geo_id': fields.Str(required=True, location='json'),
 
         'products': fields.List(
             fields.Nested(
@@ -692,6 +698,9 @@ def check_coupon():
         'check_payment_mode': fields.Bool(location='query', missing=False)
 
     }
+    # TODO remove this auto conversion from area_id to geo_id once order service is updated
+    if not 'geo_id' in request.json and 'area_id' in request.json:
+        request.json['geo_id'] = request.json['area_id']
     try:
         args = parser.parse(check_coupon_args, request)
     except werkzeug.exceptions.UnprocessableEntity as e:
@@ -699,6 +708,8 @@ def check_coupon():
 
     # for product in args.get('products'):
     #     product['subscription_id'] = product['item_id']
+
+    setattr(request, 'customer_id', args.get('customer_id'))
 
     success, order, error_list = fetch_order_detail(args)
 

@@ -3,7 +3,7 @@ import copy
 from data import VerificationItemData
 from src.enums import UseType, MatchStatus
 from src.sqlalchemydb import CouponsAlchemyDB
-from utils import fetch_user_details, fetch_phone_no
+from utils import fetch_user_details, fetch_phone_no, fetch_phone_no_from_session_id
 from flask import request
 from src.rules.match_utils import match_list_intersection_atleast_one_common, \
     match_value_in_list, match_user_order_no, match_in_not_in, match_greater_than, \
@@ -21,7 +21,7 @@ class RuleCriteria(object):
         ('state', 'state', match_list_intersection_atleast_one_common, None),
         ('city', 'city', match_list_intersection_atleast_one_common, None),
         ('zone', 'zone', match_list_intersection_atleast_one_common, None),
-        ('area', 'area', match_value_in_list, None),
+        ('area', 'area', match_list_intersection_atleast_one_common, None),
         ('source', 'source', match_value_in_list, None),
         ('payment_modes', 'payment_mode', match_value_in_list, None),
         ('valid_on_order_no', None, match_user_order_no, fetch_user_details)
@@ -292,7 +292,14 @@ class RuleCriteria(object):
     def is_voucher_exhausted_for_this_user(self, user_id, voucher_id, order_id, db=None):
         if not db:
             db = CouponsAlchemyDB()
-        is_logged_in, phone_no = fetch_phone_no(user_id)
+        session_id = request.headers.get('X-ASKME-SESSIONID', None)
+        user_uuid = request.headers.get('X-ASKME-USERID', None)
+        if session_id:
+            is_logged_in, phone_no = fetch_phone_no_from_session_id(session_id)
+        elif user_uuid:
+            is_logged_in, phone_no = fetch_phone_no(user_uuid)
+        else:
+            is_logged_in, phone_no = fetch_phone_no(user_id)
 
         if not phone_no:
             return True
