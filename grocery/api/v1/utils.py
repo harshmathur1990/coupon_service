@@ -261,7 +261,7 @@ def fetch_location_dict(id):
         if not data or not data['types']:
             return False, None, u'{} is not a valid geo Id'.format(id)
 
-        geo_types_ordered = ['area', 'pincode', 'zone', 'city', 'state']
+        geo_types_ordered = ['area', 'pincode', 'zone', 'city', 'state', 'country']
         id_types = data['types']
         id_type = None
         for geo_type in geo_types_ordered:
@@ -277,13 +277,17 @@ def fetch_location_dict(id):
             'state': list(),
             'city': list(),
             'pincode': list(),
-            'zone': list()
+            'zone': list(),
+            'country': list()
         }
         for container in data.get('containers'):
             for geo_type in geo_types_ordered:
                 if geo_type in container['types']:
                     location_dict[geo_type].append(container['gid'])
         location_dict[id_type].append(id)
+
+        if not location_dict['country']:
+            location_dict['country'].append(1)  # TODO remove this, once geo service starts returning country also
 
         cache.set(key, location_dict, ex=GROCERY_CACHE_TTL)
 
