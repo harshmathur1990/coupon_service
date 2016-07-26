@@ -145,26 +145,7 @@ class CouponsAlchemyDB:
 
             CouponsAlchemyDB._table["user_voucher_transaction_log"] = CouponsAlchemyDB.user_voucher_transaction_log
 
-            if client == 'grocery':
-                CouponsAlchemyDB.auto_benefits = Table(
-                    'auto_benefits', CouponsAlchemyDB.metadata,
-                    Column('id', BIGINT, primary_key=True, autoincrement=True),
-                    Column('type', INTEGER, index=True, nullable=False),
-                    Column('variants', INTEGER, index=True),
-                    Column('zone', INTEGER, index=True, nullable=False),
-                    Column('range_min', INTEGER, index=True),
-                    Column('range_max', INTEGER, index=True),
-                    Column('cart_range_min', INTEGER, index=True),
-                    Column('cart_range_max', INTEGER, index=True),
-                    Column('voucher_id', BINARY(16), ForeignKey("all_vouchers.id"), nullable=False, index=True),
-                    Column('from', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, index=True),
-                    Column('to', DATETIME(fsp=6), default=datetime.utcnow, nullable=False, index=True),
-                    Column('agent_id', INTEGER, ForeignKey("tokens.agent_id"), default=get_agent_id, nullable=True)
-                )
-
-                CouponsAlchemyDB._table["auto_benefits"] = CouponsAlchemyDB.auto_benefits
-
-            elif client == 'new_grocery':
+            if client == 'grocery' or client == 'new_grocery':
                 CouponsAlchemyDB.auto_benefits = Table(
                     'auto_benefits', CouponsAlchemyDB.metadata,
                     Column('id', BIGINT, primary_key=True, autoincrement=True),
