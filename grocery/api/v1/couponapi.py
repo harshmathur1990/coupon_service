@@ -574,6 +574,10 @@ def apply_coupon():
 
         'order_date': fields.DateTime(location='json', required=False, missing=None)
     }
+
+    # TODO remove this auto conversion from area_id to geo_id once order service is updated
+    if not 'geo_id' in request.json and 'area_id' in request.json:
+        request.json['geo_id'] = request.json['area_id']
     try:
         args = parser.parse(apply_coupon_args, request)
     except werkzeug.exceptions.UnprocessableEntity as e:
@@ -694,6 +698,9 @@ def check_coupon():
         'check_payment_mode': fields.Bool(location='query', missing=False)
 
     }
+    # TODO remove this auto conversion from area_id to geo_id once order service is updated
+    if not 'geo_id' in request.json and 'area_id' in request.json:
+        request.json['geo_id'] = request.json['area_id']
     try:
         args = parser.parse(check_coupon_args, request)
     except werkzeug.exceptions.UnprocessableEntity as e:
