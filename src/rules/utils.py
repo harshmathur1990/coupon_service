@@ -98,12 +98,11 @@ def apply_benefits(args, order, benefits):
 
             if config.client == 'new_grocery':
                 customer_id = getattr(request, "phone_no", "-")
-                session_id = order.session_id
-                user_uuid = order.customer_id
             else:
                 customer_id = user_id
-                session_id = None
-                user_uuid = None
+
+            session_id = request.headers.get('X-ASKME-SESSIONID', None)
+            user_uuid = request.headers.get('X-ASKME-USERID', None)
 
             transaction_log = VoucherTransactionLog(**{
                 'id': uuid.uuid1().hex,

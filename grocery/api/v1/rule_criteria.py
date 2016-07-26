@@ -292,9 +292,12 @@ class RuleCriteria(object):
     def is_voucher_exhausted_for_this_user(self, user_id, voucher_id, order_id, db=None):
         if not db:
             db = CouponsAlchemyDB()
-
-        if hasattr(request, 'session_id'):
-            is_logged_in, phone_no = fetch_phone_no_from_session_id(request.session_id)
+        session_id = request.headers.get('X-ASKME-SESSIONID', None)
+        user_uuid = request.headers.get('X-ASKME-USERID', None)
+        if session_id:
+            is_logged_in, phone_no = fetch_phone_no_from_session_id(session_id)
+        elif user_uuid:
+            is_logged_in, phone_no = fetch_phone_no(user_uuid)
         else:
             is_logged_in, phone_no = fetch_phone_no(user_id)
 

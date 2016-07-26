@@ -437,7 +437,6 @@ def confirm_order():
     logger.info(u'Requested url = {} , arguments = {}'.format(request.url_rule, request.get_data()))
     confirm_order_args = {
         'customer_id': fields.Str(required=False, location='json'),
-        'session_id': fields.Str(required=False, location='json'),
         'order_id': fields.Str(required=True, location='json'),
         'payment_status': fields.Bool(required=True, location='json')
     }

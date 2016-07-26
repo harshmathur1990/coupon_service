@@ -324,7 +324,6 @@ def fetch_order_detail(args):
     order_data_dict['check_payment_mode'] = args.get('check_payment_mode')
     order_data_dict['items'] = items
     order_data_dict['customer_id'] = args.get('customer_id')
-    order_data_dict['session_id'] = args.get('session_id')
     order_data_dict['order_id'] = args.get('order_id')
     order_data_dict['geo_id'] = args.get('geo_id')
     order_data_dict['validate'] = args.get('validate', True)

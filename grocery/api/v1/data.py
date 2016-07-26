@@ -34,7 +34,6 @@ class OrderData(object):
         for item in self.items:
             self.total_price += item.price * item.quantity
         self.customer_id = kwargs.get('customer_id')
-        self.session_id = kwargs.get('session_id')
         self.existing_vouchers = list()
         self.can_accommodate_new_vouchers = True
         self.failed_vouchers = list()
