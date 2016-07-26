@@ -21,7 +21,7 @@ class RuleCriteria(object):
         ('state', 'state', match_list_intersection_atleast_one_common, None),
         ('city', 'city', match_list_intersection_atleast_one_common, None),
         ('zone', 'zone', match_list_intersection_atleast_one_common, None),
-        ('area', 'area', match_value_in_list, None),
+        ('area', 'area', match_list_intersection_atleast_one_common, None),
         ('source', 'source', match_value_in_list, None),
         ('payment_modes', 'payment_mode', match_value_in_list, None),
         ('valid_on_order_no', None, match_user_order_no, fetch_user_details)

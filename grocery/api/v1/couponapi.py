@@ -513,11 +513,7 @@ def apply_coupon():
 
         'customer_id': fields.Str(required=True, location='json'),
 
-        'session_id': fields.Str(required=False, location='json'),
-
-        'area_id': fields.Str(required=False, location='json'),
-
-        'zone_id': fields.Str(required=False, location='json'),  # at least one of 'zone_id' or 'area_id' is required
+        'geo_id': fields.Str(required=True, location='json'),
 
         'products': fields.List(
             fields.Nested(
@@ -587,10 +583,6 @@ def apply_coupon():
     # order_exists, benefits_given = fetch_order_response(args)
     # if order_exists:
     #     return benefits_given
-
-    if args.get('session_id'):
-        setattr(request, 'session_id', args.get('session_id'))
-
     setattr(request, 'customer_id', args.get('customer_id'))
 
     success, order, error_list = fetch_order_detail(args)
@@ -641,11 +633,7 @@ def check_coupon():
 
         'customer_id': fields.Str(required=True, location='json'),
 
-        'session_id': fields.Str(required=False, location='json'),
-
-        'area_id': fields.Str(required=False, location='json'),
-
-        'zone_id': fields.Str(required=False, location='json'),  # at least one of 'zone_id' or 'area_id' is required
+        'geo_id': fields.Str(required=True, location='json'),
 
         'products': fields.List(
             fields.Nested(
@@ -714,9 +702,6 @@ def check_coupon():
 
     # for product in args.get('products'):
     #     product['subscription_id'] = product['item_id']
-
-    if args.get('session_id'):
-        setattr(request, 'session_id', args.get('session_id'))
 
     setattr(request, 'customer_id', args.get('customer_id'))
 

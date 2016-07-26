@@ -180,9 +180,6 @@ def fetch_items(subscription_id_list, item_map):
         }
 
         headers = config.SUBSCRIPTIONHEADERS
-        if hasattr(request, 'session_id'):
-            headers['X-ASKME-SESSIONID'] = request.session_id
-        headers['X-ASKME-USERID'] = request.customer_id
 
         response = make_api_call(config.SUBSCRIPTIONURL, method='POST', headers=headers, body=body)
 
@@ -233,8 +230,8 @@ def fetch_items(subscription_id_list, item_map):
     return True, item_list, None
 
 
-def fetch_location_dict(id, id_type='zone'):
-    key = GROCERY_LOCATION_KEY+u'{}_{}'.format(id_type, id)
+def fetch_location_dict(id):
+    key = GROCERY_LOCATION_KEY+u'{}'.format(id)
     location_dict = cache.get(key)
     if not location_dict:
         location_url = config.LOCATIONURL + str(id)
@@ -244,10 +241,10 @@ def fetch_location_dict(id, id_type='zone'):
             raw_data = json.loads(response.text)
         except Exception as e:
             logger.exception(e)
-            return False, None, u'Unable to fetch {} details'.format(id_type)
+            return False, None, u'Unable to fetch details for geo id={}'.format(id)
 
         if not raw_data.get('locations'):
-            return False, None, u'{} does not exist'.format(id_type)
+            return False, None, u'geo id={} does not exist'.format(id)
 
         locations = raw_data.get('locations')
 
@@ -261,8 +258,19 @@ def fetch_location_dict(id, id_type='zone'):
         if not data and not (('tags' in locations[0]) and locations[0]['tags'] and ('grocery' not in locations[0]['tags'])):
             data = locations[0]
 
-        if not data or id_type not in data['types']:
-            return False, None, u'Not a valid {} Id'.format(id_type)
+        if not data or not data['types']:
+            return False, None, u'{} is not a valid geo Id'.format(id)
+
+        geo_types_ordered = ['area', 'pincode', 'zone', 'city', 'state']
+        id_types = data['types']
+        id_type = None
+        for geo_type in geo_types_ordered:
+            if geo_type in id_types:
+                id_type = geo_type
+                break
+
+        if not id_type:
+            return False, None, u'{} is not a valid geo Id'.format(id)
 
         location_dict = {
             'area': list(),
@@ -272,62 +280,10 @@ def fetch_location_dict(id, id_type='zone'):
             'zone': list()
         }
         for container in data.get('containers'):
-            if 'state' in container['types']:
-                location_dict['state'].append(container['gid'])
-            if 'city' in container['types']:
-                location_dict['city'].append(container['gid'])
-            if 'zone' in container['types']:
-                location_dict['zone'].append(container['gid'])
-            if 'pincode' in container['types']:
-                location_dict['pincode'].append(container['gid'])
-
-        location_dict[id_type] = id
-        cache.set(key, location_dict, ex=GROCERY_CACHE_TTL)
-
-    return True, location_dict, None
-
-
-def fetch_location_dict_from_area(area_id):
-    key = GROCERY_LOCATION_KEY+u'{}'.format(area_id)
-    location_dict = cache.get(key)
-    if not location_dict:
-        location_url = config.LOCATIONURL + str(area_id)
-        response = make_api_call(location_url)
-
-        try:
-            raw_data = json.loads(response.text)
-        except Exception as e:
-            logger.exception(e)
-            return False, None, u'Unable to fetch area details'
-
-        if not raw_data.get('locations'):
-            return False, None, u'Area Does not exist'
-
-        locations = raw_data.get('locations')
-
-        data = locations[0]  # TODO instead of locations[0], pick the entry with 'grocery' tag
-
-        types = data['types']
-
-        if 'area' not in types:
-            return False, None, u'Not a valid Area Id'
-
-        location_dict = {
-            'area': area_id,
-            'state': list(),
-            'city': list(),
-            'pincode': list(),
-            'zone': list()
-        }
-        for container in data.get('containers'):
-            if 'state' in container['types']:
-                location_dict['state'].append(container['gid'])
-            if 'city' in container['types']:
-                location_dict['city'].append(container['gid'])
-            if 'zone' in container['types']:
-                location_dict['zone'].append(container['gid'])
-            if 'pincode' in container['types']:
-                location_dict['pincode'].append(container['gid'])
+            for geo_type in geo_types_ordered:
+                if geo_type in container['types']:
+                    location_dict[geo_type].append(container['gid'])
+        location_dict[id_type].append(id)
 
         cache.set(key, location_dict, ex=GROCERY_CACHE_TTL)
 
@@ -335,13 +291,10 @@ def fetch_location_dict_from_area(area_id):
 
 
 def fetch_order_detail(args):
-    success = False
-    error = ""
     # custom implementation for askmegrocery, this method has to be
     # re-written to integrate with other sites' services
     # This
-    area_id = args.get('area_id', None)
-    zone_id = args.get('zone_id', None)
+    geo_id = args.get('geo_id', None)
     subscription_id_set = set()
     item_map = dict()
 
@@ -359,13 +312,7 @@ def fetch_order_detail(args):
     if not success:
         return False, None, [error]
 
-    if zone_id:
-        success, location_dict, error = fetch_location_dict(zone_id, 'zone')
-    elif area_id:
-        success, location_dict, error = fetch_location_dict(area_id, 'area')
-    else:
-        success = False
-        error = "Area id or zone id not provided"
+    success, location_dict, error = fetch_location_dict(geo_id)
     if not success:
         return False, None, [error]
 
@@ -379,7 +326,7 @@ def fetch_order_detail(args):
     order_data_dict['customer_id'] = args.get('customer_id')
     order_data_dict['session_id'] = args.get('session_id')
     order_data_dict['order_id'] = args.get('order_id')
-    order_data_dict['area_id'] = args.get('area_id')
+    order_data_dict['geo_id'] = args.get('geo_id')
     order_data_dict['validate'] = args.get('validate', True)
     order_data = OrderData(**order_data_dict)
     return True, order_data, None
