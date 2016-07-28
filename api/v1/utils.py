@@ -349,6 +349,15 @@ def get_criteria_kwargs(data):
             }
             benefit_list.append(cashback_benefit)
 
+        if benefits.get('cashback_percentage'):
+            cashback_percentage_benefit = {
+                'type': BenefitType.cashback_percentage.value,
+                'value': benefits.get('cashback_percentage'),
+            }
+            if benefits.get('max_discount'):
+                cashback_percentage_benefit['max_cap'] = benefits.get('max_discount')
+            benefit_list.append(cashback_percentage_benefit)
+
     benefit_criteria_kwargs = {
         'data': benefit_list
     }
@@ -581,6 +590,11 @@ def fetch_coupon(args):
                     elif type is BenefitType.percentage:
                         benefits['percentage'] = data.get('value')
                         benefits['max_discount'] = data.get('max_cap')
+                    elif type is BenefitType.cashback_amount:
+                        benefits['cashback'] = data.get('value')
+                    elif type is BenefitType.cashback_percentage:
+                        benefits['cashback_percentage'] = data.get('value')
+                        benefits['max_discount'] = data.get('max_cap')
                     else:
                         benefits['freebies'] = [data.get('value')]
                 if not benefits.get('freebies'):
@@ -637,6 +651,15 @@ def refactor_benefits(order):
             benefit['prorated_discount'] = benefit.get('amount')
         else:
             benefit['prorated_discount'] = 0.0
+        if benefit.get('benefit_type') is BenefitType.cashback_amount.value:
+            benefit['flat_cashback'] = benefit.get('amount')
+        else:
+            benefit['flat_cashback'] = 0.0
+        if benefit.get('benefit_type') is BenefitType.cashback_percentage.value:
+            benefit['prorated_cashback'] = benefit.get('amount')
+        else:
+            benefit['prorated_cashback'] = 0.0
         benefit['max_discount'] = benefit.get('max_cap')
+        benefit['max_cashback'] = benefit.get('max_cap')
         benefit['freebies'] = benefit.get('freebies', list())
     return benefits
