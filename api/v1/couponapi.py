@@ -378,7 +378,7 @@ def create_voucher():
                                 required=False, missing=None, validate=validate.Range(min=0)
                             ),
 
-                            'percentage': fields.Int(
+                            'percentage': fields.Float(
                                 required=False, missing=None, validate=validate.Range(min=0, max=100)
                             ),
 
@@ -386,7 +386,11 @@ def create_voucher():
                                 required=False, validate=validate.Range(min=0)
                             ),
 
-                            'cashback': fields.Int(
+                            'cashback': fields.Float(
+                                required=False, missing=None, validate=validate.Range(min=0)
+                            ),
+
+                            'cashback_percentage': fields.Float(
                                 required=False, missing=None, validate=validate.Range(min=0)
                             )
                         },
